@@ -1,0 +1,14 @@
+$ vitest run --reporter=default --reporter=junit --outputFile=../artifacts/component-tests.xml
+
+ RUN  v3.2.7 C:/Users/Lenovo/Desktop/当代数据管理系统/大作业/frontend
+
+ ✓ tests/components/inputs.spec.ts (8 tests) 95ms
+ ✓ tests/components/attempt.spec.ts (16 tests) 229ms
+ ✓ tests/components/editor.spec.ts (19 tests) 489ms
+
+ Test Files  3 passed (3)
+      Tests  43 passed (43)
+   Start at  20:58:27
+   Duration  5.13s (transform 1.03s, setup 0ms, collect 3.61s, tests 812ms, environment 6.50s, prepare 1.42s)
+
+JUNIT report written to C:/Users/Lenovo/Desktop/当代数据管理系统/大作业/artifacts/component-tests.xml

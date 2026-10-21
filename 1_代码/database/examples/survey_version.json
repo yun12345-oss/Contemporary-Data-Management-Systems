@@ -1,0 +1,12 @@
+{
+ "schema_version":1,"rule_engine_version":1,
+ "definition":{
+  "title":"数据管理课程学习体验调查",
+  "description":"听见你的学习体验，让下一次课程更贴近真实需要。问卷约需 2 分钟，所有回答仅用于课程改进。",
+  "allow_anonymous":true,"allow_repeat":true,
+  "questions":[
+   {"id":"q_role","type":"single_choice","title":"你目前的身份是？","required":true,"options":[{"id":"student","label":"在校学生"},{"id":"worker","label":"已参加工作"}],"validation":{},"routing":{"rules":[{"condition":{"question_id":"q_role","operator":"eq","value":"worker"},"target":"q_hours"}],"default_target":null}},
+   {"id":"q_tools","type":"multiple_choice","title":"你希望深入学习哪些工具？","required":true,"options":[{"id":"mongo","label":"MongoDB"},{"id":"python","label":"Python"},{"id":"java","label":"Java"},{"id":"node","label":"Node.js"}],"validation":{"min_choices":2,"max_choices":3},"routing":{"rules":[],"default_target":null}},
+   {"id":"q_hours","type":"number","title":"你每周愿意投入多少小时进行实践？","required":true,"options":[],"validation":{"min":0,"max":40,"integer_only":true},"routing":{"rules":[],"default_target":null}},
+   {"id":"q_feedback","type":"text","title":"你对课程还有哪些期待或建议？","required":false,"options":[],"validation":{"min_length":2,"max_length":500},"routing":{"rules":[],"default_target":"END"}}
+ ]}}

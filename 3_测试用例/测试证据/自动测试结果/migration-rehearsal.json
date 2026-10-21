@@ -1,0 +1,15 @@
+{
+  "source_database": "survey_lab",
+  "collections": {
+    "users": 1,
+    "sessions": 1,
+    "surveys": 2,
+    "survey_versions": 1,
+    "responses": 4
+  },
+  "data_hashes_preserved": true,
+  "statistics_preserved": true,
+  "rollback_and_retry_passed": true,
+  "published_versions_verified": 1,
+  "scope": "真实旧业务数据的临时副本；不是业务版本2迁移验证"
+}

@@ -1,0 +1,8 @@
+{
+  "survey_scope": "独立自动测试问卷，未修改原问卷",
+  "closed_with_draft_preserved": true,
+  "unpublished_deadline_did_not_leak_to_server": true,
+  "invalid_json_did_not_replace_rules": true,
+  "single_emoji_submitted_and_stored": true,
+  "response_count": 1
+}

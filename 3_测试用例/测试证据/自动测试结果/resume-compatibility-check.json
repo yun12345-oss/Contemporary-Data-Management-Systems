@@ -1,0 +1,15 @@
+{
+  "baseline": "phase1-editor-fixes",
+  "unchanged_validators": [
+    "users",
+    "sessions",
+    "surveys",
+    "survey_versions",
+    "responses"
+  ],
+  "added_collections": [
+    "attempts"
+  ],
+  "old_validators_identical": true,
+  "old_business_documents_rewritten": false
+}

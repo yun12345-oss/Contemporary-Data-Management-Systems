@@ -1,0 +1,5163 @@
+--- 1.0.2/backend/app/main.py
++++ 1.1.0/backend/app/main.py
+@@ -19,9 +19,11 @@
+     StatusChange,
+     StartAttempt,
+     Submit,
++    SaveAttempt,
++    AttemptRevision,
+ )
+ from app.security import Security, passwords, new_session, digest, now, uid
+-from app.services import surveys, participation, statistics
++from app.services import surveys, participation, statistics, attempts
+ 
+ 
+ def create_app(database=None, secret=None):
+@@ -47,7 +49,7 @@
+ 
+     app = FastAPI(
+         title="问序 Survey Lab",
+-        version="1.0.2",
++        version="1.1.0",
+         description="MongoDB 问卷系统第一阶段 API",
+         lifespan=lifespan,
+     )
+@@ -137,7 +139,7 @@
+     @app.get("/api/health")
+     def health(database=Depends(db)):
+         database.command("ping")
+-        return {"status": "ok", "version": "1.0.2"}
++        return {"status": "ok", "version": "1.1.0"}
+ 
+     @app.post("/api/auth/register", status_code=201)
+     def register(body: Credentials, response: Response, database=Depends(db)):
+@@ -310,6 +312,64 @@
+     ):
+         return participation.submit(database, sec, user, body)
+ 
++    @app.get("/api/public/{share}/attempt")
++    def current_attempt(
++        share: str,
++        database=Depends(db),
++        sec=Depends(security),
++        user=Depends(current_user),
++    ):
++        return attempts.find_current(database, sec, user, share)
++
++    @app.post("/api/public/{share}/attempt")
++    def begin_attempt(
++        share: str,
++        body: StartAttempt,
++        database=Depends(db),
++        sec=Depends(security),
++        user=Depends(current_user),
++    ):
++        return attempts.begin(database, sec, user, share, body.anonymous)
++
++    @app.get("/api/attempts/{aid}")
++    def read_attempt(
++        aid: str,
++        database=Depends(db),
++        sec=Depends(security),
++        user=Depends(current_user),
++    ):
++        return attempts.view(database, attempts.owned(database, sec, user, aid))
++
++    @app.put("/api/attempts/{aid}")
++    def save_attempt(
++        aid: str,
++        body: SaveAttempt,
++        database=Depends(db),
++        sec=Depends(security),
++        user=Depends(current_user),
++    ):
++        return attempts.save(database, sec, user, aid, body)
++
++    @app.post("/api/attempts/{aid}/abandon")
++    def abandon_attempt(
++        aid: str,
++        body: AttemptRevision,
++        database=Depends(db),
++        sec=Depends(security),
++        user=Depends(current_user),
++    ):
++        return attempts.abandon(database, sec, user, aid, body.revision)
++
++    @app.post("/api/attempts/{aid}/submit")
++    def submit_attempt(
++        aid: str,
++        body: AttemptRevision,
++        database=Depends(db),
++        sec=Depends(security),
++        user=Depends(current_user),
++    ):
++        return attempts.submit(database, sec, user, aid, body.revision)
++
+     @app.post("/api/evaluate")
+     def evaluate_preview(
+         body: Submit,
+--- 1.0.2/backend/app/migration.py
++++ 1.1.0/backend/app/migration.py
+@@ -33,15 +33,19 @@
+     )
+     options = {c["name"]: c.get("options", {}) for c in db.list_collections()}
+     require(
+-        set(target) <= set(options),
++        set(legacy) <= set(options),
+         "已有库缺少集合，请先检查数据库，不自动推断迁移路径",
+         409,
+     )
+     report = {}
+     for name, schema in target.items():
++        # 新增集合由普通初始化创建；此流程只升级已有集合。
++        if name not in options:
++            continue
+         current = options[name].get("validator", {})
+         require(
+-            current in ({"$jsonSchema": legacy[name]}, {"$jsonSchema": schema}),
++            current
++            in ({"$jsonSchema": legacy.get(name, schema)}, {"$jsonSchema": schema}),
+             f"{name} 的校验器不是已知旧版或目标版，停止升级",
+             409,
+         )
+@@ -92,7 +96,7 @@
+         "旧数据不符合新约束，升级未执行。请先查看 --check 结果并制定修复方案。",
+         409,
+     )
+-    target = validator_definitions()
++    target = {n: s for n, s in validator_definitions().items() if n in options}
+     journal = {
+         "database": db.name,
+         "started_at": datetime.now(timezone.utc),
+--- 1.0.2/backend/app/schemas.py
++++ 1.1.0/backend/app/schemas.py
+@@ -82,6 +82,15 @@
+     anonymous: bool = False
+ 
+ 
++class AttemptRevision(StrictModel):
++    revision: int = Field(ge=1, strict=True)
++
++
++class SaveAttempt(AttemptRevision):
++    answers: dict = Field(max_length=100)
++    current_question_id: str | None = Field(default=None, max_length=64)
++
++
+ class Submit(StrictModel):
+     token: str = Field(max_length=4096)
+     answers: dict = Field(max_length=100)
+--- 1.0.2/backend/app/services/attempts.py
++++ 1.1.0/backend/app/services/attempts.py
+@@ -0,0 +1,329 @@
++"""可恢复填写。原始输入独立于正式答案，只有校验通过的值参与路径计算。"""
++
++import re
++from itertools import pairwise
++
++from pymongo import ReturnDocument
++from pymongo.errors import DuplicateKeyError
++
++from app.database import transact
++from app.domain.questions import validate_answer
++from app.domain.rules import evaluate, route_target
++from app.errors import BusinessError, require
++from app.security import now, uid
++from app.services.participation import receipt
++from app.services.surveys import available
++
++NUMERIC = re.compile(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$", re.ASCII)
++
++
++def normalized(q, raw):
++    if q["type"] == "number" and isinstance(raw, str):
++        text = raw.strip()
++        if not text:
++            return None
++        require(bool(NUMERIC.fullmatch(text)), "请输入有效数字")
++        try:
++            return float(text)
++        except (ValueError, OverflowError):
++            raise BusinessError("请输入有效数字")
++    return raw
++
++
++def progress(definition, raw, hint=None):
++    """到第一道无效题为止；无效输入不能决定分支或默认路径。"""
++    qs = definition["questions"]
++    positions = {q["id"]: i for i, q in enumerate(qs)}
++    require(set(raw) <= set(positions), "草稿包含未知题目")
++    effective, path, errors = {}, [], {}
++    i = 0
++    while i < len(qs):
++        q = qs[i]
++        path.append(q["id"])
++        try:
++            effective[q["id"]] = validate_answer(q, normalized(q, raw.get(q["id"])))
++        except BusinessError as exc:
++            errors[q["id"]] = exc.message
++            break
++        target = route_target(q, effective)
++        if target == "END":
++            break
++        i = positions[target] if target else i + 1
++    current = next(iter(errors), hint if hint in path else path[-1])
++    return effective, path, errors, current
++
++
++def owned(db, sec, user, aid, session=None):
++    doc = db.attempts.find_one({"_id": aid}, session=session)
++    require(doc is not None, "填写草稿不存在", 404)
++    require(
++        doc["respondent_key"] == sec.respondent_key(doc["survey_id"], user["_id"]),
++        "填写草稿不存在",
++        404,
++    )
++    return doc
++
++
++def view(db, doc):
++    survey = db.surveys.find_one({"_id": doc["survey_id"]})
++    version = db.survey_versions.find_one({"_id": doc["version_id"]})
++    require(
++        version is not None
++        and version["schema_version"] == 1
++        and version["rule_engine_version"] == 1,
++        "不支持的问卷版本",
++        409,
++    )
++    reason = None
++    try:
++        available(survey)
++    except BusinessError as exc:
++        reason = exc.message
++    _, path, issues, current = progress(
++        version["definition"], doc["raw_answers"], doc["current_question_id"]
++    )
++    result = {
++        k: doc[k] for k in ("_id", "revision", "status", "anonymous", "updated_at")
++    }
++    result.update(
++        definition=version["definition"],
++        version=version["version"],
++        answers=doc["raw_answers"],
++        path=path,
++        issues=issues,
++        current_question_id=current,
++        read_only=bool(reason) or doc["status"] != "in_progress",
++        read_only_reason=reason,
++        deadline=survey.get("deadline") if survey else None,
++    )
++    if doc.get("response_id"):
++        response = db.responses.find_one({"_id": doc["response_id"]})
++        result["receipt"] = receipt(response)
++    return result
++
++
++def find_current(db, sec, user, share):
++    survey = db.surveys.find_one({"share_code": share})
++    require(survey is not None, "问卷不存在", 404)
++    doc = db.attempts.find_one(
++        {
++            "survey_id": survey["_id"],
++            "respondent_key": sec.respondent_key(survey["_id"], user["_id"]),
++            "status": "in_progress",
++        }
++    )
++    return view(db, doc) if doc else None
++
++
++def begin(db, sec, user, share, anonymous):
++    def work(session):
++        survey = db.surveys.find_one_and_update(
++            {"share_code": share},
++            {"$inc": {"activity_seq": 1}},
++            session=session,
++            return_document=ReturnDocument.AFTER,
++        )
++        require(survey is not None, "问卷不存在", 404)
++        key = sec.respondent_key(survey["_id"], user["_id"])
++        existing = db.attempts.find_one(
++            {
++                "survey_id": survey["_id"],
++                "respondent_key": key,
++                "status": "in_progress",
++            },
++            session=session,
++        )
++        if existing:
++            return existing
++        available(survey)
++        version = db.survey_versions.find_one(
++            {"survey_id": survey["_id"], "version": survey["current_version"]},
++            session=session,
++        )
++        d = version["definition"]
++        require(not anonymous or d["allow_anonymous"], "此问卷不允许匿名填写")
++        require(
++            d["allow_repeat"]
++            or db.responses.find_one(
++                {"survey_id": survey["_id"], "respondent_key": key}, session=session
++            )
++            is None,
++            "你已经提交过此问卷",
++            409,
++        )
++        doc = {
++            "_id": uid(),
++            "survey_id": survey["_id"],
++            "version_id": version["_id"],
++            "respondent_key": key,
++            "anonymous": anonymous,
++            "status": "in_progress",
++            "raw_answers": {},
++            "current_question_id": d["questions"][0]["id"],
++            "revision": 1,
++            "created_at": now(),
++            "updated_at": now(),
++            "schema_version": 1,
++        }
++        db.attempts.insert_one(doc, session=session)
++        return doc
++
++    try:
++        doc = transact(db, work)
++    except DuplicateKeyError:
++        result = find_current(db, sec, user, share)
++        require(result is not None, "草稿状态已变化，请重试", 409)
++        return result
++    return view(db, doc)
++
++
++def save(db, sec, user, aid, body):
++    def work(session):
++        doc = owned(db, sec, user, aid, session)
++        require(doc["status"] == "in_progress", "填写已结束，不能继续保存", 409)
++        require(
++            doc["revision"] == body.revision, "草稿已在其他页面更新，请重新加载", 409
++        )
++        survey = db.surveys.find_one_and_update(
++            {"_id": doc["survey_id"]},
++            {"$inc": {"activity_seq": 1}},
++            session=session,
++            return_document=ReturnDocument.AFTER,
++        )
++        available(survey)
++        version = db.survey_versions.find_one(
++            {"_id": doc["version_id"]}, session=session
++        )
++        questions = {q["id"]: q for q in version["definition"]["questions"]}
++        require(set(body.answers) <= set(questions), "草稿包含未知题目")
++        for value in body.answers.values():
++            require(
++                value is None
++                or type(value) in (str, int, float)
++                or isinstance(value, list)
++                and len(value) <= 100
++                and all(isinstance(x, str) and len(x) <= 64 for x in value),
++                "草稿答案结构错误",
++            )
++            require(
++                not isinstance(value, str) or len(value) <= 20000, "草稿单项输入过长"
++            )
++        _, path, _, current = progress(
++            version["definition"], body.answers, body.current_question_id
++        )
++        # 清除确定被有效跳转绕过的题目；无效前题后的暂存答案保留，修正后重新判断。
++        positions = {q: i for i, q in enumerate(questions)}
++        skipped = set()
++        for a, b in pairwise(path):
++            skipped.update(
++                q for q, i in positions.items() if positions[a] < i < positions[b]
++            )
++        effective, _, issues, _ = progress(version["definition"], body.answers, current)
++        if not issues and route_target(questions[path[-1]], effective) == "END":
++            skipped.update(q for q, i in positions.items() if i > positions[path[-1]])
++        raw = {k: v for k, v in body.answers.items() if k not in skipped}
++        return db.attempts.find_one_and_update(
++            {"_id": aid, "revision": body.revision, "status": "in_progress"},
++            {
++                "$set": {
++                    "raw_answers": raw,
++                    "current_question_id": current,
++                    "updated_at": now(),
++                },
++                "$inc": {"revision": 1},
++            },
++            return_document=ReturnDocument.AFTER,
++            session=session,
++        )
++
++    return view(db, transact(db, work))
++
++
++def abandon(db, sec, user, aid, revision):
++    doc = owned(db, sec, user, aid)
++    require(doc["status"] == "in_progress", "填写已结束", 409)
++    result = db.attempts.update_one(
++        {"_id": aid, "revision": revision, "status": "in_progress"},
++        {
++            "$set": {"status": "abandoned", "raw_answers": {}, "updated_at": now()},
++            "$inc": {"revision": 1},
++        },
++    )
++    require(result.modified_count == 1, "草稿已变化，请重新加载后确认放弃", 409)
++    return {"ok": True}
++
++
++def submit(db, sec, user, aid, revision):
++    def work(session):
++        doc = owned(db, sec, user, aid, session)
++        if doc["status"] == "submitted":
++            return receipt(
++                db.responses.find_one({"_id": doc["response_id"]}, session=session)
++            )
++        require(doc["status"] == "in_progress", "填写已放弃", 409)
++        require(doc["revision"] == revision, "草稿已在其他页面更新，请重新加载", 409)
++        survey = db.surveys.find_one_and_update(
++            {"_id": doc["survey_id"]},
++            {"$inc": {"activity_seq": 1}},
++            return_document=ReturnDocument.AFTER,
++            session=session,
++        )
++        available(survey)
++        version = db.survey_versions.find_one(
++            {"_id": doc["version_id"]}, session=session
++        )
++        d = version["definition"]
++        require(
++            d["allow_repeat"]
++            or db.responses.find_one(
++                {
++                    "survey_id": doc["survey_id"],
++                    "respondent_key": doc["respondent_key"],
++                },
++                session=session,
++            )
++            is None,
++            "你已经提交过此问卷",
++            409,
++        )
++        raw = {}
++        # 无效输入留给 evaluate 按有效路径给出逐题错误，跳过题不影响提交。
++        for q in d["questions"]:
++            value = doc["raw_answers"].get(q["id"])
++            try:
++                raw[q["id"]] = normalized(q, value)
++            except BusinessError:
++                raw[q["id"]] = value
++        clean, path = evaluate(d, raw)
++        response = {
++            "_id": uid(),
++            "survey_id": doc["survey_id"],
++            "version_id": doc["version_id"],
++            "version": version["version"],
++            "attempt_id": aid,
++            "respondent_key": doc["respondent_key"],
++            "anonymous": doc["anonymous"],
++            "answers": [{"question_id": k, "value": v} for k, v in clean.items()],
++            "path": path,
++            "submitted_at": now(),
++            "schema_version": 1,
++        }
++        if not doc["anonymous"]:
++            response["user_id"] = user["_id"]
++        db.responses.insert_one(response, session=session)
++        db.attempts.update_one(
++            {"_id": aid},
++            {
++                "$set": {
++                    "status": "submitted",
++                    "raw_answers": {},
++                    "response_id": response["_id"],
++                    "updated_at": now(),
++                },
++                "$inc": {"revision": 1},
++            },
++            session=session,
++        )
++        return receipt(response)
++
++    return transact(db, work)
+--- 1.0.2/backend/pyproject.toml
++++ 1.1.0/backend/pyproject.toml
+@@ -4,7 +4,7 @@
+ 
+ [project]
+ name = "survey-lab"
+-version = "1.0.2"
++version = "1.1.0"
+ requires-python = ">=3.11"
+ dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "pymongo>=4.10,<5", "pwdlib[argon2]>=0.2,<1", "itsdangerous>=2.2,<3", "python-dotenv>=1,<2"]
+ 
+--- 1.0.2/backend/requirements-lock.txt
++++ 1.1.0/backend/requirements-lock.txt
+@@ -1,33 +1,33 @@
+-annotated-doc==0.0.5
+-annotated-types==0.8.0
+-anyio==4.15.1
+-argon2-cffi==25.1.0
+-argon2-cffi-bindings==26.1.0
+-certifi==2026.7.22
+-cffi==2.1.1
+-click==8.5.0
+-colorama==0.4.6
+-dnspython==2.9.0
+-fastapi==0.144.0
+-h11==0.16.0
+-httpcore==1.0.9
+-httpx==0.28.1
+-idna==3.20
+-iniconfig==2.3.1
+-itsdangerous==2.2.0
+-opentelemetry-api==1.45.1
+-packaging==26.3
+-pluggy==1.7.0
+-pwdlib==0.3.1
+-pycparser==3.11
+-pydantic==2.14.1
+-pydantic_core==2.50.1
+-Pygments==2.21.0
+-pymongo==4.19.0
+-pytest==9.1.1
+-python-dotenv==1.2.4
+-setuptools==84.0.0
+-starlette==1.8.0
+-typing-inspection==0.4.4
+-typing_extensions==4.16.0
+-uvicorn==0.54.0
++annotated-doc==0.0.5
++annotated-types==0.8.0
++anyio==4.15.1
++argon2-cffi==25.1.0
++argon2-cffi-bindings==26.1.0
++certifi==2026.7.22
++cffi==2.1.1
++click==8.5.0
++colorama==0.4.6
++dnspython==2.9.0
++fastapi==0.144.0
++h11==0.16.0
++httpcore==1.0.9
++httpx==0.28.1
++idna==3.20
++iniconfig==2.3.1
++itsdangerous==2.2.0
++opentelemetry-api==1.45.1
++packaging==26.3
++pluggy==1.7.0
++pwdlib==0.3.1
++pycparser==3.11
++pydantic==2.14.1
++pydantic_core==2.50.1
++Pygments==2.21.0
++pymongo==4.19.0
++pytest==9.1.1
++python-dotenv==1.2.4
++setuptools==84.0.0
++starlette==1.8.0
++typing-inspection==0.4.4
++typing_extensions==4.16.0
++uvicorn==0.54.0
+--- 1.0.2/backend/tests/test_attempts.py
++++ 1.1.0/backend/tests/test_attempts.py
+@@ -0,0 +1,290 @@
++from concurrent.futures import ThreadPoolExecutor
++from contextlib import ExitStack
++from copy import deepcopy
++from datetime import timedelta
++from threading import Barrier
++from uuid import uuid4
++
++import pytest
++from app.security import now
++from conftest import publish_survey
++from fastapi.testclient import TestClient
++from pymongo.errors import DuplicateKeyError, WriteError
++
++
++def begin(client, survey, anonymous=False):
++    r = client.post(
++        f"/api/public/{survey['share_code']}/attempt", json={"anonymous": anonymous}
++    )
++    assert r.status_code == 200, r.text
++    return r.json()
++
++
++def save(client, attempt, answers, current="q3"):
++    return client.put(
++        f"/api/attempts/{attempt['_id']}",
++        json={
++            "revision": attempt["revision"],
++            "answers": answers,
++            "current_question_id": current,
++        },
++    )
++
++
++def finish(client, attempt):
++    return client.post(
++        f"/api/attempts/{attempt['_id']}/submit", json={"revision": attempt["revision"]}
++    )
++
++
++def other(app, stack):
++    c = stack.enter_context(TestClient(app))
++    credentials = {
++        "username": "resume_" + uuid4().hex[:12],
++        "password": "ResumePass123!",
++    }
++    assert c.post("/api/auth/register", json=credentials).status_code == 201
++    return c, credentials
++
++
++def test_partial_raw_input_resume_across_login_and_device(
++    client, published, app, database
++):
++    with ExitStack() as stack:
++        c, credentials = other(app, stack)
++        a = begin(c, published, True)
++        r = save(c, a, {"q1": "worker", "q3": "-", "q4": "输入尚未完成"}, "q4")
++        assert r.status_code == 200, r.text
++        saved = r.json()
++        assert saved["answers"]["q3"] == "-"
++        assert saved["current_question_id"] == "q3" and "q3" in saved["issues"]
++        assert "q4" not in saved["path"]
++        assert c.post("/api/auth/logout").status_code == 200
++        assert c.get(f"/api/attempts/{a['_id']}").status_code == 401
++        device = stack.enter_context(TestClient(app))
++        assert device.post("/api/auth/login", json=credentials).status_code == 200
++        resumed = device.get(f"/api/public/{published['share_code']}/attempt").json()
++        assert resumed["answers"] == saved["answers"] and resumed["anonymous"] is True
++        assert begin(device, published, False)["anonymous"] is True
++        assert finish(device, resumed).status_code == 422
++        assert database.responses.count_documents({"attempt_id": a["_id"]}) == 0
++
++
++def test_revision_conflict_does_not_overwrite(client, published):
++    a = begin(client, published)
++    first = save(client, a, {"q1": "worker", "q3": "22"}).json()
++    assert save(client, a, {"q1": "student"}).status_code == 409
++    assert finish(client, a).status_code == 409
++    latest = client.get(f"/api/attempts/{a['_id']}").json()
++    assert latest["answers"] == first["answers"]
++
++
++def test_parallel_begin_has_one_active_attempt(client, published, database):
++    barrier = Barrier(5)
++
++    def run(_):
++        barrier.wait()
++        return begin(client, published)
++
++    with ThreadPoolExecutor(max_workers=5) as pool:
++        results = list(pool.map(run, range(5)))
++    assert len({r["_id"] for r in results}) == 1
++    assert (
++        database.attempts.count_documents(
++            {"survey_id": published["_id"], "status": "in_progress"}
++        )
++        == 1
++    )
++    doc = database.attempts.find_one({"_id": results[0]["_id"]})
++    doc["_id"] = uuid4().hex
++    with pytest.raises(DuplicateKeyError):
++        database.attempts.insert_one(doc)
++
++
++def test_skip_cleanup_and_recover_valid_position(client, published):
++    a = begin(client, published)
++    a = save(client, a, {"q1": "student", "q2": ["a", "b"], "q3": "20"}, "q3").json()
++    a = save(client, a, {**a["answers"], "q1": "worker"}, "q2").json()
++    assert "q2" not in a["answers"] and a["path"] == ["q1", "q3", "q4"]
++    assert a["current_question_id"] in a["path"]
++    a = save(client, a, {**a["answers"], "q1": "student"}, "q4").json()
++    assert a["current_question_id"] == "q2" and a["path"] == ["q1", "q2"]
++
++
++@pytest.mark.parametrize("state", ["closed", "expired"])
++def test_read_only_restore_but_no_save_submit(client, published, database, state):
++    a = begin(client, published)
++    a = save(client, a, {"q1": "worker", "q3": "20"}).json()
++    fields = (
++        {"status": "closed"}
++        if state == "closed"
++        else {"deadline": now() - timedelta(seconds=1)}
++    )
++    database.surveys.update_one({"_id": published["_id"]}, {"$set": fields})
++    resumed = client.get(f"/api/public/{published['share_code']}/attempt")
++    assert resumed.status_code == 200 and resumed.json()["read_only"]
++    assert resumed.json()["answers"] == a["answers"]
++    assert save(client, a, a["answers"]).status_code == 409
++    assert finish(client, a).status_code == 409
++    assert begin(client, published)["_id"] == a["_id"]
++
++
++def test_pinned_version_and_anonymity_atomic_idempotent_submit(
++    client, published, database
++):
++    a = begin(client, published, True)
++    a = save(client, a, {"q1": "worker", "q3": "0", "q4": "原始版本"}, "q4").json()
++    sid = published["_id"]
++    d = deepcopy(published["draft"])
++    d["questions"][2]["validation"]["min"] = 100
++    s = client.put(
++        f"/api/surveys/{sid}/draft",
++        json={"revision": published["revision"], "draft": d},
++    ).json()
++    assert (
++        client.post(
++            f"/api/surveys/{sid}/publish", json={"revision": s["revision"]}
++        ).status_code
++        == 200
++    )
++    assert begin(client, published)["version"] == 1
++    barrier = Barrier(3)
++
++    def run(_):
++        barrier.wait()
++        return finish(client, a)
++
++    with ThreadPoolExecutor(max_workers=3) as pool:
++        results = list(pool.map(run, range(3)))
++    assert all(r.status_code == 200 for r in results), [r.text for r in results]
++    assert len({r.json()["id"] for r in results}) == 1
++    assert finish(client, {**a, "revision": 1}).json() == results[0].json()
++    stored = database.attempts.find_one({"_id": a["_id"]})
++    assert stored["status"] == "submitted" and stored["raw_answers"] == {}
++    response = database.responses.find_one({"_id": stored["response_id"]})
++    assert response["version"] == 1 and "user_id" not in response
++    assert save(client, a, a["answers"]).status_code == 409
++    assert (
++        client.get(f"/api/attempts/{a['_id']}").json()["receipt"] == results[0].json()
++    )
++
++
++def test_abandon_clears_answers_rejects_late_save_and_allows_new(
++    client, published, database
++):
++    a = begin(client, published)
++    a = save(client, a, {"q1": "worker", "q3": "-"}).json()
++    r = client.post(
++        f"/api/attempts/{a['_id']}/abandon", json={"revision": a["revision"] - 1}
++    )
++    assert r.status_code == 409
++    assert (
++        client.post(
++            f"/api/attempts/{a['_id']}/abandon", json={"revision": a["revision"]}
++        ).status_code
++        == 200
++    )
++    assert database.attempts.find_one({"_id": a["_id"]})["raw_answers"] == {}
++    assert save(client, a, {"q1": "student"}).status_code == 409
++    assert finish(client, a).status_code == 409
++    assert begin(client, published)["_id"] != a["_id"]
++
++
++def test_drafts_not_in_statistics_and_account_isolation(
++    client, published, app, database
++):
++    a = begin(client, published)
++    a = save(client, a, {"q1": "worker", "q3": "20"}).json()
++    stats = client.get(f"/api/surveys/{published['_id']}/statistics").json()
++    assert stats["total"] == 0 and stats["respondent_count"] == 0
++    with ExitStack() as stack:
++        c, _ = other(app, stack)
++        assert c.get(f"/api/attempts/{a['_id']}").status_code == 404
++        assert save(c, a, {}).status_code == 404
++        assert finish(c, a).status_code == 404
++        assert (
++            c.post(
++                f"/api/attempts/{a['_id']}/abandon", json={"revision": a["revision"]}
++            ).status_code
++            == 404
++        )
++        assert c.get(f"/api/public/{published['share_code']}/attempt").json() is None
++
++
++@pytest.mark.parametrize(
++    "answers",
++    [{"unknown": "x"}, {"q1": {"nested": "x"}}, {"q3": True}, {"q4": "x" * 20001}],
++)
++def test_bad_raw_structure_no_partial_write(client, published, answers):
++    a = begin(client, published)
++    assert save(client, a, answers).status_code == 422
++    assert client.get(f"/api/attempts/{a['_id']}").json()["revision"] == 1
++
++
++def test_direct_database_schema_rejects_malformed_attempt(client, published, database):
++    a = begin(client, published)
++    doc = database.attempts.find_one({"_id": a["_id"]})
++    doc["_id"] = uuid4().hex
++    doc["status"] = "broken"
++    with pytest.raises(WriteError):
++        database.attempts.insert_one(doc)
++
++
++def test_submit_transaction_rolls_back_response_on_failure(
++    client, published, database, monkeypatch
++):
++    from pymongo.synchronous.collection import Collection
++
++    a = begin(client, published)
++    a = save(client, a, {"q1": "worker", "q3": "20"}).json()
++    original = Collection.update_one
++
++    def fail(self, filt, update, *args, **kwargs):
++        if (
++            self.name == "attempts"
++            and update.get("$set", {}).get("status") == "submitted"
++        ):
++            raise RuntimeError("simulated failure after response insertion")
++        return original(self, filt, update, *args, **kwargs)
++
++    monkeypatch.setattr(Collection, "update_one", fail)
++    with pytest.raises(RuntimeError):
++        finish(client, a)
++    assert database.responses.count_documents({"attempt_id": a["_id"]}) == 0
++    assert database.attempts.find_one({"_id": a["_id"]})["status"] == "in_progress"
++
++
++def test_eight_users_parallel_mixed_paths_and_statistics(
++    client, definition, app, database
++):
++    survey = publish_survey(client, definition)
++    with ExitStack() as stack:
++        clients = [other(app, stack)[0] for _ in range(8)]
++        barrier = Barrier(8)
++
++        def run(i):
++            c = clients[i]
++            a = begin(c, survey, i % 2 == 0)
++            raw = {
++                "q1": "worker" if i % 2 == 0 else "student",
++                "q2": ["a", "b"],
++                "q3": str(20 + i),
++                "q4": f"用户{i}回答",
++            }
++            a = save(c, a, raw, "q4").json()
++            barrier.wait()
++            return finish(c, a)
++
++        with ThreadPoolExecutor(max_workers=8) as pool:
++            results = list(pool.map(run, range(8)))
++        assert all(r.status_code == 200 for r in results), [r.text for r in results]
++    rows = list(database.responses.find({"survey_id": survey["_id"]}))
++    assert len(rows) == 8 and len({r["respondent_key"] for r in rows}) == 8
++    assert all(("q2" in r["path"]) == (not r["anonymous"]) for r in rows)
++    stats = client.get(f"/api/surveys/{survey['_id']}/statistics").json()
++    assert stats["total"] == stats["respondent_count"] == 8
++    assert stats["questions"][1]["answered"] == 4
++    assert stats["questions"][2]["average"] == 23.5
++    assert sorted(
++        a["value"] for r in rows for a in r["answers"] if a["question_id"] == "q4"
++    ) == [f"用户{i}回答" for i in range(8)]
+--- 1.0.2/backend/tests/test_migration.py
++++ 1.1.0/backend/tests/test_migration.py
+@@ -50,7 +50,11 @@
+         )
+         assert not any(r["needs_upgrade"] for r in inspect_upgrade(db)[0].values())
+         assert rollback(db, path)["state"] == "rolled_back"
+-        assert all(r["needs_upgrade"] for r in inspect_upgrade(db)[0].values())
++        assert all(
++            r["needs_upgrade"]
++            for n, r in inspect_upgrade(db)[0].items()
++            if n != "attempts"
++        )
+     finally:
+         database.client.drop_database(db.name)
+ 
+@@ -72,7 +76,11 @@
+         with pytest.raises(RuntimeError):
+             upgrade(db, path)
+         assert json.loads(path.read_text())["state"] == "rolled_back"
+-        assert all(r["needs_upgrade"] for r in inspect_upgrade(db)[0].values())
++        assert all(
++            r["needs_upgrade"]
++            for n, r in inspect_upgrade(db)[0].items()
++            if n != "attempts"
++        )
+     finally:
+         database.client.drop_database(db.name)
+ 
+@@ -102,7 +110,11 @@
+         with pytest.raises(BusinessError):
+             upgrade(db, tmp_path / "blocked.json")
+         assert not (tmp_path / "blocked.json").exists()
+-        assert all(r["needs_upgrade"] for r in inspect_upgrade(db)[0].values())
++        assert all(
++            r["needs_upgrade"]
++            for n, r in inspect_upgrade(db)[0].items()
++            if n != "attempts"
++        )
+     finally:
+         database.client.drop_database(db.name)
+ 
+--- 1.0.2/database/build_validators.py
++++ 1.1.0/database/build_validators.py
+@@ -176,6 +176,51 @@
+         surveys=survey,
+         survey_versions=survey_version,
+         responses=response,
++        attempts=obj(
++            {
++                "_id": id_field,
++                "survey_id": id_field,
++                "version_id": id_field,
++                "respondent_key": {"bsonType": "string", "pattern": "^[a-f0-9]{64}$"},
++                "anonymous": boolean,
++                "status": {
++                    "bsonType": "string",
++                    "enum": ["in_progress", "submitted", "abandoned"],
++                },
++                "raw_answers": {
++                    "bsonType": "object",
++                    "maxProperties": 100,
++                    "additionalProperties": {
++                        "anyOf": [
++                            {"bsonType": "null"},
++                            string(20000, 0),
++                            number,
++                            array(id_field),
++                        ]
++                    },
++                },
++                "current_question_id": id_field,
++                "revision": {"bsonType": ["int", "long"], "minimum": 1},
++                "created_at": date,
++                "updated_at": date,
++                "schema_version": version,
++                "response_id": id_field,
++            },
++            required=[
++                "_id",
++                "survey_id",
++                "version_id",
++                "respondent_key",
++                "anonymous",
++                "status",
++                "raw_answers",
++                "current_question_id",
++                "revision",
++                "created_at",
++                "updated_at",
++                "schema_version",
++            ],
++        ),
+     )
+ 
+ 
+--- 1.0.2/database/collection_validators.json
++++ 1.1.0/database/collection_validators.json
+@@ -1,717 +1,826 @@
+-{
+-  "users": {
+-    "bsonType": "object",
+-    "properties": {
+-      "_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "username": {
+-        "bsonType": "string",
+-        "minLength": 3,
+-        "maxLength": 40
+-      },
+-      "username_key": {
+-        "bsonType": "string",
+-        "minLength": 1,
+-        "maxLength": 200
+-      },
+-      "password_hash": {
+-        "bsonType": "string",
+-        "minLength": 1,
+-        "maxLength": 1024
+-      },
+-      "created_at": {
+-        "bsonType": "date"
+-      },
+-      "schema_version": {
+-        "bsonType": [
+-          "int",
+-          "long"
+-        ],
+-        "enum": [
+-          1
+-        ]
+-      }
+-    },
+-    "required": [
+-      "_id",
+-      "username",
+-      "username_key",
+-      "password_hash",
+-      "created_at",
+-      "schema_version"
+-    ]
+-  },
+-  "sessions": {
+-    "bsonType": "object",
+-    "properties": {
+-      "_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "token_hash": {
+-        "bsonType": "string",
+-        "pattern": "^[a-f0-9]{64}$"
+-      },
+-      "user_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "expires_at": {
+-        "bsonType": "date"
+-      }
+-    },
+-    "required": [
+-      "_id",
+-      "token_hash",
+-      "user_id",
+-      "expires_at"
+-    ]
+-  },
+-  "surveys": {
+-    "bsonType": "object",
+-    "properties": {
+-      "_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "owner_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "share_code": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "status": {
+-        "enum": [
+-          "draft",
+-          "published",
+-          "closed"
+-        ]
+-      },
+-      "draft": {
+-        "bsonType": "object",
+-        "properties": {
+-          "title": {
+-            "bsonType": "string",
+-            "minLength": 1,
+-            "maxLength": 200
+-          },
+-          "description": {
+-            "bsonType": "string",
+-            "minLength": 0,
+-            "maxLength": 5000
+-          },
+-          "allow_anonymous": {
+-            "bsonType": "bool"
+-          },
+-          "allow_repeat": {
+-            "bsonType": "bool"
+-          },
+-          "questions": {
+-            "bsonType": "array",
+-            "items": {
+-              "bsonType": "object",
+-              "properties": {
+-                "id": {
+-                  "bsonType": "string",
+-                  "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-                },
+-                "type": {
+-                  "bsonType": "string",
+-                  "minLength": 1,
+-                  "maxLength": 40
+-                },
+-                "title": {
+-                  "bsonType": "string",
+-                  "minLength": 1,
+-                  "maxLength": 500
+-                },
+-                "required": {
+-                  "bsonType": "bool"
+-                },
+-                "options": {
+-                  "bsonType": "array",
+-                  "items": {
+-                    "bsonType": "object",
+-                    "properties": {
+-                      "id": {
+-                        "bsonType": "string",
+-                        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-                      },
+-                      "label": {
+-                        "bsonType": "string",
+-                        "minLength": 1,
+-                        "maxLength": 200
+-                      }
+-                    },
+-                    "required": [
+-                      "id",
+-                      "label"
+-                    ]
+-                  },
+-                  "maxItems": 100
+-                },
+-                "validation": {
+-                  "bsonType": "object",
+-                  "properties": {
+-                    "min_choices": {
+-                      "bsonType": [
+-                        "int",
+-                        "long"
+-                      ],
+-                      "minimum": 0,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "max_choices": {
+-                      "bsonType": [
+-                        "int",
+-                        "long"
+-                      ],
+-                      "minimum": 0,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "min_length": {
+-                      "bsonType": [
+-                        "int",
+-                        "long"
+-                      ],
+-                      "minimum": 0,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "max_length": {
+-                      "bsonType": [
+-                        "int",
+-                        "long"
+-                      ],
+-                      "minimum": 0,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "min": {
+-                      "bsonType": [
+-                        "int",
+-                        "long",
+-                        "double"
+-                      ],
+-                      "minimum": -1000000000000000,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "max": {
+-                      "bsonType": [
+-                        "int",
+-                        "long",
+-                        "double"
+-                      ],
+-                      "minimum": -1000000000000000,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "integer_only": {
+-                      "bsonType": "bool"
+-                    }
+-                  }
+-                },
+-                "routing": {
+-                  "bsonType": "object",
+-                  "properties": {
+-                    "rules": {
+-                      "bsonType": "array",
+-                      "items": {
+-                        "bsonType": "object",
+-                        "properties": {
+-                          "condition": {
+-                            "bsonType": "object",
+-                            "minProperties": 1
+-                          },
+-                          "target": {
+-                            "bsonType": "string",
+-                            "minLength": 1,
+-                            "maxLength": 64
+-                          }
+-                        },
+-                        "required": [
+-                          "condition",
+-                          "target"
+-                        ]
+-                      },
+-                      "maxItems": 20
+-                    },
+-                    "default_target": {
+-                      "bsonType": [
+-                        "null",
+-                        "string"
+-                      ]
+-                    }
+-                  },
+-                  "required": [
+-                    "rules",
+-                    "default_target"
+-                  ]
+-                }
+-              },
+-              "required": [
+-                "id",
+-                "type",
+-                "title",
+-                "required",
+-                "options",
+-                "validation",
+-                "routing"
+-              ]
+-            },
+-            "maxItems": 100
+-          }
+-        },
+-        "required": [
+-          "title",
+-          "description",
+-          "allow_anonymous",
+-          "allow_repeat",
+-          "questions"
+-        ]
+-      },
+-      "deadline": {
+-        "bsonType": [
+-          "date",
+-          "null"
+-        ]
+-      },
+-      "revision": {
+-        "bsonType": [
+-          "int",
+-          "long"
+-        ],
+-        "minimum": 1
+-      },
+-      "current_version": {
+-        "bsonType": [
+-          "int",
+-          "long"
+-        ],
+-        "minimum": 0,
+-        "maximum": 1000000000000000
+-      },
+-      "created_at": {
+-        "bsonType": "date"
+-      },
+-      "updated_at": {
+-        "bsonType": "date"
+-      },
+-      "activity_seq": {
+-        "bsonType": [
+-          "int",
+-          "long"
+-        ],
+-        "minimum": 0,
+-        "maximum": 1000000000000000
+-      },
+-      "schema_version": {
+-        "bsonType": [
+-          "int",
+-          "long"
+-        ],
+-        "enum": [
+-          1
+-        ]
+-      }
+-    },
+-    "required": [
+-      "_id",
+-      "owner_id",
+-      "share_code",
+-      "status",
+-      "draft",
+-      "deadline",
+-      "revision",
+-      "current_version",
+-      "created_at",
+-      "updated_at",
+-      "activity_seq",
+-      "schema_version"
+-    ]
+-  },
+-  "survey_versions": {
+-    "bsonType": "object",
+-    "properties": {
+-      "_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "survey_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "version": {
+-        "bsonType": [
+-          "int",
+-          "long"
+-        ],
+-        "minimum": 1
+-      },
+-      "definition": {
+-        "bsonType": "object",
+-        "properties": {
+-          "title": {
+-            "bsonType": "string",
+-            "minLength": 1,
+-            "maxLength": 200
+-          },
+-          "description": {
+-            "bsonType": "string",
+-            "minLength": 0,
+-            "maxLength": 5000
+-          },
+-          "allow_anonymous": {
+-            "bsonType": "bool"
+-          },
+-          "allow_repeat": {
+-            "bsonType": "bool"
+-          },
+-          "questions": {
+-            "bsonType": "array",
+-            "items": {
+-              "bsonType": "object",
+-              "properties": {
+-                "id": {
+-                  "bsonType": "string",
+-                  "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-                },
+-                "type": {
+-                  "bsonType": "string",
+-                  "minLength": 1,
+-                  "maxLength": 40
+-                },
+-                "title": {
+-                  "bsonType": "string",
+-                  "minLength": 1,
+-                  "maxLength": 500
+-                },
+-                "required": {
+-                  "bsonType": "bool"
+-                },
+-                "options": {
+-                  "bsonType": "array",
+-                  "items": {
+-                    "bsonType": "object",
+-                    "properties": {
+-                      "id": {
+-                        "bsonType": "string",
+-                        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-                      },
+-                      "label": {
+-                        "bsonType": "string",
+-                        "minLength": 1,
+-                        "maxLength": 200
+-                      }
+-                    },
+-                    "required": [
+-                      "id",
+-                      "label"
+-                    ]
+-                  },
+-                  "maxItems": 100
+-                },
+-                "validation": {
+-                  "bsonType": "object",
+-                  "properties": {
+-                    "min_choices": {
+-                      "bsonType": [
+-                        "int",
+-                        "long"
+-                      ],
+-                      "minimum": 0,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "max_choices": {
+-                      "bsonType": [
+-                        "int",
+-                        "long"
+-                      ],
+-                      "minimum": 0,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "min_length": {
+-                      "bsonType": [
+-                        "int",
+-                        "long"
+-                      ],
+-                      "minimum": 0,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "max_length": {
+-                      "bsonType": [
+-                        "int",
+-                        "long"
+-                      ],
+-                      "minimum": 0,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "min": {
+-                      "bsonType": [
+-                        "int",
+-                        "long",
+-                        "double"
+-                      ],
+-                      "minimum": -1000000000000000,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "max": {
+-                      "bsonType": [
+-                        "int",
+-                        "long",
+-                        "double"
+-                      ],
+-                      "minimum": -1000000000000000,
+-                      "maximum": 1000000000000000
+-                    },
+-                    "integer_only": {
+-                      "bsonType": "bool"
+-                    }
+-                  }
+-                },
+-                "routing": {
+-                  "bsonType": "object",
+-                  "properties": {
+-                    "rules": {
+-                      "bsonType": "array",
+-                      "items": {
+-                        "bsonType": "object",
+-                        "properties": {
+-                          "condition": {
+-                            "bsonType": "object",
+-                            "minProperties": 1
+-                          },
+-                          "target": {
+-                            "bsonType": "string",
+-                            "minLength": 1,
+-                            "maxLength": 64
+-                          }
+-                        },
+-                        "required": [
+-                          "condition",
+-                          "target"
+-                        ]
+-                      },
+-                      "maxItems": 20
+-                    },
+-                    "default_target": {
+-                      "bsonType": [
+-                        "null",
+-                        "string"
+-                      ]
+-                    }
+-                  },
+-                  "required": [
+-                    "rules",
+-                    "default_target"
+-                  ]
+-                }
+-              },
+-              "required": [
+-                "id",
+-                "type",
+-                "title",
+-                "required",
+-                "options",
+-                "validation",
+-                "routing"
+-              ]
+-            },
+-            "maxItems": 100,
+-            "minItems": 1
+-          }
+-        },
+-        "required": [
+-          "title",
+-          "description",
+-          "allow_anonymous",
+-          "allow_repeat",
+-          "questions"
+-        ]
+-      },
+-      "schema_version": {
+-        "bsonType": [
+-          "int",
+-          "long"
+-        ],
+-        "enum": [
+-          1
+-        ]
+-      },
+-      "rule_engine_version": {
+-        "bsonType": [
+-          "int",
+-          "long"
+-        ],
+-        "enum": [
+-          1
+-        ]
+-      },
+-      "published_at": {
+-        "bsonType": "date"
+-      }
+-    },
+-    "required": [
+-      "_id",
+-      "survey_id",
+-      "version",
+-      "definition",
+-      "schema_version",
+-      "rule_engine_version",
+-      "published_at"
+-    ]
+-  },
+-  "responses": {
+-    "bsonType": "object",
+-    "properties": {
+-      "_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "survey_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "version_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "version": {
+-        "bsonType": [
+-          "int",
+-          "long"
+-        ],
+-        "minimum": 1
+-      },
+-      "attempt_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      },
+-      "respondent_key": {
+-        "bsonType": "string",
+-        "pattern": "^[a-f0-9]{64}$"
+-      },
+-      "anonymous": {
+-        "bsonType": "bool"
+-      },
+-      "answers": {
+-        "bsonType": "array",
+-        "items": {
+-          "bsonType": "object",
+-          "properties": {
+-            "question_id": {
+-              "bsonType": "string",
+-              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-            },
+-            "value": {
+-              "anyOf": [
+-                {
+-                  "bsonType": "null"
+-                },
+-                {
+-                  "bsonType": "string",
+-                  "minLength": 1,
+-                  "maxLength": 10000
+-                },
+-                {
+-                  "bsonType": [
+-                    "int",
+-                    "long",
+-                    "double"
+-                  ],
+-                  "minimum": -1000000000000000,
+-                  "maximum": 1000000000000000
+-                },
+-                {
+-                  "bsonType": "array",
+-                  "items": {
+-                    "bsonType": "string",
+-                    "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-                  },
+-                  "maxItems": 100,
+-                  "uniqueItems": true,
+-                  "minItems": 1
+-                }
+-              ]
+-            }
+-          },
+-          "additionalProperties": false,
+-          "required": [
+-            "question_id",
+-            "value"
+-          ]
+-        },
+-        "maxItems": 100,
+-        "minItems": 1
+-      },
+-      "path": {
+-        "bsonType": "array",
+-        "items": {
+-          "bsonType": "string",
+-          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-        },
+-        "maxItems": 100,
+-        "minItems": 1,
+-        "uniqueItems": true
+-      },
+-      "submitted_at": {
+-        "bsonType": "date"
+-      },
+-      "schema_version": {
+-        "bsonType": [
+-          "int",
+-          "long"
+-        ],
+-        "enum": [
+-          1
+-        ]
+-      },
+-      "user_id": {
+-        "bsonType": "string",
+-        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+-      }
+-    },
+-    "required": [
+-      "_id",
+-      "survey_id",
+-      "version_id",
+-      "version",
+-      "attempt_id",
+-      "respondent_key",
+-      "anonymous",
+-      "answers",
+-      "path",
+-      "submitted_at",
+-      "schema_version"
+-    ],
+-    "oneOf": [
+-      {
+-        "properties": {
+-          "anonymous": {
+-            "enum": [
+-              true
+-            ]
+-          }
+-        },
+-        "not": {
+-          "required": [
+-            "user_id"
+-          ]
+-        }
+-      },
+-      {
+-        "properties": {
+-          "anonymous": {
+-            "enum": [
+-              false
+-            ]
+-          }
+-        },
+-        "required": [
+-          "user_id"
+-        ]
+-      }
+-    ]
+-  }
+-}
++{
++  "users": {
++    "bsonType": "object",
++    "properties": {
++      "_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "username": {
++        "bsonType": "string",
++        "minLength": 3,
++        "maxLength": 40
++      },
++      "username_key": {
++        "bsonType": "string",
++        "minLength": 1,
++        "maxLength": 200
++      },
++      "password_hash": {
++        "bsonType": "string",
++        "minLength": 1,
++        "maxLength": 1024
++      },
++      "created_at": {
++        "bsonType": "date"
++      },
++      "schema_version": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "enum": [
++          1
++        ]
++      }
++    },
++    "required": [
++      "_id",
++      "username",
++      "username_key",
++      "password_hash",
++      "created_at",
++      "schema_version"
++    ]
++  },
++  "sessions": {
++    "bsonType": "object",
++    "properties": {
++      "_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "token_hash": {
++        "bsonType": "string",
++        "pattern": "^[a-f0-9]{64}$"
++      },
++      "user_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "expires_at": {
++        "bsonType": "date"
++      }
++    },
++    "required": [
++      "_id",
++      "token_hash",
++      "user_id",
++      "expires_at"
++    ]
++  },
++  "surveys": {
++    "bsonType": "object",
++    "properties": {
++      "_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "owner_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "share_code": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "status": {
++        "enum": [
++          "draft",
++          "published",
++          "closed"
++        ]
++      },
++      "draft": {
++        "bsonType": "object",
++        "properties": {
++          "title": {
++            "bsonType": "string",
++            "minLength": 1,
++            "maxLength": 200
++          },
++          "description": {
++            "bsonType": "string",
++            "minLength": 0,
++            "maxLength": 5000
++          },
++          "allow_anonymous": {
++            "bsonType": "bool"
++          },
++          "allow_repeat": {
++            "bsonType": "bool"
++          },
++          "questions": {
++            "bsonType": "array",
++            "items": {
++              "bsonType": "object",
++              "properties": {
++                "id": {
++                  "bsonType": "string",
++                  "pattern": "^[A-Za-z0-9_-]{1,64}$"
++                },
++                "type": {
++                  "bsonType": "string",
++                  "minLength": 1,
++                  "maxLength": 40
++                },
++                "title": {
++                  "bsonType": "string",
++                  "minLength": 1,
++                  "maxLength": 500
++                },
++                "required": {
++                  "bsonType": "bool"
++                },
++                "options": {
++                  "bsonType": "array",
++                  "items": {
++                    "bsonType": "object",
++                    "properties": {
++                      "id": {
++                        "bsonType": "string",
++                        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++                      },
++                      "label": {
++                        "bsonType": "string",
++                        "minLength": 1,
++                        "maxLength": 200
++                      }
++                    },
++                    "required": [
++                      "id",
++                      "label"
++                    ]
++                  },
++                  "maxItems": 100
++                },
++                "validation": {
++                  "bsonType": "object",
++                  "properties": {
++                    "min_choices": {
++                      "bsonType": [
++                        "int",
++                        "long"
++                      ],
++                      "minimum": 0,
++                      "maximum": 1000000000000000
++                    },
++                    "max_choices": {
++                      "bsonType": [
++                        "int",
++                        "long"
++                      ],
++                      "minimum": 0,
++                      "maximum": 1000000000000000
++                    },
++                    "min_length": {
++                      "bsonType": [
++                        "int",
++                        "long"
++                      ],
++                      "minimum": 0,
++                      "maximum": 1000000000000000
++                    },
++                    "max_length": {
++                      "bsonType": [
++                        "int",
++                        "long"
++                      ],
++                      "minimum": 0,
++                      "maximum": 1000000000000000
++                    },
++                    "min": {
++                      "bsonType": [
++                        "int",
++                        "long",
++                        "double"
++                      ],
++                      "minimum": -1000000000000000,
++                      "maximum": 1000000000000000
++                    },
++                    "max": {
++                      "bsonType": [
++                        "int",
++                        "long",
++                        "double"
++                      ],
++                      "minimum": -1000000000000000,
++                      "maximum": 1000000000000000
++                    },
++                    "integer_only": {
++                      "bsonType": "bool"
++                    }
++                  }
++                },
++                "routing": {
++                  "bsonType": "object",
++                  "properties": {
++                    "rules": {
++                      "bsonType": "array",
++                      "items": {
++                        "bsonType": "object",
++                        "properties": {
++                          "condition": {
++                            "bsonType": "object",
++                            "minProperties": 1
++                          },
++                          "target": {
++                            "bsonType": "string",
++                            "minLength": 1,
++                            "maxLength": 64
++                          }
++                        },
++                        "required": [
++                          "condition",
++                          "target"
++                        ]
++                      },
++                      "maxItems": 20
++                    },
++                    "default_target": {
++                      "bsonType": [
++                        "null",
++                        "string"
++                      ]
++                    }
++                  },
++                  "required": [
++                    "rules",
++                    "default_target"
++                  ]
++                }
++              },
++              "required": [
++                "id",
++                "type",
++                "title",
++                "required",
++                "options",
++                "validation",
++                "routing"
++              ]
++            },
++            "maxItems": 100
++          }
++        },
++        "required": [
++          "title",
++          "description",
++          "allow_anonymous",
++          "allow_repeat",
++          "questions"
++        ]
++      },
++      "deadline": {
++        "bsonType": [
++          "date",
++          "null"
++        ]
++      },
++      "revision": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "minimum": 1
++      },
++      "current_version": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "minimum": 0,
++        "maximum": 1000000000000000
++      },
++      "created_at": {
++        "bsonType": "date"
++      },
++      "updated_at": {
++        "bsonType": "date"
++      },
++      "activity_seq": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "minimum": 0,
++        "maximum": 1000000000000000
++      },
++      "schema_version": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "enum": [
++          1
++        ]
++      }
++    },
++    "required": [
++      "_id",
++      "owner_id",
++      "share_code",
++      "status",
++      "draft",
++      "deadline",
++      "revision",
++      "current_version",
++      "created_at",
++      "updated_at",
++      "activity_seq",
++      "schema_version"
++    ]
++  },
++  "survey_versions": {
++    "bsonType": "object",
++    "properties": {
++      "_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "survey_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "version": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "minimum": 1
++      },
++      "definition": {
++        "bsonType": "object",
++        "properties": {
++          "title": {
++            "bsonType": "string",
++            "minLength": 1,
++            "maxLength": 200
++          },
++          "description": {
++            "bsonType": "string",
++            "minLength": 0,
++            "maxLength": 5000
++          },
++          "allow_anonymous": {
++            "bsonType": "bool"
++          },
++          "allow_repeat": {
++            "bsonType": "bool"
++          },
++          "questions": {
++            "bsonType": "array",
++            "items": {
++              "bsonType": "object",
++              "properties": {
++                "id": {
++                  "bsonType": "string",
++                  "pattern": "^[A-Za-z0-9_-]{1,64}$"
++                },
++                "type": {
++                  "bsonType": "string",
++                  "minLength": 1,
++                  "maxLength": 40
++                },
++                "title": {
++                  "bsonType": "string",
++                  "minLength": 1,
++                  "maxLength": 500
++                },
++                "required": {
++                  "bsonType": "bool"
++                },
++                "options": {
++                  "bsonType": "array",
++                  "items": {
++                    "bsonType": "object",
++                    "properties": {
++                      "id": {
++                        "bsonType": "string",
++                        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++                      },
++                      "label": {
++                        "bsonType": "string",
++                        "minLength": 1,
++                        "maxLength": 200
++                      }
++                    },
++                    "required": [
++                      "id",
++                      "label"
++                    ]
++                  },
++                  "maxItems": 100
++                },
++                "validation": {
++                  "bsonType": "object",
++                  "properties": {
++                    "min_choices": {
++                      "bsonType": [
++                        "int",
++                        "long"
++                      ],
++                      "minimum": 0,
++                      "maximum": 1000000000000000
++                    },
++                    "max_choices": {
++                      "bsonType": [
++                        "int",
++                        "long"
++                      ],
++                      "minimum": 0,
++                      "maximum": 1000000000000000
++                    },
++                    "min_length": {
++                      "bsonType": [
++                        "int",
++                        "long"
++                      ],
++                      "minimum": 0,
++                      "maximum": 1000000000000000
++                    },
++                    "max_length": {
++                      "bsonType": [
++                        "int",
++                        "long"
++                      ],
++                      "minimum": 0,
++                      "maximum": 1000000000000000
++                    },
++                    "min": {
++                      "bsonType": [
++                        "int",
++                        "long",
++                        "double"
++                      ],
++                      "minimum": -1000000000000000,
++                      "maximum": 1000000000000000
++                    },
++                    "max": {
++                      "bsonType": [
++                        "int",
++                        "long",
++                        "double"
++                      ],
++                      "minimum": -1000000000000000,
++                      "maximum": 1000000000000000
++                    },
++                    "integer_only": {
++                      "bsonType": "bool"
++                    }
++                  }
++                },
++                "routing": {
++                  "bsonType": "object",
++                  "properties": {
++                    "rules": {
++                      "bsonType": "array",
++                      "items": {
++                        "bsonType": "object",
++                        "properties": {
++                          "condition": {
++                            "bsonType": "object",
++                            "minProperties": 1
++                          },
++                          "target": {
++                            "bsonType": "string",
++                            "minLength": 1,
++                            "maxLength": 64
++                          }
++                        },
++                        "required": [
++                          "condition",
++                          "target"
++                        ]
++                      },
++                      "maxItems": 20
++                    },
++                    "default_target": {
++                      "bsonType": [
++                        "null",
++                        "string"
++                      ]
++                    }
++                  },
++                  "required": [
++                    "rules",
++                    "default_target"
++                  ]
++                }
++              },
++              "required": [
++                "id",
++                "type",
++                "title",
++                "required",
++                "options",
++                "validation",
++                "routing"
++              ]
++            },
++            "maxItems": 100,
++            "minItems": 1
++          }
++        },
++        "required": [
++          "title",
++          "description",
++          "allow_anonymous",
++          "allow_repeat",
++          "questions"
++        ]
++      },
++      "schema_version": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "enum": [
++          1
++        ]
++      },
++      "rule_engine_version": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "enum": [
++          1
++        ]
++      },
++      "published_at": {
++        "bsonType": "date"
++      }
++    },
++    "required": [
++      "_id",
++      "survey_id",
++      "version",
++      "definition",
++      "schema_version",
++      "rule_engine_version",
++      "published_at"
++    ]
++  },
++  "responses": {
++    "bsonType": "object",
++    "properties": {
++      "_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "survey_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "version_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "version": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "minimum": 1
++      },
++      "attempt_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "respondent_key": {
++        "bsonType": "string",
++        "pattern": "^[a-f0-9]{64}$"
++      },
++      "anonymous": {
++        "bsonType": "bool"
++      },
++      "answers": {
++        "bsonType": "array",
++        "items": {
++          "bsonType": "object",
++          "properties": {
++            "question_id": {
++              "bsonType": "string",
++              "pattern": "^[A-Za-z0-9_-]{1,64}$"
++            },
++            "value": {
++              "anyOf": [
++                {
++                  "bsonType": "null"
++                },
++                {
++                  "bsonType": "string",
++                  "minLength": 1,
++                  "maxLength": 10000
++                },
++                {
++                  "bsonType": [
++                    "int",
++                    "long",
++                    "double"
++                  ],
++                  "minimum": -1000000000000000,
++                  "maximum": 1000000000000000
++                },
++                {
++                  "bsonType": "array",
++                  "items": {
++                    "bsonType": "string",
++                    "pattern": "^[A-Za-z0-9_-]{1,64}$"
++                  },
++                  "maxItems": 100,
++                  "uniqueItems": true,
++                  "minItems": 1
++                }
++              ]
++            }
++          },
++          "additionalProperties": false,
++          "required": [
++            "question_id",
++            "value"
++          ]
++        },
++        "maxItems": 100,
++        "minItems": 1
++      },
++      "path": {
++        "bsonType": "array",
++        "items": {
++          "bsonType": "string",
++          "pattern": "^[A-Za-z0-9_-]{1,64}$"
++        },
++        "maxItems": 100,
++        "minItems": 1,
++        "uniqueItems": true
++      },
++      "submitted_at": {
++        "bsonType": "date"
++      },
++      "schema_version": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "enum": [
++          1
++        ]
++      },
++      "user_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      }
++    },
++    "required": [
++      "_id",
++      "survey_id",
++      "version_id",
++      "version",
++      "attempt_id",
++      "respondent_key",
++      "anonymous",
++      "answers",
++      "path",
++      "submitted_at",
++      "schema_version"
++    ],
++    "oneOf": [
++      {
++        "properties": {
++          "anonymous": {
++            "enum": [
++              true
++            ]
++          }
++        },
++        "not": {
++          "required": [
++            "user_id"
++          ]
++        }
++      },
++      {
++        "properties": {
++          "anonymous": {
++            "enum": [
++              false
++            ]
++          }
++        },
++        "required": [
++          "user_id"
++        ]
++      }
++    ]
++  },
++  "attempts": {
++    "bsonType": "object",
++    "properties": {
++      "_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "survey_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "version_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "respondent_key": {
++        "bsonType": "string",
++        "pattern": "^[a-f0-9]{64}$"
++      },
++      "anonymous": {
++        "bsonType": "bool"
++      },
++      "status": {
++        "bsonType": "string",
++        "enum": [
++          "in_progress",
++          "submitted",
++          "abandoned"
++        ]
++      },
++      "raw_answers": {
++        "bsonType": "object",
++        "maxProperties": 100,
++        "additionalProperties": {
++          "anyOf": [
++            {
++              "bsonType": "null"
++            },
++            {
++              "bsonType": "string",
++              "minLength": 0,
++              "maxLength": 20000
++            },
++            {
++              "bsonType": [
++                "int",
++                "long",
++                "double"
++              ],
++              "minimum": -1000000000000000,
++              "maximum": 1000000000000000
++            },
++            {
++              "bsonType": "array",
++              "items": {
++                "bsonType": "string",
++                "pattern": "^[A-Za-z0-9_-]{1,64}$"
++              },
++              "maxItems": 100
++            }
++          ]
++        }
++      },
++      "current_question_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      },
++      "revision": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "minimum": 1
++      },
++      "created_at": {
++        "bsonType": "date"
++      },
++      "updated_at": {
++        "bsonType": "date"
++      },
++      "schema_version": {
++        "bsonType": [
++          "int",
++          "long"
++        ],
++        "enum": [
++          1
++        ]
++      },
++      "response_id": {
++        "bsonType": "string",
++        "pattern": "^[A-Za-z0-9_-]{1,64}$"
++      }
++    },
++    "required": [
++      "_id",
++      "survey_id",
++      "version_id",
++      "respondent_key",
++      "anonymous",
++      "status",
++      "raw_answers",
++      "current_question_id",
++      "revision",
++      "created_at",
++      "updated_at",
++      "schema_version"
++    ]
++  }
++}
+--- 1.0.2/database/indexes.json
++++ 1.1.0/database/indexes.json
+@@ -1,17 +1,151 @@
+ {
+-  "users": [{"keys": [["username_key", 1]], "name": "username_unique", "unique": true}],
++  "users": [
++    {
++      "keys": [
++        [
++          "username_key",
++          1
++        ]
++      ],
++      "name": "username_unique",
++      "unique": true
++    }
++  ],
+   "sessions": [
+-    {"keys": [["token_hash", 1]], "name": "session_token_unique", "unique": true},
+-    {"keys": [["expires_at", 1]], "name": "session_expiry", "expireAfterSeconds": 0}
++    {
++      "keys": [
++        [
++          "token_hash",
++          1
++        ]
++      ],
++      "name": "session_token_unique",
++      "unique": true
++    },
++    {
++      "keys": [
++        [
++          "expires_at",
++          1
++        ]
++      ],
++      "name": "session_expiry",
++      "expireAfterSeconds": 0
++    }
+   ],
+   "surveys": [
+-    {"keys": [["owner_id", 1], ["created_at", -1]], "name": "owner_created"},
+-    {"keys": [["share_code", 1]], "name": "share_unique", "unique": true}
++    {
++      "keys": [
++        [
++          "owner_id",
++          1
++        ],
++        [
++          "created_at",
++          -1
++        ]
++      ],
++      "name": "owner_created"
++    },
++    {
++      "keys": [
++        [
++          "share_code",
++          1
++        ]
++      ],
++      "name": "share_unique",
++      "unique": true
++    }
+   ],
+-  "survey_versions": [{"keys": [["survey_id", 1], ["version", 1]], "name": "survey_version_unique", "unique": true}],
++  "survey_versions": [
++    {
++      "keys": [
++        [
++          "survey_id",
++          1
++        ],
++        [
++          "version",
++          1
++        ]
++      ],
++      "name": "survey_version_unique",
++      "unique": true
++    }
++  ],
+   "responses": [
+-    {"keys": [["survey_id", 1], ["version", 1], ["submitted_at", -1]], "name": "survey_statistics"},
+-    {"keys": [["attempt_id", 1]], "name": "attempt_unique", "unique": true},
+-    {"keys": [["survey_id", 1], ["respondent_key", 1]], "name": "respondent_lookup"}
++    {
++      "keys": [
++        [
++          "survey_id",
++          1
++        ],
++        [
++          "version",
++          1
++        ],
++        [
++          "submitted_at",
++          -1
++        ]
++      ],
++      "name": "survey_statistics"
++    },
++    {
++      "keys": [
++        [
++          "attempt_id",
++          1
++        ]
++      ],
++      "name": "attempt_unique",
++      "unique": true
++    },
++    {
++      "keys": [
++        [
++          "survey_id",
++          1
++        ],
++        [
++          "respondent_key",
++          1
++        ]
++      ],
++      "name": "respondent_lookup"
++    }
++  ],
++  "attempts": [
++    {
++      "keys": [
++        [
++          "survey_id",
++          1
++        ],
++        [
++          "respondent_key",
++          1
++        ]
++      ],
++      "name": "one_active_attempt",
++      "unique": true,
++      "partialFilterExpression": {
++        "status": "in_progress"
++      }
++    },
++    {
++      "keys": [
++        [
++          "respondent_key",
++          1
++        ],
++        [
++          "updated_at",
++          -1
++        ]
++      ],
++      "name": "attempt_owner_updated"
++    }
+   ]
+ }
+--- 1.0.2/docs/ai-usage-log.md
++++ 1.1.0/docs/ai-usage-log.md
+@@ -1,74 +1,84 @@
+-# AI 使用日志
+-
+-## 1.0.2 编辑交互修订实例
+-
+-原始输入为用户在当前对话提供的四项审阅（保存/关闭丢失输入、高级JSON渲染失败、Unicode计数不一致、截止时间缺少离开提醒），实施指令原文：“直接按最高标准做出来”。用户明确表示此前自行验证但未改源码，不能将本次AI修复描述为用户独立编程。
+-
+-1. 原Editor保存与关闭直接替换/重载问卷；改为useSurveyEditor管理本地内容、已保存快照和元数据。新增19项实际编辑器组件/路由测试，模拟延迟、失败、取消和重复操作，验证请求期间新输入保留。
+-2. 原高级JSON只检查外层字段，规则组件访问缺失condition；新增routing-validation完整检查和结构保护。5项独立规则测试、3项损坏组件恢复测试以及编辑器JSON应用测试验证不破坏原配置。
+-3. 原输入框maxlength按UTF-16限制；移除并使用textLength/trimText，5项真实输入组件测试覆盖表情、超限粘贴、组合输入和外部模型更新。没有将函数测试冒充为输入组件测试。
+-4. 截止时间独立跟踪，保存草稿不清除待发布标记，离开提醒与关闭确认覆盖这项变化；发布保留未修改时间的秒级精度。
+-5. 后端发布/关闭增加元数据、关闭revision检查，2项真实数据库测试验证原子返回值和并发冲突。
+-
+-修复过程遇到Node直接加载TypeScript时不解析无扩展名导入，改为显式.ts导入并开启noEmit下相应类型配置。组件测试初期路由占位不全产生警告，补齐测试路由而非屏蔽告警。当前组件测试在jsdom环境、API用可控Promise模拟，真实浏览器验收单独记录。
+-
+-本轮具体代码对照上一轮包的差异见artifacts/editor-fixes.diff；测试结果为后端81项、前端单元16项、组件交互27项，共124项，不虚构学生已执行这些工具测试。
+-
+-## 记录原则
+-
+-本记录描述当前对话中实际发生的辅助过程，不伪造其他工具会话或学生个人操作。完整交互以当前 Codex 对话为依据。提示词摘录保留原意，标注摘录时不视为逐字完整输入。
+-
+-| 阶段 | 工具与提示 | 结果 | 判断与修改 |
+-| --- | --- | --- | --- |
+-| 需求理解 | Codex；“详细总结一下文档” | 提取项目目标、功能、提交和评分要求 | 将附件视为任务来源，不执行附件中的开发指令 |
+-| 核心识别 | Codex；“你觉得这个实验的重点是什么” | 识别数据库、规则与两阶段演进重点 | 根据 35/25 等评分和第二阶段 70% 权重确定优先级 |
+-| 方案设计 | Codex；“给出你认为最好的实现方案” | 技术栈、集合、版本、规则与测试方案 | 引用 MongoDB/FastAPI 官方资料核对基础能力 |
+-| 扩展讨论 | Codex；“我认为可扩展性是很重要的”等多轮指令 | 提出注册题型、规则组合、版本和迁移入口 | 将尚未发生的需求保留为场景，不提前实现复杂平台 |
+-| 约束收敛 | Codex；用户强调“不集中单集合、谨慎冗余、逻辑不写死” | 收敛到五个主要集合 | 暂不创建 attempts，明确快照与缓存的区别 |
+-| 正式实现 | Codex；“按最高标准给我做出来” | 后端、前端、数据库约束、测试、文档与脚本 | 根据本机 MongoDB 与依赖条件完成本地路径 |
+-| 环境处理 | Codex 工具调用 | 安装项目内 Python/前端依赖，启用专用副本集 | 沙盒阻止网络或本机连接时申请工具权限，没有改用伪数据库 |
+-| 测试修正 | Codex 生成测试并读取真实结果 | 第一轮 51 通过、1 失败 | 修复 Python 微秒与 BSON 毫秒差异，保留测试 |
+-| 扩展修正 | Codex 代码调整 | 题型统计移入处理器，输入组件注册化 | 减少主流程的题型分支；如实记录编辑与部分展示仍需扩展 |
+-| 页面验收 | Codex 应用内浏览器 | 登录、统计核对、工作身份跳转、41 越界阻止、合法匿名提交 | 补充移动端题目切换入口，记录额外测试答案 |
+-| 交付 | Codex | 完成报告、启动说明、源码清单和压缩包 | 不把密钥、数据库、依赖打入源码包 |
+-
+-## 本轮完整可核对实例
+-
+-共同原始输入为 review-request.md 保留的完整六项审阅意见，后续指令原文为“人数也加上，给出修改思路”和“按照这个思路，修改这六个问题”。下面的初版代码可从原包读取，实际代码差异见 artifacts/review-fixes.diff，不伪造未保存的中间实现。
+-
+-### 实例一 不可回答的题目
+-
+-- 提示与问题：审阅原文第1项，必答多选最多0项、必答整数范围0.1～0.9仍可发布。
+-- 原代码：domain/questions.py 的 Multiple 只检查 `0 <= low <= high <= options数量`，Number 只检查数值和上下界顺序。
+-- 实际修改：必答多选有效下限至少1，必答整数检查 `ceil(low) <= floor(high)`；一并检查必答文本不允许最大长度0。
+-- 生成文件：backend/app/domain/questions.py、backend/tests/test_review_fixes.py。
+-- 验证：3个不可回答配置发布返回422，版本不新增、状态不改变；3个包含合法整数的边界配置仍通过。
+-
+-### 实例二 极端数字
+-
+-- 提示与问题：审阅原文第2项，超大整数触发 OverflowError、配置10²⁰进入 BSON 编码。
+-- 原代码：在限制绝对值前调用 math.isfinite，草稿 validation 为无数值边界的字典。
+-- 实际修改：新增 domain/numbers.py；整数先与整数上限比较，递归模型检查覆盖校验配置、条件和值；HTTP错误不回显原始巨大数字，溢出兜底返回422。
+-- 生成文件：numbers.py、schemas.py、rules.py、main.py 及极端输入测试。
+-- 验证：正负10⁴⁰⁰、无穷和NaN在领域检查被拒绝；10²⁰配置与10⁴⁰⁰提交返回422，数据库无部分写入。
+-
+-### 实例三 统计次数与人数
+-
+-- 提示与问题：审阅原文第6项及“人数也加上，给出修改思路”。
+-- 原代码：按答案记录计数，却显示“人回答”。
+-- 实际修改：分组先按 respondent_key 去重，再合计次数和人数；选项也分别聚合；前端可切换人数/次数分子分母并解释单选重复提交的人数交叉。
+-- 生成文件：aggregation.py、services/statistics.py、Statistics.vue、statistics.ts及相关测试。
+-- 验证：同一账号匿名与实名3次、另一账号1次，共4份/2人；多选3次/2人；匿名接口不暴露去重标识。前端3项测试覆盖比例切换、空数据及人数重叠。
+-
+-### 实例四 约束升级与失败恢复
+-
+-- 提示与问题：审阅原文第3、4项。
+-- 实际修改：生成嵌套约束；启动不自动覆盖；增加全量预检、原约束日志、显式应用和恢复。初次测试发现 MongoDB 不允许空 required 数组，修正为没有必需字段时省略该关键字。
+-- 生成文件：database/build_validators.py、app/database.py、app/migration.py、upgrade_database.py、test_migration.py。
+-- 验证：故障注入后约束自动恢复、预检有非法旧数据时零变更、未知或未来约束不被覆盖；真实旧库副本的升级、哈希、统计、回滚、重试均通过。业务版本2尚未实现。
+-
+-本轮原有与新增测试合计：后端79项、前端11项。记录为实际工具执行结果；不将AI测试宣称为学生独立操作。
+-
+-## 代码与修改范围
+-
+-本次项目代码由 Codex 在当前工作区生成并修正。工具未自动证明作者本人已理解代码。学生在正式提交前应亲自运行演示、检查 schema 与规则流程，并依据实际参与情况补充个人贡献；不能将上述 AI 工作改写成未发生的个人独立设计经历。
++# AI 使用日志
++
++## 1.1.0 填写恢复扩展
++
++工具为当前Codex及其代码执行、浏览器工具。用户原始需求：“每次填写都应该被保存，需要满足填写到一半退出也能恢复，给出修改建议”；之后提供六项具体约定与三个实现细节，最终指令：“按最高标准完成”。这些需求取舍由用户提出，代码实现及下述工具验证由AI完成，不冒充学生独立编程。
++
++产出：backend/app/services/attempts.py、草稿请求模型与六个接口、attempts schema和部分唯一索引、useAttempt.ts、attempt-progress.ts、Fill.vue、原始数字输入、退出登录保存钩子、test_attempts.py与attempt.spec.ts。修改旧迁移流程以区分新增集合和已有约束，保留旧提交接口与历史数据。
++
++实际修正：恢复响应最初会把正在返回编辑的用户拉到未完成题，改为保存不抢当前位置、下次恢复由服务端约束；Vue响应式对象不能直接structuredClone，改为JSON快照；有效路径遇中间无效输入时不能误删后续暂存答案，改为仅清理确定跳过的区间。组件测试最初直接挂载页面导致路由守卫警告，改为真实RouterView挂载并增加路由离开测试。测试初次受沙盒本机套接字限制，随后授权连接真实MongoDB验证；没有改用模拟数据库。
++
++结果：后端97项、前端单元16项、组件43项，共156项；8账号并行提交和5请求并行开始均验证。完整差异见artifacts/resumable-filling.diff，原始结果见JUnit和控制台记录。浏览器实际恢复另记，不能把模拟慢请求描述为浏览器网络故障实测。个人实际运行与审阅情况仍需作者据实补充。
++
++## 1.0.2 编辑交互修订实例
++
++原始输入为用户在当前对话提供的四项审阅（保存/关闭丢失输入、高级JSON渲染失败、Unicode计数不一致、截止时间缺少离开提醒），实施指令原文：“直接按最高标准做出来”。用户明确表示此前自行验证但未改源码，不能将本次AI修复描述为用户独立编程。
++
++1. 原Editor保存与关闭直接替换/重载问卷；改为useSurveyEditor管理本地内容、已保存快照和元数据。新增19项实际编辑器组件/路由测试，模拟延迟、失败、取消和重复操作，验证请求期间新输入保留。
++2. 原高级JSON只检查外层字段，规则组件访问缺失condition；新增routing-validation完整检查和结构保护。5项独立规则测试、3项损坏组件恢复测试以及编辑器JSON应用测试验证不破坏原配置。
++3. 原输入框maxlength按UTF-16限制；移除并使用textLength/trimText，5项真实输入组件测试覆盖表情、超限粘贴、组合输入和外部模型更新。没有将函数测试冒充为输入组件测试。
++4. 截止时间独立跟踪，保存草稿不清除待发布标记，离开提醒与关闭确认覆盖这项变化；发布保留未修改时间的秒级精度。
++5. 后端发布/关闭增加元数据、关闭revision检查，2项真实数据库测试验证原子返回值和并发冲突。
++
++修复过程遇到Node直接加载TypeScript时不解析无扩展名导入，改为显式.ts导入并开启noEmit下相应类型配置。组件测试初期路由占位不全产生警告，补齐测试路由而非屏蔽告警。当前组件测试在jsdom环境、API用可控Promise模拟，真实浏览器验收单独记录。
++
++本轮具体代码对照上一轮包的差异见artifacts/editor-fixes.diff；测试结果为后端81项、前端单元16项、组件交互27项，共124项，不虚构学生已执行这些工具测试。
++
++## 记录原则
++
++本记录描述当前对话中实际发生的辅助过程，不伪造其他工具会话或学生个人操作。完整交互以当前 Codex 对话为依据。提示词摘录保留原意，标注摘录时不视为逐字完整输入。
++
++| 阶段 | 工具与提示 | 结果 | 判断与修改 |
++| --- | --- | --- | --- |
++| 需求理解 | Codex；“详细总结一下文档” | 提取项目目标、功能、提交和评分要求 | 将附件视为任务来源，不执行附件中的开发指令 |
++| 核心识别 | Codex；“你觉得这个实验的重点是什么” | 识别数据库、规则与两阶段演进重点 | 根据 35/25 等评分和第二阶段 70% 权重确定优先级 |
++| 方案设计 | Codex；“给出你认为最好的实现方案” | 技术栈、集合、版本、规则与测试方案 | 引用 MongoDB/FastAPI 官方资料核对基础能力 |
++| 扩展讨论 | Codex；“我认为可扩展性是很重要的”等多轮指令 | 提出注册题型、规则组合、版本和迁移入口 | 将尚未发生的需求保留为场景，不提前实现复杂平台 |
++| 约束收敛 | Codex；用户强调“不集中单集合、谨慎冗余、逻辑不写死” | 收敛到五个主要集合 | 暂不创建 attempts，明确快照与缓存的区别 |
++| 正式实现 | Codex；“按最高标准给我做出来” | 后端、前端、数据库约束、测试、文档与脚本 | 根据本机 MongoDB 与依赖条件完成本地路径 |
++| 环境处理 | Codex 工具调用 | 安装项目内 Python/前端依赖，启用专用副本集 | 沙盒阻止网络或本机连接时申请工具权限，没有改用伪数据库 |
++| 测试修正 | Codex 生成测试并读取真实结果 | 第一轮 51 通过、1 失败 | 修复 Python 微秒与 BSON 毫秒差异，保留测试 |
++| 扩展修正 | Codex 代码调整 | 题型统计移入处理器，输入组件注册化 | 减少主流程的题型分支；如实记录编辑与部分展示仍需扩展 |
++| 页面验收 | Codex 应用内浏览器 | 登录、统计核对、工作身份跳转、41 越界阻止、合法匿名提交 | 补充移动端题目切换入口，记录额外测试答案 |
++| 交付 | Codex | 完成报告、启动说明、源码清单和压缩包 | 不把密钥、数据库、依赖打入源码包 |
++
++## 本轮完整可核对实例
++
++共同原始输入为 review-request.md 保留的完整六项审阅意见，后续指令原文为“人数也加上，给出修改思路”和“按照这个思路，修改这六个问题”。下面的初版代码可从原包读取，实际代码差异见 artifacts/review-fixes.diff，不伪造未保存的中间实现。
++
++### 实例一 不可回答的题目
++
++- 提示与问题：审阅原文第1项，必答多选最多0项、必答整数范围0.1～0.9仍可发布。
++- 原代码：domain/questions.py 的 Multiple 只检查 `0 <= low <= high <= options数量`，Number 只检查数值和上下界顺序。
++- 实际修改：必答多选有效下限至少1，必答整数检查 `ceil(low) <= floor(high)`；一并检查必答文本不允许最大长度0。
++- 生成文件：backend/app/domain/questions.py、backend/tests/test_review_fixes.py。
++- 验证：3个不可回答配置发布返回422，版本不新增、状态不改变；3个包含合法整数的边界配置仍通过。
++
++### 实例二 极端数字
++
++- 提示与问题：审阅原文第2项，超大整数触发 OverflowError、配置10²⁰进入 BSON 编码。
++- 原代码：在限制绝对值前调用 math.isfinite，草稿 validation 为无数值边界的字典。
++- 实际修改：新增 domain/numbers.py；整数先与整数上限比较，递归模型检查覆盖校验配置、条件和值；HTTP错误不回显原始巨大数字，溢出兜底返回422。
++- 生成文件：numbers.py、schemas.py、rules.py、main.py 及极端输入测试。
++- 验证：正负10⁴⁰⁰、无穷和NaN在领域检查被拒绝；10²⁰配置与10⁴⁰⁰提交返回422，数据库无部分写入。
++
++### 实例三 统计次数与人数
++
++- 提示与问题：审阅原文第6项及“人数也加上，给出修改思路”。
++- 原代码：按答案记录计数，却显示“人回答”。
++- 实际修改：分组先按 respondent_key 去重，再合计次数和人数；选项也分别聚合；前端可切换人数/次数分子分母并解释单选重复提交的人数交叉。
++- 生成文件：aggregation.py、services/statistics.py、Statistics.vue、statistics.ts及相关测试。
++- 验证：同一账号匿名与实名3次、另一账号1次，共4份/2人；多选3次/2人；匿名接口不暴露去重标识。前端3项测试覆盖比例切换、空数据及人数重叠。
++
++### 实例四 约束升级与失败恢复
++
++- 提示与问题：审阅原文第3、4项。
++- 实际修改：生成嵌套约束；启动不自动覆盖；增加全量预检、原约束日志、显式应用和恢复。初次测试发现 MongoDB 不允许空 required 数组，修正为没有必需字段时省略该关键字。
++- 生成文件：database/build_validators.py、app/database.py、app/migration.py、upgrade_database.py、test_migration.py。
++- 验证：故障注入后约束自动恢复、预检有非法旧数据时零变更、未知或未来约束不被覆盖；真实旧库副本的升级、哈希、统计、回滚、重试均通过。业务版本2尚未实现。
++
++本轮原有与新增测试合计：后端79项、前端11项。记录为实际工具执行结果；不将AI测试宣称为学生独立操作。
++
++## 代码与修改范围
++
++本次项目代码由 Codex 在当前工作区生成并修正。工具未自动证明作者本人已理解代码。学生在正式提交前应亲自运行演示、检查 schema 与规则流程，并依据实际参与情况补充个人贡献；不能将上述 AI 工作改写成未发生的个人独立设计经历。
+--- 1.0.2/docs/ai-usage-summary.md
++++ 1.1.0/docs/ai-usage-summary.md
+@@ -8,4 +8,6 @@
+ 
+ AI 的局限同样明确：测试通过不代表不存在缺陷；扩展入口不代表任意需求无需重构；本机没有 Docker，不能声称容器路径已验证；单节点事务测试不是多节点故障恢复测试。
+ 
+-本轮用户实际提供六项审阅和复现反馈，属于可核实的人工贡献；Codex据此修改代码并执行79项后端和11项前端测试、旧数据副本升级演练。完整审阅原文见 review-request.md，具体提示词—文件—修改—测试实例见 ai-usage-log.md，原版与修订代码差异见 artifacts/review-fixes.diff。不将这些AI执行记录冒充为学生独立编程或独立测试经历。
++1.0.1修订时用户实际提供六项审阅和复现反馈，属于可核实的人工贡献；Codex据此修改代码并执行79项后端和11项前端测试、旧数据副本升级演练。完整审阅原文见 review-request.md，具体提示词—文件—修改—测试实例见 ai-usage-log.md，原版与修订代码差异见 artifacts/review-fixes.diff。不将这些AI执行记录冒充为学生独立编程或独立测试经历。
++
++当前1.1.0由用户明确退出恢复要求和六项边界，Codex实现服务器草稿、自动保存与恢复并执行156项测试。AI实施中修正保存响应抢占题目、响应式快照克隆和不完整路径误删答案等问题，详见日志。未增加本地持久缓存，不声称断电前未同步输入绝不丢失；不将工具测试写成学生独立测试。
+--- 1.0.2/docs/api.md
++++ 1.1.0/docs/api.md
+@@ -107,3 +107,7 @@
+ | 503 | 数据库不可用 |
+ 
+ 管理查询使用 owner_id 过滤，不能通过猜测 sid 读取他人的草稿、历史版本、答案和统计。匿名内容查询不会返回 user_id、respondent_key、attempt_id 或会话信息。
++
++## 1.1.0 自动保存与恢复增量
++
++填写页现采用独立attempts流程，草稿允许不完整，服务器约束路径和恢复位置，正式提交只携带revision并从草稿读取答案。接口清单、数据约束、登录恢复、只读恢复及兼容规则见[续填说明](resumable-filling.md)。本轮未改变原五个集合约束；新增集合初始化与已有集合显式升级分开。
+--- 1.0.2/docs/architecture.md
++++ 1.1.0/docs/architecture.md
+@@ -1,4 +1,8 @@
+ # 系统设计
++
++## 1.1.0 填写过程
++
++Fill.vue使用useAttempt串行自动保存；attempt-progress按有效输入计算路径；服务端attempts服务负责草稿权限、状态、并发及事务提交。旧participation服务保留为兼容入口，统计仍只读取responses。两个流程共用既有校验器与规则引擎，详见resumable-filling.md。
+ 
+ ## 1.0.2 编辑器状态边界
+ 
+@@ -20,7 +24,7 @@
+ | 领域 | domain/rules.py | 条件语言、发布检查、路径计算 |
+ | 基础设施 | database.py、security.py、config.py | 连接、索引初始化、事务、会话和签名 |
+ 
+-本阶段没有为五个集合逐一建立空的 Repository 包装，MongoDB 访问集中在服务与基础设施中；领域校验和路由不访问数据库。题型统计处理器使用 PyMongo 聚合，是明确的存储耦合点。第二阶段若引入复杂查询或存储替换，可在这些位置提取 Repository，保留服务接口。文件布局以实际代码为准，不为满足早期目录草案增加无行为文件。
++本阶段没有为各集合逐一建立空的 Repository 包装，MongoDB 访问集中在服务与基础设施中；领域校验和路由不访问数据库。题型统计处理器使用 PyMongo 聚合，是明确的存储耦合点。第二阶段若引入复杂查询或存储替换，可在这些位置提取 Repository，保留服务接口。文件布局以实际代码为准，不为满足早期目录草案增加无行为文件。
+ 
+ ## 主要流程
+ 
+--- 1.0.2/docs/changelog.md
++++ 1.1.0/docs/changelog.md
+@@ -1,32 +1,38 @@
+-# 修改记录
+-
+-## 第一阶段 1.0.2
+-
+-- 保存采用请求快照，响应仅合并服务器元数据；保留请求期间的本地输入。
+-- 关闭前确认并保存，有新修改或保存失败时中止关闭；发布和关闭增加原子元数据响应，关闭支持revision冲突检查。
+-- 高级JSON应用前完整检查，损坏规则组件具备保护和恢复入口。
+-- 文本答案移除原生maxlength，统一Unicode码点计数，保护中文输入法组合过程。
+-- 截止时间独立跟踪待发布状态并参与离开提醒，保存草稿不误报时间已保存。
+-- 新增Vue组件及路由交互测试27项，连同其他测试共124项；保留此前两份基线包。
+-
+-## 第一阶段 1.0.1
+-
+-- 修复不可回答必答题的发布检查，统一极端数字安全边界。
+-- 加强嵌套 MongoDB 约束；已有库需显式预检、升级与恢复，启动不再覆盖。
+-- 用真实旧数据副本验证约束升级、数据与统计一致性以及恢复重试。
+-- 统计新增去重账号人数，整卷、单题、选项区分次数与人数，百分比可切换。
+-- 补充完整审阅原文、代码差异证据与AI使用实例，保留真实个人贡献边界。
+-- 后端79项、前端11项测试通过；原第一阶段基线包不覆盖。
+-
+-## 第一阶段 1.0.0
+-
+-- 根据初始任务建立 FastAPI、Vue 和 MongoDB 系统。
+-- 实现注册会话、问卷草稿、题目校验、条件路由、版本发布和正式提交。
+-- 实现所有者隔离、匿名、重复填写限制、幂等提交和事务一致性。
+-- 实现按版本和时间过滤的统计与内容分页。
+-- 增加真实数据库测试、演示数据、启动脚本与第一阶段文档。
+-- 修正首次与重试回执的时间精度差异。
+-- 将题型输入组件注册化，将统计方法归入题型处理器。
+-- 补充移动端选择已有题目的入口。
+-
+-第二阶段应继续追加真实变更，每次记录需求、原因、模块、集合、兼容处理、测试和结果，不覆盖第一阶段记录。
++# 修改记录
++
++## 第一阶段 1.1.0
++
++- 新增attempts集合、部分唯一索引、填写自动保存、跨设备恢复、冲突和登录失效处理。
++- 固定原发布版本与匿名选择；关闭/截止后只读；事务提交清空草稿副本；明确放弃后删除答案。
++- 新增真实8用户并行提交和恢复测试，当前156项通过；历史功能和交付包保留。
++
++## 第一阶段 1.0.2
++
++- 保存采用请求快照，响应仅合并服务器元数据；保留请求期间的本地输入。
++- 关闭前确认并保存，有新修改或保存失败时中止关闭；发布和关闭增加原子元数据响应，关闭支持revision冲突检查。
++- 高级JSON应用前完整检查，损坏规则组件具备保护和恢复入口。
++- 文本答案移除原生maxlength，统一Unicode码点计数，保护中文输入法组合过程。
++- 截止时间独立跟踪待发布状态并参与离开提醒，保存草稿不误报时间已保存。
++- 新增Vue组件及路由交互测试27项，连同其他测试共124项；保留此前两份基线包。
++
++## 第一阶段 1.0.1
++
++- 修复不可回答必答题的发布检查，统一极端数字安全边界。
++- 加强嵌套 MongoDB 约束；已有库需显式预检、升级与恢复，启动不再覆盖。
++- 用真实旧数据副本验证约束升级、数据与统计一致性以及恢复重试。
++- 统计新增去重账号人数，整卷、单题、选项区分次数与人数，百分比可切换。
++- 补充完整审阅原文、代码差异证据与AI使用实例，保留真实个人贡献边界。
++- 后端79项、前端11项测试通过；原第一阶段基线包不覆盖。
++
++## 第一阶段 1.0.0
++
++- 根据初始任务建立 FastAPI、Vue 和 MongoDB 系统。
++- 实现注册会话、问卷草稿、题目校验、条件路由、版本发布和正式提交。
++- 实现所有者隔离、匿名、重复填写限制、幂等提交和事务一致性。
++- 实现按版本和时间过滤的统计与内容分页。
++- 增加真实数据库测试、演示数据、启动脚本与第一阶段文档。
++- 修正首次与重试回执的时间精度差异。
++- 将题型输入组件注册化，将统计方法归入题型处理器。
++- 补充移动端选择已有题目的入口。
++
++第二阶段应继续追加真实变更，每次记录需求、原因、模块、集合、兼容处理、测试和结果，不覆盖第一阶段记录。
+--- 1.0.2/docs/database-design.md
++++ 1.1.0/docs/database-design.md
+@@ -1,57 +1,62 @@
+-# MongoDB 数据库设计
+-
+-## 设计依据
+-
+-问卷包含数量受限且通常一起读取的题目，每题具有不同形状的选项、校验与条件树，适合嵌套文档。答案随提交持续增长，必须独立保存。不同生命周期的数据分别建集合，不把所有数据集中在一个文档，也不机械地将每个选项拆成关系式记录。
+-
+-## 集合定义
+-
+-| 集合 | 关键字段 | 生命周期与访问 |
+-| --- | --- | --- |
+-| users | _id、username、username_key、password_hash、created_at、schema_version | 注册时写入，登录按规范化用户名查询 |
+-| sessions | _id、token_hash、user_id、expires_at | 登录生成，退出删除，TTL 自动清理 |
+-| surveys | _id、owner_id、share_code、draft、status、deadline、revision、current_version、activity_seq、schema_version | 草稿可改，状态可变，用户列表与填写入口 |
+-| survey_versions | _id、survey_id、version、definition、published_at、schema_version、rule_engine_version | 发布时插入，通过 API 不再修改 |
+-| responses | _id、survey_id、version_id、version、attempt_id、respondent_key、anonymous、user_id（仅实名）、answers、path、submitted_at、schema_version | 每次有效提交新增，不覆盖之前答案 |
+-
+-题目字段包括 id、type、title、required、options、validation、routing。answers 为 `{question_id, value}` 数组，便于展开聚合，避免用户题目 ID 被作为 MongoDB 动态字段路径。path 是实际到达题目 ID 序列，用于复核和未来路径分析。
+-
+-所有日期使用 BSON Date、UTC、毫秒精度。用户、题目和选项采用稳定字符串 ID。数字答案限制绝对值不超过 10¹⁵，避免跨语言数值精度与 BSON 整数溢出问题。
+-
+-## 嵌入与引用
+-
+-- 题目、选项、配置与问卷定义一起发布，嵌入 definition。
+-- 用户独立保存，问卷引用 owner_id。
+-- 正式答案独立保存，通过 survey_id 与 version_id 引用定义。
+-- 不将全部答案嵌入问卷，避免无限增长及单文档写热点。
+-- 题目上限 100、选项上限 100、单次请求上限约 1 MB（Content-Length 检查），限制定义规模。服务端仍不以这个检查替代外部反向代理的严格流式请求大小限制。
+-
+-## 冗余审查
+-
+-| 数据 | 是否复制 | 理由 |
+-| --- | --- | --- |
+-| 题目文字到每份答案 | 否 | 根据版本获取原始定义 |
+-| 用户名到每份问卷和答案 | 否 | 避免用户名变化导致不同步 |
+-| 截止时间与状态到发布版本 | 否 | surveys 为唯一权威来源 |
+-| 发布版本中的完整定义 | 是 | 不可变历史事实，不是与草稿同步的缓存 |
+-| response 中 version 与 version_id | 是 | version 便于范围查询，version_id 明确历史引用；两者由同一事务从版本文档写入 |
+-| response 中 path | 是 | 从答案可推导，但作为执行结果保留便于审计；服务端统一生成 |
+-| 统计计数缓存 | 否 | 第一阶段直接聚合，避免维护一致性 |
+-
+-## 索引与约束
+-
+-定义唯一来源为 database/indexes.json，由 initialize 读取应用。包括用户名唯一、会话摘要唯一、会话 TTL、创建者与创建时间、分享码唯一、问卷与版本号唯一、答案问卷版本时间、attempt_id 唯一、问卷与 respondent_key 查询索引。
+-
+-不直接为 survey_id + respondent_key 建全局唯一索引，因为部分问卷允许重复。禁止重复填写由问卷级事务写冲突及事务内检查保证，同一次请求由 attempt_id 唯一索引保证。
+-
+-database/collection_validators.json 约束顶层字段、题目定义、选项、规则容器、答案每项及路径的类型和必需字段，并检查匿名记录不包含直接 user_id、实名记录必须有 user_id。生成源为 database/build_validators.py。复杂的题目引用、条件类型与答案路径一致性由服务端检查。
+-
+-启动仅初始化新集合并检查已有约束，不再自动 collMod。旧约束需显式预检和升级，未知或未来约束直接拒绝覆盖，详见 migration-policy.md。当前仍只支持业务 schema_version=1，不宣称已经支持业务版本2。
+-
+-## 为什么没有采用关系式拆分
+-
+-如果将题目、选项、各种校验、条件节点逐一拆分，需要较多连接或应用层拼装才能获得一份发布问卷。当前访问模式以完整问卷定义为单位，文档结构能直接表达多态题型与条件树。MongoDB 同样保留索引、集合约束和事务，灵活结构不意味着放弃约束。
+-
+-这是针对当前场景的选择，并不意味着关系数据库无法实现问卷系统。将来需要题库复用时，可增加题库集合，同时保留发布快照作为历史解释来源。
+-
+-参考：MongoDB 官方 [嵌入数据建模](https://www.mongodb.com/docs/manual/data-modeling/embedding/)、[复合索引](https://www.mongodb.com/docs/manual/core/indexes/index-types/index-compound/)、[PyMongo 事务](https://www.mongodb.com/docs/languages/python/pymongo-driver/current/crud/transactions/)。
++# MongoDB 数据库设计
++
++## 设计依据
++
++问卷包含数量受限且通常一起读取的题目，每题具有不同形状的选项、校验与条件树，适合嵌套文档。答案随提交持续增长，必须独立保存。不同生命周期的数据分别建集合，不把所有数据集中在一个文档，也不机械地将每个选项拆成关系式记录。
++
++## 集合定义
++
++| 集合 | 关键字段 | 生命周期与访问 |
++| --- | --- | --- |
++| users | _id、username、username_key、password_hash、created_at、schema_version | 注册时写入，登录按规范化用户名查询 |
++| sessions | _id、token_hash、user_id、expires_at | 登录生成，退出删除，TTL 自动清理 |
++| surveys | _id、owner_id、share_code、draft、status、deadline、revision、current_version、activity_seq、schema_version | 草稿可改，状态可变，用户列表与填写入口 |
++| survey_versions | _id、survey_id、version、definition、published_at、schema_version、rule_engine_version | 发布时插入，通过 API 不再修改 |
++| attempts | _id、survey_id、version_id、respondent_key、anonymous、status、raw_answers、current_question_id、revision、created_at、updated_at、response_id、schema_version | 每账号每问卷一份进行中草稿，完成/放弃清空答案 |
++| responses | _id、survey_id、version_id、version、attempt_id、respondent_key、anonymous、user_id（仅实名）、answers、path、submitted_at、schema_version | 每次有效提交新增，不覆盖之前答案 |
++
++题目字段包括 id、type、title、required、options、validation、routing。answers 为 `{question_id, value}` 数组，便于展开聚合，避免用户题目 ID 被作为 MongoDB 动态字段路径。path 是实际到达题目 ID 序列，用于复核和未来路径分析。
++
++所有日期使用 BSON Date、UTC、毫秒精度。用户、题目和选项采用稳定字符串 ID。数字答案限制绝对值不超过 10¹⁵，避免跨语言数值精度与 BSON 整数溢出问题。
++
++## 嵌入与引用
++
++- 题目、选项、配置与问卷定义一起发布，嵌入 definition。
++- 用户独立保存，问卷引用 owner_id。
++- 正式答案独立保存，通过 survey_id 与 version_id 引用定义。
++- 不将全部答案嵌入问卷，避免无限增长及单文档写热点。
++- 题目上限 100、选项上限 100、单次请求上限约 1 MB（Content-Length 检查），限制定义规模。服务端仍不以这个检查替代外部反向代理的严格流式请求大小限制。
++
++## 冗余审查
++
++| 数据 | 是否复制 | 理由 |
++| --- | --- | --- |
++| 题目文字到每份答案 | 否 | 根据版本获取原始定义 |
++| 用户名到每份问卷和答案 | 否 | 避免用户名变化导致不同步 |
++| 截止时间与状态到发布版本 | 否 | surveys 为唯一权威来源 |
++| 发布版本中的完整定义 | 是 | 不可变历史事实，不是与草稿同步的缓存 |
++| response 中 version 与 version_id | 是 | version 便于范围查询，version_id 明确历史引用；两者由同一事务从版本文档写入 |
++| response 中 path | 是 | 从答案可推导，但作为执行结果保留便于审计；服务端统一生成 |
++| 统计计数缓存 | 否 | 第一阶段直接聚合，避免维护一致性 |
++
++## 索引与约束
++
++定义唯一来源为 database/indexes.json，由 initialize 读取应用。包括用户名唯一、会话摘要唯一、会话 TTL、创建者与创建时间、分享码唯一、问卷与版本号唯一、答案问卷版本时间、attempt_id 唯一、问卷与 respondent_key 查询索引。
++
++不直接为 survey_id + respondent_key 建全局唯一索引，因为部分问卷允许重复。禁止重复填写由问卷级事务写冲突及事务内检查保证，同一次请求由 attempt_id 唯一索引保证。
++
++database/collection_validators.json 约束顶层字段、题目定义、选项、规则容器、答案每项及路径的类型和必需字段，并检查匿名记录不包含直接 user_id、实名记录必须有 user_id。生成源为 database/build_validators.py。复杂的题目引用、条件类型与答案路径一致性由服务端检查。
++
++启动仅初始化新集合并检查已有约束，不再自动 collMod。旧约束需显式预检和升级，未知或未来约束直接拒绝覆盖，详见 migration-policy.md。当前仍只支持业务 schema_version=1，不宣称已经支持业务版本2。
++
++## 为什么没有采用关系式拆分
++
++如果将题目、选项、各种校验、条件节点逐一拆分，需要较多连接或应用层拼装才能获得一份发布问卷。当前访问模式以完整问卷定义为单位，文档结构能直接表达多态题型与条件树。MongoDB 同样保留索引、集合约束和事务，灵活结构不意味着放弃约束。
++
++这是针对当前场景的选择，并不意味着关系数据库无法实现问卷系统。将来需要题库复用时，可增加题库集合，同时保留发布快照作为历史解释来源。
++
++参考：MongoDB 官方 [嵌入数据建模](https://www.mongodb.com/docs/manual/data-modeling/embedding/)、[复合索引](https://www.mongodb.com/docs/manual/core/indexes/index-types/index-compound/)、[PyMongo 事务](https://www.mongodb.com/docs/languages/python/pymongo-driver/current/crud/transactions/)。
++
++## 1.1.0 填写过程扩展
++
++现为六个集合。新增attempts与responses生命周期分离，原始输入允许不完整；有效值只在规则计算或提交时产生，不长期复制。部分唯一索引survey_id+respondent_key只约束in_progress，不包含版本或匿名选择。原五集合约束和历史文档不变，新集合由启动初始化。详细结构、保留规则、并发与隐私见resumable-filling.md。
+--- 1.0.2/docs/demo-guide.md
++++ 1.1.0/docs/demo-guide.md
+@@ -1,35 +1,39 @@
+-# 演示操作指南
+-
+-## 准备
+-
+-启动 scripts/start-local.ps1 -SeedDemo，打开 http://127.0.0.1:8000，使用 demo / SurveyDemo2026! 登录。示例数据可重复导入，不清空已有问卷，也不会重复插入初始样例。
+-
+-## 初始数据核对
+-
+-“数据管理课程学习体验调查”有四道题：身份单选、工具多选、实践小时数字、建议文本。工作身份跳过工具题。
+-
+-首次导入三份正式回答：
+-
+-| 样例 | 身份 | 工具 | 小时 | 匿名 |
+-| --- | --- | --- | --- | --- |
+-| 1 | 学生 | MongoDB、Python | 6 | 是 |
+-| 2 | 学生 | MongoDB、Java | 8 | 否 |
+-| 3 | 工作 | 跳过 | 4 | 是 |
+-
+-初次导入预期：3 份提交、1 人填写（演示样例均由 demo 账号提交）；身份选项为学生 2 次/1 人、工作 1 次/1 人；工具题 2 次作答/1 人，选项次数 2/1/1/0。小时平均 6、最小 4、最大 8。
+-
+-当前本机另有一份浏览器验收样例：匿名、工作、小时 6，因此是 4 份提交、1 人填写；学生和工作各 2 次、各 1 人，小时平均仍为 6。匿名与实名不会将同一账号计为两人。
+-
+-## 功能演示顺序
+-
+-1. 在工作台打开示例统计，核对人数、跳过题目和平均值。
+-2. 打开编辑器，查看四种题型、数值校验和身份跳转规则；窄屏使用题目下拉框切换。
+-3. 点击填写链接，勾选匿名。选择工作身份，确认直接进入小时题；输入 41，确认阻止继续，改为合法值。
+-4. 返回身份题并改选学生，确认工具题重新出现；只选一项无法继续，选两项后继续。
+-5. 正式提交，查看回执。重新进入统计，确认总数与所选路径上的题目计数增加。
+-6. 创建自己的问卷，关闭允许重复填写选项；提交后再次开始应被拒绝。
+-7. 修改草稿标题或题目文字并发布新版本，选择不同版本查看统计，确认旧版本数据未丢失。
+-8. 关闭问卷，填写入口或未提交凭证应拒绝提交。
+-9. 使用第二账号尝试访问原账号的编辑和统计地址，应显示无权访问或不存在。
+-
+-演示操作会增加或修改数据，后续统计以实际正式提交为准。避免为了恢复初始数值而清空业务数据库。
++# 演示操作指南
++
++## 准备
++
++启动 scripts/start-local.ps1 -SeedDemo，打开 http://127.0.0.1:8000，使用 demo / SurveyDemo2026! 登录。示例数据可重复导入，不清空已有问卷，也不会重复插入初始样例。
++
++## 初始数据核对
++
++“数据管理课程学习体验调查”有四道题：身份单选、工具多选、实践小时数字、建议文本。工作身份跳过工具题。
++
++首次导入三份正式回答：
++
++| 样例 | 身份 | 工具 | 小时 | 匿名 |
++| --- | --- | --- | --- | --- |
++| 1 | 学生 | MongoDB、Python | 6 | 是 |
++| 2 | 学生 | MongoDB、Java | 8 | 否 |
++| 3 | 工作 | 跳过 | 4 | 是 |
++
++初次导入预期：3 份提交、1 人填写（演示样例均由 demo 账号提交）；身份选项为学生 2 次/1 人、工作 1 次/1 人；工具题 2 次作答/1 人，选项次数 2/1/1/0。小时平均 6、最小 4、最大 8。
++
++初版浏览器验收时另增加一份样例：匿名、工作、小时 6，因此是 4 份提交、1 人填写；学生和工作各 2 次、各 1 人，小时平均仍为 6。匿名与实名不会将同一账号计为两人。
++
++## 功能演示顺序
++
++1. 在工作台打开示例统计，核对人数、跳过题目和平均值。
++2. 打开编辑器，查看四种题型、数值校验和身份跳转规则；窄屏使用题目下拉框切换。
++3. 点击填写链接，勾选匿名。选择工作身份，确认直接进入小时题；输入 41，确认阻止继续，改为合法值。
++4. 返回身份题并改选学生，确认工具题重新出现；只选一项无法继续，选两项后继续。
++5. 正式提交，查看回执。重新进入统计，确认总数与所选路径上的题目计数增加。
++6. 创建自己的问卷，关闭允许重复填写选项；提交后再次开始应被拒绝。
++7. 修改草稿标题或题目文字并发布新版本，选择不同版本查看统计，确认旧版本数据未丢失。
++8. 关闭问卷，填写入口或未提交凭证应拒绝提交。
++9. 使用第二账号尝试访问原账号的编辑和统计地址，应显示无权访问或不存在。
++
++演示操作会增加或修改数据，后续统计以实际正式提交为准。避免为了恢复初始数值而清空业务数据库。
++
++## 断点续填演示
++
++创建独立问卷，填写一部分，等到“已保存到服务器”后关闭页签。重新打开同一填写链接，选择“继续填写”，检查原答案、匿名选择和版本；继续填写并提交，统计只增加一次正式提交。另建草稿后关闭问卷，重新打开应允许只读查看保存内容，禁止修改和提交。放弃草稿前有明确确认，确认后其未提交答案删除。
+--- 1.0.2/docs/design-decisions.md
++++ 1.1.0/docs/design-decisions.md
+@@ -3,7 +3,7 @@
+ | 编号 | 决策 | 原因与代价 |
+ | --- | --- | --- |
+ | D01 | 模块化单体后端 | 课程规模下便于启动和调试；保留领域与服务边界，暂不拆微服务 |
+-| D02 | 五个主要集合 | 根据生命周期划分；暂不为无草稿恢复需求的填写过程建立集合 |
++| D02 | 六个主要集合 | 初版五集合保留；用户明确退出恢复后新增attempts，隔离未完成输入与正式答卷 |
+ | D03 | 题目内嵌，答案独立 | 优化完整问卷读取，避免答案无限增长嵌入 |
+ | D04 | 不可变发布快照 | 保留旧答案含义；接受有目的的历史数据复制 |
+ | D05 | 规则数据化，有限解释器 | 可配置且可校验；新增能力仍需程序实现，禁止任意脚本 |
+--- 1.0.2/docs/editor-fixes.md
++++ 1.1.0/docs/editor-fixes.md
+@@ -1,50 +1,50 @@
+-# 编辑交互修订 1.0.2
+-
+-本轮根据用户提出的四项问题与“直接按最高标准做出来”的实施指令修改，继续沿用原系统。初版包和1.0.1修订包均保留。本轮未修改MongoDB文档结构，不需要再次升级约束。
+-
+-## 1 保存、发布和关闭不覆盖本地输入
+-
+-编辑状态提取至 frontend/src/composables/useSurveyEditor.ts，明确区分当前草稿、已保存快照、服务器revision、截止时间输入和当前操作。
+-
+-- 保存请求发送不可变快照。响应只合并元数据，并更新已保存快照，绝不替换当前本地草稿。请求期间新输入保持未保存状态。
+-- 保存、发布、关闭互斥；操作期间允许继续编辑，但禁止重复操作及路由离开，刷新/关闭页签触发浏览器提醒。
+-- 关闭前显示明确确认框，可取消；有草稿修改时“保存草稿并关闭”。保存失败不关闭；保存期间又有新输入则中止关闭，请用户再次确认。
+-- 关闭请求进行期间产生的新输入也保留，关闭成功后仍提示未保存。保存成功、关闭失败时分别说明两个结果。
+-- 发布前保存期间又有修改时中止发布。发布请求进行期间的新草稿或截止时间保留，成功后仅将本次实际发布的时间标记为已发布。
+-- 发布和关闭接口返回原子操作产生的 survey 元数据，无需再次GET问卷；关闭增加可选revision检查，旧调用仍兼容，新编辑器携带revision防止并发覆盖。
+-
+-## 2 高级规则JSON与渲染保护
+-
+-新增 routing-validation.ts，在替换配置前检查对象和字段、规则数量、条件树、运算符、比较值、区间、题目和选项引用、前向跳转、深度与节点规模。任何错误都保留原配置并显示具体位置。编辑弹窗绑定题目ID，应用时重新定位该题目。
+-
+-RoutingEditor使用独立的结构安全检查，损坏配置显示错误和显式清空入口，不访问缺失condition。结构保护允许正常数字输入短暂为空，不因编辑中间状态隐藏输入框；完整语义检查仍在高级JSON应用和后端发布时执行。
+-
+-## 3 文本输入按Unicode码点计数
+-
+-移除答案输入框原生maxlength，保留全部输入和粘贴内容，显示字符计数和超限提示，规则校验阻止不合法答案。使用统一textLength与trimText，空白集合与Python str.strip对齐，按去首尾空白后的Unicode码点计数；不把组合字形宣称为一个码点。
+-
+-中文输入法组合期间保留原始内容，不提交或校验中间拼音；compositionend后提交完整内容，避免紧随其后的重复input产生重复更新。一个😀在上限1时可输入并通过；两个😀不截断，提示超限。
+-
+-## 4 截止时间单独提示与保护
+-
+-草稿修改与截止时间待发布分别跟踪，任一存在都触发离开提醒。保存草稿明确说明不会保存截止时间；保存完成后仍提示“截止时间尚未发布”。关闭不会发布该时间，确认前和完成后都明确说明并保留本地值。
+-
+-发布失败、取消或请求期间继续修改时，不清除尚未发布的时间。未修改截止时间时重新发布保留服务器原有秒级精度，避免分钟输入控件静默截断旧值。
+-
+-## 回归测试与证据
+-
+-- 后端81项：原79项加发布/关闭原子元数据和revision冲突2项。
+-- 前端普通单元16项：原11项加高级规则检查5项。
+-- Vue组件与路由交互27项：编辑器19项、文本与规则组件8项。
+-- 合计124项；组件测试在jsdom中真实挂载Vue组件，网络延迟和失败由可控Promise模拟，不等同于所有浏览器原生行为覆盖。
+-- artifacts/test-results.xml、frontend-tests.txt、component-tests.xml、component-tests.txt保留原始结果；editor-fixes.diff与上一轮不可变包比较。
+-
+-## 实际浏览器验收
+-
+-创建独立的“编辑器回归验收”问卷，原有问卷不修改。实际验证：单独更改截止时间并保存草稿，仍明确提示尚未发布；应用 `{"rules":[{}],"default_target":null}` 显示具体错误，取消后原规则正常；填写页通过真实输入操作输入一个😀显示1/1并成功提交，两个😀保留全文并阻止继续；编辑标题后选择“保存草稿并关闭”，关闭成功，标题仍保留。验收时发现旧成功反馈可能在后续编辑后残留，已改为继续输入即清除过期反馈，并新增组件测试。
+-
+-截图为 artifacts/screenshots/editor-json-rejected.jpg、editor-unicode-one-character.jpg。本地保留一份已关闭、明确标记为自动测试数据的验收问卷和一份表情答案，不混入原演示问卷的统计。
+-
+-## 使用注意
+-
+-已打开的旧编辑页不会被强制刷新。请先保存当前内容再刷新加载新界面。服务端不会自动保存本地截止时间；仍需发布新版本。浏览器最终确认刷新后放弃未保存内容属于用户主动操作，本轮没有增加断点续填或自动恢复草稿。
++# 编辑交互修订 1.0.2
++
++本轮根据用户提出的四项问题与“直接按最高标准做出来”的实施指令修改，继续沿用原系统。初版包和1.0.1修订包均保留。本轮未修改MongoDB文档结构，不需要再次升级约束。
++
++## 1 保存、发布和关闭不覆盖本地输入
++
++编辑状态提取至 frontend/src/composables/useSurveyEditor.ts，明确区分当前草稿、已保存快照、服务器revision、截止时间输入和当前操作。
++
++- 保存请求发送不可变快照。响应只合并元数据，并更新已保存快照，绝不替换当前本地草稿。请求期间新输入保持未保存状态。
++- 保存、发布、关闭互斥；操作期间允许继续编辑，但禁止重复操作及路由离开，刷新/关闭页签触发浏览器提醒。
++- 关闭前显示明确确认框，可取消；有草稿修改时“保存草稿并关闭”。保存失败不关闭；保存期间又有新输入则中止关闭，请用户再次确认。
++- 关闭请求进行期间产生的新输入也保留，关闭成功后仍提示未保存。保存成功、关闭失败时分别说明两个结果。
++- 发布前保存期间又有修改时中止发布。发布请求进行期间的新草稿或截止时间保留，成功后仅将本次实际发布的时间标记为已发布。
++- 发布和关闭接口返回原子操作产生的 survey 元数据，无需再次GET问卷；关闭增加可选revision检查，旧调用仍兼容，新编辑器携带revision防止并发覆盖。
++
++## 2 高级规则JSON与渲染保护
++
++新增 routing-validation.ts，在替换配置前检查对象和字段、规则数量、条件树、运算符、比较值、区间、题目和选项引用、前向跳转、深度与节点规模。任何错误都保留原配置并显示具体位置。编辑弹窗绑定题目ID，应用时重新定位该题目。
++
++RoutingEditor使用独立的结构安全检查，损坏配置显示错误和显式清空入口，不访问缺失condition。结构保护允许正常数字输入短暂为空，不因编辑中间状态隐藏输入框；完整语义检查仍在高级JSON应用和后端发布时执行。
++
++## 3 文本输入按Unicode码点计数
++
++移除答案输入框原生maxlength，保留全部输入和粘贴内容，显示字符计数和超限提示，规则校验阻止不合法答案。使用统一textLength与trimText，空白集合与Python str.strip对齐，按去首尾空白后的Unicode码点计数；不把组合字形宣称为一个码点。
++
++中文输入法组合期间保留原始内容，不提交或校验中间拼音；compositionend后提交完整内容，避免紧随其后的重复input产生重复更新。一个😀在上限1时可输入并通过；两个😀不截断，提示超限。
++
++## 4 截止时间单独提示与保护
++
++草稿修改与截止时间待发布分别跟踪，任一存在都触发离开提醒。保存草稿明确说明不会保存截止时间；保存完成后仍提示“截止时间尚未发布”。关闭不会发布该时间，确认前和完成后都明确说明并保留本地值。
++
++发布失败、取消或请求期间继续修改时，不清除尚未发布的时间。未修改截止时间时重新发布保留服务器原有秒级精度，避免分钟输入控件静默截断旧值。
++
++## 回归测试与证据
++
++- 后端81项：原79项加发布/关闭原子元数据和revision冲突2项。
++- 前端普通单元16项：原11项加高级规则检查5项。
++- Vue组件与路由交互27项：编辑器19项、文本与规则组件8项。
++- 合计124项；组件测试在jsdom中真实挂载Vue组件，网络延迟和失败由可控Promise模拟，不等同于所有浏览器原生行为覆盖。
++- artifacts/test-results.xml、frontend-tests.txt、component-tests.xml、component-tests.txt保留原始结果；editor-fixes.diff与上一轮不可变包比较。
++
++## 实际浏览器验收
++
++创建独立的“编辑器回归验收”问卷，原有问卷不修改。实际验证：单独更改截止时间并保存草稿，仍明确提示尚未发布；应用 `{"rules":[{}],"default_target":null}` 显示具体错误，取消后原规则正常；填写页通过真实输入操作输入一个😀显示1/1并成功提交，两个😀保留全文并阻止继续；编辑标题后选择“保存草稿并关闭”，关闭成功，标题仍保留。验收时发现旧成功反馈可能在后续编辑后残留，已改为继续输入即清除过期反馈，并新增组件测试。
++
++截图为 artifacts/screenshots/editor-json-rejected.jpg、editor-unicode-one-character.jpg。本地保留一份已关闭、明确标记为自动测试数据的验收问卷和一份表情答案，不混入原演示问卷的统计。
++
++## 使用注意
++
++已打开的旧编辑页不会被强制刷新。请先保存当前内容再刷新加载新界面。服务端不会自动保存本地截止时间；仍需发布新版本。浏览器最终确认刷新后放弃未保存内容属于用户主动操作，本轮没有增加断点续填或自动恢复草稿。
+--- 1.0.2/docs/extensibility.md
++++ 1.1.0/docs/extensibility.md
+@@ -19,7 +19,7 @@
+ | 多人协作 | 权限模型、服务接口、用户或成员集合、前端入口 | 原创建者继续拥有管理权限 |
+ | 题目跨问卷复用 | 新题库与版本引用、编辑及发布逻辑 | 已发布快照仍保存完整定义 |
+ | 按答题群体统计 | 查询参数、聚合筛选、统计页面 | 明确匿名数据可使用哪些分组字段 |
+-| 自动保存和恢复 | 增加 attempts 集合及草稿状态，扩展填写流程 | responses 的正式提交语义保持一致 |
++| 自动保存和恢复 | 1.1.0已新增attempts集合及草稿状态，扩展填写流程 | responses 的正式提交语义保持一致 |
+ | 循环追问 | 修改路径模型、终止约束及答案结构 | 不能沿用只允许向后跳转的假设 |
+ 
+ 这些是可能场景，不是假设教师一定会提出的功能。
+--- 1.0.2/docs/migration-policy.md
++++ 1.1.0/docs/migration-policy.md
+@@ -42,3 +42,7 @@
+ 全量预检通过前不修改任何集合；升级先保存全部原约束及目标指纹，逐集合记录进度，普通异常自动恢复，进程中断保留显式恢复入口。恢复前校验当前约束属于原版或本次目标，拒绝覆盖其他操作引入的未知约束。当前升级只改变约束，不改写文档；恢复日志不是数据备份，不能恢复已删除数据。
+ 
+ 本轮对本机真实旧数据的临时副本执行了升级、哈希核对、统计比较、回滚和再次升级：用户1、会话1、问卷2、发布版本1、正式答案4，验证通过。可复现脚本为 scripts/rehearse-upgrade.py，脱敏结果见 artifacts/migration-rehearsal.json。当前业务库已显式升级；恢复日志保留于本地 .local，不进入源码包。
++
++## 1.1.0 自动保存与恢复增量
++
++填写页现采用独立attempts流程，草稿允许不完整，服务器约束路径和恢复位置，正式提交只携带revision并从草稿读取答案。接口清单、数据约束、登录恢复、只读恢复及兼容规则见[续填说明](resumable-filling.md)。本轮未改变原五个集合约束；新增集合初始化与已有集合显式升级分开。
+--- 1.0.2/docs/phase1-report.md
++++ 1.1.0/docs/phase1-report.md
+@@ -1,99 +1,107 @@
+-# 基于 MongoDB 的问卷系统第一阶段完成报告
+-
+-## 当前修订 1.0.2
+-
+-在1.0.1基础上修复四项编辑交互问题：保存与关闭不丢失输入、高级规则JSON完整检查及渲染保护、文本码点计数与输入法保护、截止时间独立待发布提示。具体实现与测试范围见editor-fixes.md，新增文件包括useSurveyEditor.ts、routing-validation.ts、text.ts及Vue组件交互测试。
+-
+-当前后端81项、前端普通单元16项、组件交互27项，共124项通过。后文60项、90项是阶段历史记录。应用数据模型未改动，不需要再次升级集合约束；原两份交付包保留，本轮使用独立修订标签。
+-
+-## 项目目标
+-
+-本项目实现简化在线问卷系统，支持注册用户创建、发布和管理问卷，填写者通过链接登录作答，系统执行校验与条件跳转并生成结果统计。第一阶段建立可以继续修改的代码和数据基础，第二阶段在原系统上扩展。
+-
+-重点对应 MongoDB 设计 35 分、后端逻辑 25 分、测试 10 分、文档 15 分与 AI 使用说明 15 分。界面采用统一的绿色与浅色工作台风格，适配窄屏，优先保证业务可操作。
+-
+-## 系统实现
+-
+-采用 Vue 3、TypeScript、Vite、FastAPI、PyMongo 和 MongoDB。前端构建由后端同源提供。账号使用 Argon2 哈希、MongoDB 会话和 HttpOnly Cookie。问卷管理接口统一校验所有权。
+-
+-完整功能包括注册登录退出、问卷列表、草稿编辑、题目增删排序、四种输入类型、必答及范围校验、条件跳转、发布检查、版本快照、分享、截止和关闭、匿名及重复填写控制、正式提交、版本和时间统计及原始内容分页。
+-
+-问卷题目与规则配置保存在数据中，程序通过注册题型与有限条件解释器执行。不使用现成问卷框架，不使用关系数据库。
+-
+-## MongoDB 设计
+-
+-使用 users、sessions、surveys、survey_versions、responses 五个集合。用户和会话分别管理；问卷保存可变状态与草稿；版本文档保存不可变定义；每次正式提交独立保存。
+-
+-题目、选项、校验与条件树一起读取和发布，嵌入问卷定义。答案持续增长，独立存储并引用发布版本。没有将全部数据塞入一个集合，也没有机械拆分所有字段为关系式表结构。
+-
+-必要冗余包括发布快照、答案中的版本号和实际路径；每项都有明确用途与生成入口。题目文字和用户名不复制到每份答案，统计不维护另一份缓存计数，问卷状态和截止时间只有 surveys 一个权威来源。
+-
+-集合约束与索引在 database JSON 文件中集中定义；启动检查已有约束，升级必须显式执行。索引覆盖用户名唯一、会话过期、所有者列表、分享码、版本唯一、提交幂等与统计查询。
+-
+-## 跳转设计
+-
+-条件叶子包含 question_id、operator、value，支持单选匹配、多选集合关系、数字比较和包含边界的区间；all、any 组合条件支持复杂关系。规则按列表顺序首条匹配，默认目标为空则顺序下一题。
+-
+-第一阶段仅允许跳至后续题或结束，发布前检查题目与选项引用、条件类型、目标存在和配置边界。未来题目不可引用，未到达或未回答题目的条件不满足。不采用 eval 或硬编码问卷分支。
+-
+-前端根据公开语义即时展示，后端提交时从首题独立重算路径。修改前题使原路径失效时清除相关答案。被跳过题目不执行必答，也不参与该题统计。
+-
+-## 校验设计
+-
+-分为请求结构、问卷配置和作答三层。Pydantic 检查基础结构；发布检查配置完整性；题型处理器检查答案。单选要求有效选项，多选要求无重复且满足数量，文本按去首尾空白后的码点数，数字要求有限、范围合法且可选择整数。
+-
+-用户界面提示不替代后端检查。错误按题目 ID 返回，非法提交不写入正式答案。可选空题保存 null，不当作零值或有效回答。
+-
+-## 提交与一致性
+-
+-开始填写签发绑定用户、版本、匿名选择和 attempt_id 的限时凭证。凭证无法被客户端随意修改。提交使用 MongoDB 副本集事务，将状态检查、重复检查和正式写入放在同一一致性边界。
+-
+-同一问卷事务更新 activity_seq，形成可重试的写冲突。相同 attempt_id 重试返回同一回执；不允许重复填写时检查整个问卷的历史提交。关闭和发布也写同一问卷，避免状态检查与提交之间出现无保护窗口。
+-
+-匿名数据不保存直接 user_id，使用受限的问卷范围 HMAC 标识去重，创建者查询不返回此标识。匿名含义是对创建者隐藏身份，不宣称管理员无法关联。
+-
+-## 统计实现
+-
+-按问卷、版本、提交时间筛选 responses，展开答案进行聚合。整卷与单题同时统计作答次数和去重账号数；单选、多选每项也分别计算选择次数与人数，百分比可切换次数或人数口径。文本分页展示，数字平均值及上下界按有效答案计算。统计含义由绑定的发布版本解释，不自动合并不同版本。
+-
+-初始演示三份答案的小时数 6、8、4，平均值 6；工具题两次作答（同一账号），MongoDB/Python/Java/Node.js 次数为 2/1/1/0。浏览器验收又提交一份工作身份、小时 6 的匿名样例，当前本地总数因此为 4，平均仍为 6。
+-
+-## 可扩展性与第二阶段准备
+-
+-题型统一提供配置检查、答案校验与统计；前端输入组件按类型注册；条件与路径逻辑集中；版本快照与稳定 ID 保留历史语义。数据结构和引擎版本为后续兼容提供识别入口，源码清单、测试与设计记录形成第一阶段基线。
+-
+-扩展性不等于无需修改核心代码。多人协作、题库复用、循环追问或跨版本分析可能需要调整集合和流程。第二阶段应记录需求、原设计问题、修改理由、数据变化、程序调整、兼容措施与测试结果，不另建全新系统替换当前项目。
+-
+-## 测试结果
+-
+-后端使用真实 MongoDB 执行领域及集成测试。首轮 51 通过、1 失败，修复后 52 项全部通过，涵盖数字边界、多选、文本、条件、路径、权限、匿名、凭证、并发重复提交、幂等、关闭截止、统计、版本兼容和集合校验。该初版历史结果保留在原第一阶段包；当前修订测试记录见 artifacts/test-results.xml。
+-
+-前端执行 TypeScript 类型检查与生产构建，并使用实际浏览器验收登录、统计、编辑器、分支填写、越界提示和成功提交。浏览器证据保存在 artifacts/screenshots。更详细步骤、输入与结果见 testing.md。
+-
+-另补充前端规则单元测试 8 项并全部通过，验证动态路径、失效答案、条件与输入校验交互。初版前后端共 60 项测试。修订后为后端 79 项、前端 11 项，共 90 项通过；前端原始记录为 artifacts/frontend-tests.txt。
+-
+-## 遇到的问题与处理
+-
+-1. 沙盒限制网络、本机端口与依赖缓存访问，采用工具权限流程完成依赖安装和本机测试，没有用内存假库替代数据库。
+-2. 本地 Python 初始虚拟环境引导失败，改用可用的 Python 3.12 建立项目内环境并补齐安装工具。
+-3. BSON 只保留毫秒，首次回执使用微秒导致重试结果不同；统一时间精度后测试通过。
+-4. 窄屏隐藏题目目录，补充下拉选择入口。
+-5. 初稿题型分支较集中，拆分输入组件并将统计归入处理器，同时如实保留仍需调整的前端编辑扩展点。
+-
+-## AI 使用过程
+-
+-AI 辅助完成需求分析、方案、代码、测试、环境处理和文档。用户通过多轮讨论明确可扩展性及数据库约束，AI 根据真实测试结果修正实现。完整记录见 ai-usage-log.md 与 ai-usage-summary.md。
+-
+-本报告不虚构学生已经独立设计、人工修改或完全理解所有实现。本轮用户已经提供六项实测审阅反馈并明确修订要求，属于实际贡献；个人独立编程和完整测试执行等尚未发生的事项，仍需依据真实参与情况补充。
+-
+-## 运行与交付
+-
+-README 提供当前电脑与新电脑的启动方式。Windows 本地路径已验证；Docker 文件已提供但本机未实际运行。源码打包排除数据库、密钥和依赖，附文件哈希与测试结果，便于第二阶段比较。
+-
+-## 1.0.1 审阅修订
+-
+-本轮六项问题的修复、统计人数口径和实际升级证据见 review-fixes.md。已加强不可回答必答题的检查、数字安全边界及嵌套结构约束；启动不再隐式升级，真实旧库副本验证升级、恢复和重试；AI日志保留原始审阅指令及可比对代码。原第一阶段基线不覆盖，修订源代码继续沿用原系统。
+-
+-## 当前局限
+-
+-未实现自动保存、断点续填、文件题、多人协作、循环跳转及跨版本合并。问卷级提交序列化适合课程规模，不代表高吞吐设计。整卷多查询统计不是精确时点快照。单节点副本集不提供多节点容灾。外网部署需要进一步配置认证、HTTPS、限流和备份。
++# 基于 MongoDB 的问卷系统第一阶段完成报告
++
++## 当前修订 1.1.0
++
++在1.0.2基础上完成填写自动保存和退出恢复。用户进一步明确“每次填写保存”包括未完成过程；新增attempts集合，保留原核心结构、发布版本、规则引擎与正式答卷统计。当前后端97项、前端普通单元16项、组件交互43项，共156项通过。原五集合约束不变，历史答卷不改写，新增集合和索引由初始化创建。此前三个交付包保留。
++
++新增设计、问题处理及接口见resumable-filling.md；具体步骤、输入、输出和结果见resume-test-cases.md。以下标注初版/1.0.1/1.0.2的数量和过程是历史记录。
++
++## 项目目标
++
++本项目实现简化在线问卷系统，支持注册用户创建、发布和管理问卷，填写者通过链接登录作答，系统执行校验与条件跳转并生成结果统计。第一阶段建立可以继续修改的代码和数据基础，第二阶段在原系统上扩展。
++
++重点对应 MongoDB 设计 35 分、后端逻辑 25 分、测试 10 分、文档 15 分与 AI 使用说明 15 分。界面采用统一的绿色与浅色工作台风格，适配窄屏，优先保证业务可操作。
++
++## 系统实现
++
++采用 Vue 3、TypeScript、Vite、FastAPI、PyMongo 和 MongoDB。前端构建由后端同源提供。账号使用 Argon2 哈希、MongoDB 会话和 HttpOnly Cookie。问卷管理接口统一校验所有权。
++
++完整功能包括填写自动保存、断点续填、冲突检查、关闭截止后只读恢复，以及注册登录退出、问卷列表、草稿编辑、题目增删排序、四种输入类型、必答及范围校验、条件跳转、发布检查、版本快照、分享、截止和关闭、匿名及重复填写控制、正式提交、版本和时间统计及原始内容分页。
++
++问卷题目与规则配置保存在数据中，程序通过注册题型与有限条件解释器执行。不使用现成问卷框架，不使用关系数据库。
++
++## MongoDB 设计
++
++使用 users、sessions、surveys、survey_versions、responses、attempts 六个集合。用户和会话分别管理；问卷保存可变状态与草稿；版本文档保存不可变定义；每次正式提交独立保存。
++
++题目、选项、校验与条件树一起读取和发布，嵌入问卷定义。答案持续增长，独立存储并引用发布版本。没有将全部数据塞入一个集合，也没有机械拆分所有字段为关系式表结构。
++
++必要冗余包括发布快照、答案中的版本号和实际路径；每项都有明确用途与生成入口。题目文字和用户名不复制到每份答案，统计不维护另一份缓存计数，问卷状态和截止时间只有 surveys 一个权威来源。
++
++集合约束与索引在 database JSON 文件中集中定义；启动检查已有约束，升级必须显式执行。索引覆盖用户名唯一、会话过期、所有者列表、分享码、版本唯一、提交幂等与统计查询。
++
++## 跳转设计
++
++条件叶子包含 question_id、operator、value，支持单选匹配、多选集合关系、数字比较和包含边界的区间；all、any 组合条件支持复杂关系。规则按列表顺序首条匹配，默认目标为空则顺序下一题。
++
++第一阶段仅允许跳至后续题或结束，发布前检查题目与选项引用、条件类型、目标存在和配置边界。未来题目不可引用，未到达或未回答题目的条件不满足。不采用 eval 或硬编码问卷分支。
++
++前端根据公开语义即时展示，后端提交时从首题独立重算路径。修改前题使原路径失效时清除相关答案。被跳过题目不执行必答，也不参与该题统计。
++
++## 校验设计
++
++分为请求结构、问卷配置和作答三层。Pydantic 检查基础结构；发布检查配置完整性；题型处理器检查答案。单选要求有效选项，多选要求无重复且满足数量，文本按去首尾空白后的码点数，数字要求有限、范围合法且可选择整数。
++
++用户界面提示不替代后端检查。错误按题目 ID 返回，非法提交不写入正式答案。可选空题保存 null，不当作零值或有效回答。
++
++## 提交与一致性
++
++新填写流程持久化绑定用户关联标识、版本、匿名选择和revision的attempts，提交以服务器草稿为唯一答案来源。保留旧接口签发绑定用户、版本、匿名选择和attempt_id的限时凭证，用于旧客户端兼容。凭证无法被客户端随意修改。提交使用 MongoDB 副本集事务，将状态检查、重复检查和正式写入放在同一一致性边界。
++
++同一问卷事务更新 activity_seq，形成可重试的写冲突。相同 attempt_id 重试返回同一回执；不允许重复填写时检查整个问卷的历史提交。关闭和发布也写同一问卷，避免状态检查与提交之间出现无保护窗口。
++
++匿名数据不保存直接 user_id，使用受限的问卷范围 HMAC 标识去重，创建者查询不返回此标识。匿名含义是对创建者隐藏身份，不宣称管理员无法关联。
++
++## 统计实现
++
++按问卷、版本、提交时间筛选 responses，展开答案进行聚合。整卷与单题同时统计作答次数和去重账号数；单选、多选每项也分别计算选择次数与人数，百分比可切换次数或人数口径。文本分页展示，数字平均值及上下界按有效答案计算。统计含义由绑定的发布版本解释，不自动合并不同版本。
++
++初始演示三份答案的小时数 6、8、4，平均值 6；工具题两次作答（同一账号），MongoDB/Python/Java/Node.js 次数为 2/1/1/0。浏览器验收又提交一份工作身份、小时 6 的匿名样例，当时该演示问卷总数因此为 4，平均仍为 6。
++
++## 可扩展性与第二阶段准备
++
++题型统一提供配置检查、答案校验与统计；前端输入组件按类型注册；条件与路径逻辑集中；版本快照与稳定 ID 保留历史语义。数据结构和引擎版本为后续兼容提供识别入口，源码清单、测试与设计记录形成第一阶段基线。
++
++扩展性不等于无需修改核心代码。多人协作、题库复用、循环追问或跨版本分析可能需要调整集合和流程。第二阶段应记录需求、原设计问题、修改理由、数据变化、程序调整、兼容措施与测试结果，不另建全新系统替换当前项目。
++
++## 测试结果
++
++后端使用真实 MongoDB 执行领域及集成测试。首轮 51 通过、1 失败，修复后 52 项全部通过，涵盖数字边界、多选、文本、条件、路径、权限、匿名、凭证、并发重复提交、幂等、关闭截止、统计、版本兼容和集合校验。该初版历史结果保留在原第一阶段包；当前修订测试记录见 artifacts/test-results.xml。
++
++前端执行 TypeScript 类型检查与生产构建，并使用实际浏览器验收登录、统计、编辑器、分支填写、越界提示和成功提交。浏览器证据保存在 artifacts/screenshots。更详细步骤、输入与结果见 testing.md。
++
++另补充前端规则单元测试 8 项并全部通过，验证动态路径、失效答案、条件与输入校验交互。初版前后端共 60 项测试。修订后为后端 79 项、前端 11 项，共 90 项通过；前端原始记录为 artifacts/frontend-tests.txt。
++
++## 遇到的问题与处理
++
++1. 沙盒限制网络、本机端口与依赖缓存访问，采用工具权限流程完成依赖安装和本机测试，没有用内存假库替代数据库。
++2. 本地 Python 初始虚拟环境引导失败，改用可用的 Python 3.12 建立项目内环境并补齐安装工具。
++3. BSON 只保留毫秒，首次回执使用微秒导致重试结果不同；统一时间精度后测试通过。
++4. 窄屏隐藏题目目录，补充下拉选择入口。
++5. 初稿题型分支较集中，拆分输入组件并将统计归入处理器，同时如实保留仍需调整的前端编辑扩展点。
++
++## AI 使用过程
++
++AI 辅助完成需求分析、方案、代码、测试、环境处理和文档。用户通过多轮讨论明确可扩展性及数据库约束，AI 根据真实测试结果修正实现。完整记录见 ai-usage-log.md 与 ai-usage-summary.md。
++
++本报告不虚构学生已经独立设计、人工修改或完全理解所有实现。本轮用户已经提供六项实测审阅反馈并明确修订要求，属于实际贡献；个人独立编程和完整测试执行等尚未发生的事项，仍需依据真实参与情况补充。
++
++## 运行与交付
++
++README 提供当前电脑与新电脑的启动方式。Windows 本地路径已验证；Docker 文件已提供但本机未实际运行。源码打包排除数据库、密钥和依赖，附文件哈希与测试结果，便于第二阶段比较。
++
++## 1.0.1 审阅修订
++
++本轮六项问题的修复、统计人数口径和实际升级证据见 review-fixes.md。已加强不可回答必答题的检查、数字安全边界及嵌套结构约束；启动不再隐式升级，真实旧库副本验证升级、恢复和重试；AI日志保留原始审阅指令及可比对代码。原第一阶段基线不覆盖，修订源代码继续沿用原系统。
++
++## 当前局限
++
++未实现本地持久答案缓存、文件题、多人协作、循环跳转及跨版本合并。服务器尚未确认的最后输入在断网或断电时可能丢失。问卷级提交序列化适合课程规模，不代表高吞吐设计。整卷多查询统计不是精确时点快照。单节点副本集不提供多节点容灾。外网部署需要进一步配置认证、HTTPS、限流和备份。
++
++## 1.1.0 新需求与问题解决
++
++原设计仅在最终提交时写responses，无法恢复未完成内容。新增attempts保存受限原始输入，部分唯一索引避免同账号并发创建两份；发布版本引用保持不变。草稿校验与正式校验分开，无效输入可存但不参与跳转。前端使用600ms停顿和5秒最长等待、串行保存、独立revision和未同步状态。保存响应期间继续输入会排队保存新快照，不覆盖本地修改或提前显示成功。恢复时优先未完成题，但保存响应不抢走当前编辑位置。
++
++提交先完成最新保存，事务内生成答卷并清除草稿副本；注入答卷写入后失败验证整体回滚。关闭/截止后的读取与写入分开，保证内容仍可查看。登录过期保留本页输入，原页同账号认证后继续保存。新功能与旧接口并存，原答卷统计不变。本轮真实8用户并发提交得到8份/8人、数值平均23.5；全部测试共156项。
++
++交付复核使用不含.env和业务数据库的独立源码目录，确认实际导入路径并复用已有依赖执行97项后端测试全部通过，结果见artifacts/delivery-tests.xml。不将此记录描述为全新电脑安装或Docker验证。
+--- 1.0.2/docs/requirements.md
++++ 1.1.0/docs/requirements.md
+@@ -1,40 +1,40 @@
+-# 第一阶段需求与验收
+-
+-## 目标与范围
+-
+-依据任务文档完成简化在线问卷系统。必须使用 MongoDB，不使用关系数据库或现成问卷系统框架。界面保持清楚易用，重点投入数据库建模、规则执行、测试、文档和真实 AI 使用记录。
+-
+-## 需求对应表
+-
+-| 编号 | 需求 | 实现入口 | 验证 |
+-| --- | --- | --- | --- |
+-| R01 | 注册登录、用户名密码注册时间 | auth API、users、sessions | test_auth_casefold_logout |
+-| R02 | 只能管理自己的问卷和统计 | surveys.owned | test_permission_isolation |
+-| R03 | 创建、发布、截止、关闭与分享 | 问卷编辑页、surveys 服务 | test_close_and_deadline、页面验收 |
+-| R04 | 单选选项与必答 | Single 处理器 | 领域校验、完整提交流程 |
+-| R05 | 多选最少最多及固定数量 | Multiple 处理器 | test_multiple |
+-| R06 | 文本最短最长、数字范围和整数 | Text、Number 处理器 | test_number_bounds、test_optional_text |
+-| R07 | 单选、多选、数字条件跳转 | conditions 与 route_target | test_operators、test_routing_discards_skipped |
+-| R08 | 顺序填写、错误提示、正式提交 | Fill.vue、participation 服务 | 页面越界提示、test_invalid_answer_no_write |
+-| R09 | 多人、匿名及有条件重复填写 | 会话、HMAC、事务 | 匿名、重复及并发测试 |
+-| R10 | 整卷与单题统计 | statistics API、Statistics.vue | test_multiple_and_average |
+-| R11 | 数据保留、为第二阶段延续 | 发布版本、版本字段、源码清单 | test_old_version_after_publish |
+-| R12 | 配置、API、规则、测试和报告 | README、docs | 文档检查 |
+-| R13 | AI 日志与总结 | ai-usage-log、ai-usage-summary | 真实过程记录 |
+-
+-## 实现约定
+-
+-1. 填写前登录，匿名仅隐藏创建者可见的账号身份；数据库保留问卷范围 HMAC 去重标识。
+-2. 不允许重复填写时，检查该账号在整份问卷的历史提交，不限于一个版本。使用本次填写绑定版本的重复策略；修改策略不追溯改变旧凭证。
+-3. 正式提交使用填写凭证内的 attempt_id 去重。重试返回同一回执，不生成额外答案；凭证有效期 24 小时。
+-4. 跳转只向后或 END。多规则按顺序首条匹配；无规则匹配时走默认目标，未设目标则下一题。
+-5. 条件引用当前题或先前题；如果该题未到达或没有答案，即使是不等于条件也不满足。
+-6. 校验只作用于实际路径；可选题空白保存 null，不贡献该题作答次数和人数。非空可选答案仍执行范围校验。
+-7. 回到前题改变路径后，前端清除失效答案；后端独立重算，不信任前端路径。
+-8. 发布快照固定题目含义；截止时间和关闭状态属于问卷级即时状态。状态检查发生于提交事务中。
+-9. 截止时间必须含时区，数据库使用 UTC；页面按浏览器本地时区显示，当前演示环境为中国标准时间。
+-10. 保存每次正式提交；未要求的草稿续填与自动保存不在第一阶段范围内。
+-
+-## 验收顺序
+-
+-启动 → 登录 demo → 核对初始统计 → 创建自己的问卷 → 配置四种题型与跳转 → 发布 → 使用另一账号填写 → 验证错误提示 → 提交 → 核对统计 → 发布新版本 → 检查旧版本 → 关闭 → 确认拒绝新提交 → 运行自动测试。
++# 第一阶段需求与验收
++
++## 目标与范围
++
++依据任务文档完成简化在线问卷系统。必须使用 MongoDB，不使用关系数据库或现成问卷系统框架。界面保持清楚易用，重点投入数据库建模、规则执行、测试、文档和真实 AI 使用记录。
++
++## 需求对应表
++
++| 编号 | 需求 | 实现入口 | 验证 |
++| --- | --- | --- | --- |
++| R01 | 注册登录、用户名密码注册时间 | auth API、users、sessions | test_auth_casefold_logout |
++| R02 | 只能管理自己的问卷和统计 | surveys.owned | test_permission_isolation |
++| R03 | 创建、发布、截止、关闭与分享 | 问卷编辑页、surveys 服务 | test_close_and_deadline、页面验收 |
++| R04 | 单选选项与必答 | Single 处理器 | 领域校验、完整提交流程 |
++| R05 | 多选最少最多及固定数量 | Multiple 处理器 | test_multiple |
++| R06 | 文本最短最长、数字范围和整数 | Text、Number 处理器 | test_number_bounds、test_optional_text |
++| R07 | 单选、多选、数字条件跳转 | conditions 与 route_target | test_operators、test_routing_discards_skipped |
++| R08 | 顺序填写、错误提示、正式提交 | Fill.vue、participation 服务 | 页面越界提示、test_invalid_answer_no_write |
++| R09 | 多人、匿名及有条件重复填写 | 会话、HMAC、事务 | test_attempts.py的8用户并发、恢复、匿名和重复测试 |
++| R10 | 整卷与单题统计 | statistics API、Statistics.vue | test_multiple_and_average |
++| R11 | 数据保留、为第二阶段延续 | 发布版本、版本字段、源码清单 | test_old_version_after_publish |
++| R12 | 配置、API、规则、测试和报告 | README、docs | 文档检查 |
++| R13 | AI 日志与总结 | ai-usage-log、ai-usage-summary | 真实过程记录 |
++
++## 实现约定
++
++1. 填写前登录，匿名仅隐藏创建者可见的账号身份；数据库保留问卷范围 HMAC 去重标识。
++2. 不允许重复填写时，检查该账号在整份问卷的历史提交，不限于一个版本。使用本次填写绑定版本的重复策略；修改策略不追溯改变旧凭证。
++3. 正式提交使用填写凭证内的 attempt_id 去重。重试返回同一回执，不生成额外答案；凭证有效期 24 小时。
++4. 跳转只向后或 END。多规则按顺序首条匹配；无规则匹配时走默认目标，未设目标则下一题。
++5. 条件引用当前题或先前题；如果该题未到达或没有答案，即使是不等于条件也不满足。
++6. 校验只作用于实际路径；可选题空白保存 null，不贡献该题作答次数和人数。非空可选答案仍执行范围校验。
++7. 回到前题改变路径后，前端清除失效答案；后端独立重算，不信任前端路径。
++8. 发布快照固定题目含义；截止时间和关闭状态属于问卷级即时状态。状态检查发生于提交事务中。
++9. 截止时间必须含时区，数据库使用 UTC；页面按浏览器本地时区显示，当前演示环境为中国标准时间。
++10. 按用户进一步明确的要求，填写过程也保存至attempts，支持同一账号恢复服务端确认的内容；responses只保存正式答卷，未完成内容不计统计。
++
++## 验收顺序
++
++启动 → 登录 demo → 核对初始统计 → 创建自己的问卷 → 配置四种题型与跳转 → 发布 → 使用另一账号填写 → 验证错误提示 → 提交 → 核对统计 → 发布新版本 → 检查旧版本 → 关闭 → 确认拒绝新提交 → 运行自动测试。
+--- 1.0.2/docs/resumable-filling.md
++++ 1.1.0/docs/resumable-filling.md
+@@ -0,0 +1,56 @@
++# 填写自动保存与断点续填 1.1.0
++
++本轮依据用户“每次填写都应该被保存，需要满足填写到一半退出也能恢复”及后续六项明确约定，在1.0.2上扩展，不替换原系统。实施指令为“按最高标准完成”。
++
++## 行为约定
++
++- 同一账号、同一问卷最多一份in_progress草稿，跨发布版本、跨匿名选择共用限制；MongoDB部分唯一索引为survey_id + respondent_key，条件status=in_progress。
++- 开始时选择匿名；恢复只读取已保存选择，不接受恢复页默认值覆盖。第一阶段不提供中途切换，需明确放弃后重新开始。
++- 停顿600ms自动保存，连续输入最长5秒安排一次保存（网络延迟不计入保证时间）；切题、页面隐藏、路由离开及主动退出登录时尝试立即保存。网络请求串行，旧响应不能确认新输入，最新输入被确认才显示已保存。
++- 保存原始输入，允许必答未完成、超范围、数字“-”等中间状态。原始输入不直接参与规则；解析并通过当前题校验的有效值参与路径计算。遇无效题停止路径推导，不因无效值走默认分支。
++- 有效跳转确定被绕过的题目清除；无效前题之后的暂存输入保留，修正后重算。恢复位置优先第一道无效或未完成题，否则采用有效路径中的位置提示。
++- 恢复不依赖24小时旧填写凭证，使用正常登录会话和草稿所有权检查；登录同一账号可跨浏览器、跨设备恢复服务器进度。
++- 新版本发布不改变已有草稿版本。关闭或截止后读取允许，保存、提交拒绝；页面只读，并可展开全部已保存输入。
++- 点击提交后禁止编辑，停止定时保存，等待现有请求及最新修改保存成功，再携带revision提交；提交接口不接收第二份答案。
++- 事务内校验版本、状态、重复策略和完整答案，写入responses并将attempts标为submitted、关联response_id、清空raw_answers。失败整体回滚。已提交重试先返回原回执，不因旧revision误报冲突。
++- 放弃需明确确认，要求revision匹配；标为abandoned并立即清空答案，不能恢复。之后允许新建过程。已提交/放弃后晚到保存不能修改状态或答案。
++- 进行中草稿暂不设置TTL；完成/放弃只保留必要关联元数据。不计入答卷统计，创建者没有读取他人未提交内容的接口。
++
++## 数据与兼容
++
++新增attempts：_id、survey_id、version_id、respondent_key、anonymous、status、raw_answers、current_question_id、revision、created_at、updated_at、schema_version，以及提交后的response_id。raw_answers保存受限的字符串、数字、选项数组或null；不允许任意嵌套对象。单项字符串最多20000码点，题目最多100项，仍受请求体限制。
++
++原五个集合及其校验器不变。启动按既有规则检查旧集合，只创建缺少的attempts及新索引，不改写历史答卷。新增集合不需要对已有业务文档做迁移。显式约束升级流程只处理已存在集合，仍拒绝未知校验器；旧迁移日志可回滚其原有集合，不删除后来新增的草稿集合。
++
++保留旧/public/{share}/start、/responses及/evaluate接口，用于1.0.2客户端兼容；它们仍是旧的一次性提交流程，不提供退出恢复。新填写页只使用attempts接口，正式提交答案唯一来自服务器草稿。升级前已在旧页面输入但未提交的内容从未保存，无法事后恢复；请先处理旧页面输入再刷新。
++
++## 接口
++
++| 方法 | 地址 | 输入和返回 |
++| --- | --- | --- |
++| GET | /api/public/{share}/attempt | 当前账号进行中草稿；无草稿返回null；关闭后仍可读取 |
++| POST | /api/public/{share}/attempt | {anonymous:false}；创建或返回已有草稿，已有匿名选择保持 |
++| GET | /api/attempts/{id} | 本人草稿、原版本定义、原始答案、路径、错误、恢复位置和只读状态 |
++| PUT | /api/attempts/{id} | {revision:1,answers:{q1:"部分输入"},current_question_id:"q1"}；返回新revision及保存结果 |
++| POST | /api/attempts/{id}/abandon | {revision:2}；立即清空答案并结束过程 |
++| POST | /api/attempts/{id}/submit | {revision:2}；仅从数据库草稿生成正式答卷，返回原有回执格式 |
++
++不返回respondent_key或直接用户ID。未登录401，他人草稿404，结构错误422，版本/状态/并发冲突409。保存失败保留本页输入；冲突暂停自动保存，重新加载前确认放弃未同步修改，避免静默覆盖。
++
++## 登录与退出
++
++登录过期显示独立提示和原页登录表单，只允许当前账号重新认证；原输入保留，认证后继续同步。保存成功前主动退出登录会等待；失败则由用户明确决定是否放弃未同步部分。页面不使用localStorage、sessionStorage或其他持久答案缓存。
++
++## 保证范围
++
++服务器确认保存的内容能够恢复。突然断电、断网或强制关闭前尚未同步的最后输入不保证恢复；beforeunload提醒和页面隐藏保存只是补充，不是可靠交付保证。本轮按确认方案优先完成服务器恢复，不引入本地持久缓存。问卷级事务适合课程规模，未做大规模性能承诺。
++
++## 验证
++
++后端97项、前端普通单元16项、组件/路由交互43项，共156项通过。新增后端test_attempts.py包含16项，新增组件attempt.spec.ts包含16项。8个独立账号同步提交混合路径，得到8份/8人、工具题4次、年龄平均23.5，答案与账号隔离。另验证5次同时开始只有一份草稿、事务插入答卷后故障回滚、旧版本恢复、登录/权限、晚到保存、非法输入、统计排除草稿。
++
++组件测试真实挂载Vue和内存路由，网络延迟与故障用受控Promise模拟；浏览器与真实数据库验收另记录在artifacts/resume-browser-check.json及截图中。原有功能回归全部保留，旧基线压缩包不覆盖。
++
++实际浏览器已完成关闭再开、恢复“-”、继续输入7并提交，MongoDB确认原文字及数值保存、仅1份正式匿名答卷、草稿答案清空。验收不修改原问卷。
++
++交付复核：将后端和数据库定义复制到不含.env、业务数据库的独立目录，确认导入来源为该目录，复用本机已安装依赖执行97项后端测试，全部通过。结果见artifacts/delivery-tests.xml和delivery-check.json；这是独立源码目录复核，不宣称已在全新电脑安装验证。
+--- 1.0.2/docs/resume-test-cases.md
++++ 1.1.0/docs/resume-test-cases.md
+@@ -0,0 +1,44 @@
++# 自动保存与恢复测试用例
++
++## 环境和执行
++
++Windows、Python3.12、MongoDB单节点survey-rs副本集、FastAPI TestClient、Vue3和Vitest/jsdom。后端测试使用本机27019端口、随机survey_lab_test_*数据库，只清理本次测试库，不清空业务库。前端接口延迟/失败使用可控Promise，浏览器实测另列。
++
++在项目根目录执行`.\.runtime\Scripts\python.exe -m pytest backend/tests -q --junitxml=artifacts/test-results.xml`；前端目录执行`pnpm test`和`pnpm run build`。只运行本轮后端用例可指定backend/tests/test_attempts.py。启动、安装和副本集要求见README。
++
++## 公共数据
++
++自动测试每项新建独立问卷和账号。q1必答单选student/worker，worker跳过q2；q2必答多选a/b/c，恰好2项；q3必答数字0～120整数；q4可选文本，非空时2～20码点。允许匿名、默认禁止重复。自动用例实际输出由断言和JUnit记录，以下不是未执行的预期清单。
++
++## 后端实际用例
++
++| 编号与测试函数 | 步骤和输入 | 预期输出 | 实际输出与结果 |
++| --- | --- | --- | --- |
++| A01 partial_raw_input_resume_across_login_and_device | 创建匿名草稿；PUT q1=worker、q3="-"、q4="输入尚未完成"，位置q4；退出后在新客户端用同账号登录并GET | 保存200，原始“-”可恢复，位置约束q3，保留匿名；完整提交422 | 与预期一致，通过；无正式答卷 |
++| A02 revision_conflict_does_not_overwrite | revision1保存年龄22；再用revision1保存和提交 | 首次新revision2；后两次409，年龄不被覆盖 | 与预期一致，通过 |
++| A03 parallel_begin_has_one_active_attempt | 5个线程经屏障同时开始；另直接插入相同唯一键草稿 | 返回相同草稿ID，仅1份进行中；重复插入拒绝 | 与预期一致，通过 |
++| A04 skip_cleanup_and_recover_valid_position | student路径保存q2=a/b、q3=20；改worker并提示位置q2；再改student | worker清除q2，位置在有效路径；改回student停在缺失q2 | 与预期一致，通过 |
++| A05/A06 read_only_restore_but_no_save_submit | 保存worker/20，分别关闭问卷和设置过去截止时间；GET、PUT、submit | GET200且只读、答案保留；写入和提交409 | 两个参数场景均通过 |
++| A07 pinned_version_and_anonymity_atomic_idempotent_submit | 匿名v1保存0；发布数字最小100的v2；3线程提交v1，再用revision1重试 | 仍按v1成功，仅一份回执；正式记录无user_id；草稿答案清空 | 与预期一致，通过；晚到保存409 |
++| A08 abandon_clears_answers_rejects_late_save_and_allows_new | 保存后先用旧revision放弃，再用正确revision放弃；晚到保存/提交；重新开始 | 旧revision409，正确放弃200；答案清空，旧写入409，新ID不同 | 与预期一致，通过 |
++| A09 drafts_not_in_statistics_and_account_isolation | 保存未提交草稿，创建者查统计；另一账号尝试GET/PUT/提交/放弃 | 统计0份/0人；他人操作全部404 | 与预期一致，通过 |
++| A10～A13 bad_raw_structure_no_partial_write | 分别保存未知题、嵌套对象、布尔数字、20001字符 | 全部422，revision仍为1，无部分更新 | 四个参数场景均通过 |
++| A14 direct_database_schema_rejects_malformed_attempt | 直接MongoDB插入status=broken | schema拒绝 | WriteError，通过 |
++| A15 submit_transaction_rolls_back_response_on_failure | 合法草稿提交；在写responses后、更新attempts时注入异常 | 整个事务回滚；0份答卷，草稿仍进行中 | 与预期一致，通过 |
++| A16 eight_users_parallel_mixed_paths_and_statistics | 8个独立账号，偶数worker匿名、奇数student实名；年龄20～27、各自文本，经屏障并发提交 | 8份/8人；q2作答4次；年龄均值23.5；路径和文本不串号 | 全部200，数据库和统计均符合，通过 |
++
++函数名前均带test_；完整实现位于backend/tests/test_attempts.py。部分用例同时覆盖多个断言，不把断言数量冒充测试数量。新增后端共16项，原81项保留，合计97项。
++
++## 前端组件与路由实际用例
++
++frontend/tests/components/attempt.spec.ts新增16项：停顿600ms保存、连续输入5秒触发、旧响应不确认新输入并串行补存、重复flush共用请求、网络失败保留与重试、409暂停及取消重载、401后同账号原页重登录保存、保存不抢前题、只读不保存、恢复选择及匿名固定、数字“-”与“1.”原样输入、提交等待保存且仅携带revision、主动退出失败确认、截止后全部输入只读、真实路由离开失败取消及成功保存、无效输入不参与跳转且不误删暂存答案。全部通过。原27项保留，组件总43项；普通单元16项，共156项测试。
++
++## 实际浏览器验收
++
++独立创建“断点续填验收（自动测试数据）”问卷，2题：必答文本最多100字符、必答数字0～10整数。匿名开始，输入“这是填到一半保存的内容😀”，切题，数字输入“-”；看到已保存后关闭页签。在新页签重新进入同一链接，出现“继续填写”，恢复至数字题，原始“-”与匿名v1均保留。随后改为7提交，显示成功回执。数据库复核见artifacts/resume-browser-check.json，截图见artifacts/screenshots/resume-restored.jpg。此独立验收问卷有一份正式匿名测试答卷，不修改原问卷。
++
++## 验证限制
++
++多设备恢复通过两个独立HTTP客户端重新登录验证；浏览器验收实际关闭再开页签。未宣称使用多台物理设备或在浏览器模拟断网。服务器已确认内容可恢复；没有本地持久缓存，突然断电前未同步内容不保证恢复。8用户是正确性验证，不是吞吐压力测试。
++
++交付复核：将后端和数据库定义复制到不含.env、业务数据库的独立目录，确认导入来源为该目录，复用本机已安装依赖执行97项后端测试，全部通过。结果见artifacts/delivery-tests.xml和delivery-check.json；这是独立源码目录复核，不宣称已在全新电脑安装验证。
+--- 1.0.2/docs/rules-and-validation.md
++++ 1.1.0/docs/rules-and-validation.md
+@@ -1,61 +1,65 @@
+-# 规则执行与校验设计
+-
+-## 数据与程序的边界
+-
+-问卷中保存题目、选项、限制和条件树。程序提供有限运算符及题型处理能力，不为某个 survey_id 或题号编写特殊分支，不使用 eval 执行配置。
+-
+-## 答案结构
+-
+-| 题型 | 答案 | 校验 |
+-| --- | --- | --- |
+-| single_choice | 选项 ID 字符串 | 必答、选项存在 |
+-| multiple_choice | 不重复的选项 ID 数组 | 选项存在、最少与最多数量 |
+-| text | 字符串 | 去除首尾空白后检查字符数 |
+-| number | JSON 数值 | 有限值、绝对值≤10¹⁵、范围、整数 |
+-
+-多选固定两项表示 min_choices=2 且 max_choices=2。可选题未回答允许跳过；填写非空内容后仍必须满足配置。布尔值不是合法数字。文本长度按 Unicode 码点计算，组合字形可能包含多个码点。
+-
+-## 条件语言
+-
+-叶子条件：
+-
+-```json
+-{"question_id":"q_age","operator":"gte","value":18}
+-```
+-
+-组合条件：
+-
+-```json
+-{"all":[{"question_id":"q_age","operator":"gte","value":18},{"any":[{"question_id":"q_role","operator":"eq","value":"student"},{"question_id":"q_tools","operator":"contains_all","value":["mongo","python"]}]}]}
+-```
+-
+-支持单选 eq/ne；多选 contains_any/contains_all/set_equals；数字 eq/ne/gt/gte/lt/lte/between。between 两端均包含。all 为全部满足，any 为任一满足。嵌套深度最多 5，每组最多 20 项，每题最多 20 条跳转。
+-
+-规则是 `{condition,target}` 的有序数组，首条满足即生效。target 为后续题目 ID 或 END；default_target=null 表示顺序下一题。不能引用未来题目，不存在或跳过的答案视为条件不满足。
+-
+-## 配置检查
+-
+-保存草稿检查基础请求结构和统一数值安全边界，允许尚未完成的业务配置。所有数值在转换或入库之前限制为有限值且绝对值不超过 10¹⁵；极端整数不会先传入 math.isfinite。发布时检查：题目数量、ID 唯一、标题选项非空、题型存在、选项 ID 唯一、校验字段可识别、上下界合法且必答题存在合法答案（必答多选至少可选一项、必答整数范围内至少有一个整数、必答文本至少可输入一个字符）、条件操作符匹配、条件引用有效、目标存在且向后。
+-
+-调换题目顺序或删除题目可能使原引用不再合法，发布时拒绝，并提示创建者修正规则。系统不静默猜测如何修复业务含义。
+-
+-## 提交路径计算
+-
+-1. 从第一题进入，建立空的规范化答案和路径。
+-2. 对到达题目检查答案；空可选题记为 null。
+-3. 使用已经到达题目的答案判断条件，决定下一题。
+-4. 走到 END 或问卷末尾结束。
+-5. 有校验错误则不保存，并返回题目 ID 对应错误。
+-6. 没有错误则仅保存有效路径及其答案。未知题目 ID 直接拒绝；有效题目但本次未到达的旧答案丢弃。
+-
+-前端使用相同的公开规则语义提供即时交互，后端不信任前端计算结果。测试分别验证路径变化和后端最终拒绝能力。
+-
+-## 统计语义
+-
+-只统计正式保存的数据。整卷以记录数计算提交份数，以 respondent_key 去重计算填写账号数。单题只统计有效非空答案，分别返回作答次数和去重作答人数；跳过题目不计入。每个选项也返回次数及去重人数。
+-
+-默认百分比分母为该题有效作答次数；切换人数后，分子为选项去重人数、分母为该题去重人数。多选各项比例可能超过 100%；允许重复填写时，同一账号可能先后选择不同单选项，因此单选各项去重人数也可能重叠。数字平均值按有效答案计算，不把跳过或空白当零，不改成每人一票的平均值。文本和数字原始答案分页显示。
+-
+-人数准确含义为去重账号数，不是可证明的自然人数；匿名与实名使用相同问卷范围 HMAC 标识，统计接口只输出聚合数量，不返回标识。去重始终在所选版本和时间范围内执行。
+-
+-匿名对创建者隐藏身份。发布快照决定题目与选项含义；不同版本不默认合并。日期筛选作用于提交时间，含起止边界。
++# 规则执行与校验设计
++
++## 数据与程序的边界
++
++问卷中保存题目、选项、限制和条件树。程序提供有限运算符及题型处理能力，不为某个 survey_id 或题号编写特殊分支，不使用 eval 执行配置。
++
++## 答案结构
++
++| 题型 | 答案 | 校验 |
++| --- | --- | --- |
++| single_choice | 选项 ID 字符串 | 必答、选项存在 |
++| multiple_choice | 不重复的选项 ID 数组 | 选项存在、最少与最多数量 |
++| text | 字符串 | 去除首尾空白后检查字符数 |
++| number | JSON 数值 | 有限值、绝对值≤10¹⁵、范围、整数 |
++
++多选固定两项表示 min_choices=2 且 max_choices=2。可选题未回答允许跳过；填写非空内容后仍必须满足配置。布尔值不是合法数字。文本长度按 Unicode 码点计算，组合字形可能包含多个码点。
++
++## 条件语言
++
++叶子条件：
++
++```json
++{"question_id":"q_age","operator":"gte","value":18}
++```
++
++组合条件：
++
++```json
++{"all":[{"question_id":"q_age","operator":"gte","value":18},{"any":[{"question_id":"q_role","operator":"eq","value":"student"},{"question_id":"q_tools","operator":"contains_all","value":["mongo","python"]}]}]}
++```
++
++支持单选 eq/ne；多选 contains_any/contains_all/set_equals；数字 eq/ne/gt/gte/lt/lte/between。between 两端均包含。all 为全部满足，any 为任一满足。嵌套深度最多 5，每组最多 20 项，每题最多 20 条跳转。
++
++规则是 `{condition,target}` 的有序数组，首条满足即生效。target 为后续题目 ID 或 END；default_target=null 表示顺序下一题。不能引用未来题目，不存在或跳过的答案视为条件不满足。
++
++## 配置检查
++
++保存草稿检查基础请求结构和统一数值安全边界，允许尚未完成的业务配置。所有数值在转换或入库之前限制为有限值且绝对值不超过 10¹⁵；极端整数不会先传入 math.isfinite。发布时检查：题目数量、ID 唯一、标题选项非空、题型存在、选项 ID 唯一、校验字段可识别、上下界合法且必答题存在合法答案（必答多选至少可选一项、必答整数范围内至少有一个整数、必答文本至少可输入一个字符）、条件操作符匹配、条件引用有效、目标存在且向后。
++
++调换题目顺序或删除题目可能使原引用不再合法，发布时拒绝，并提示创建者修正规则。系统不静默猜测如何修复业务含义。
++
++## 提交路径计算
++
++1. 从第一题进入，建立空的规范化答案和路径。
++2. 对到达题目检查答案；空可选题记为 null。
++3. 使用已经到达题目的答案判断条件，决定下一题。
++4. 走到 END 或问卷末尾结束。
++5. 有校验错误则不保存，并返回题目 ID 对应错误。
++6. 没有错误则仅保存有效路径及其答案。未知题目 ID 直接拒绝；有效题目但本次未到达的旧答案丢弃。
++
++前端使用相同的公开规则语义提供即时交互，后端不信任前端计算结果。测试分别验证路径变化和后端最终拒绝能力。
++
++## 统计语义
++
++只统计正式保存的数据。整卷以记录数计算提交份数，以 respondent_key 去重计算填写账号数。单题只统计有效非空答案，分别返回作答次数和去重作答人数；跳过题目不计入。每个选项也返回次数及去重人数。
++
++默认百分比分母为该题有效作答次数；切换人数后，分子为选项去重人数、分母为该题去重人数。多选各项比例可能超过 100%；允许重复填写时，同一账号可能先后选择不同单选项，因此单选各项去重人数也可能重叠。数字平均值按有效答案计算，不把跳过或空白当零，不改成每人一票的平均值。文本和数字原始答案分页显示。
++
++人数准确含义为去重账号数，不是可证明的自然人数；匿名与实名使用相同问卷范围 HMAC 标识，统计接口只输出聚合数量，不返回标识。去重始终在所选版本和时间范围内执行。
++
++匿名对创建者隐藏身份。发布快照决定题目与选项含义；不同版本不默认合并。日期筛选作用于提交时间，含起止边界。
++
++## 1.1.0 自动保存与恢复增量
++
++填写页现采用独立attempts流程，草稿允许不完整，服务器约束路径和恢复位置，正式提交只携带revision并从草稿读取答案。接口清单、数据约束、登录恢复、只读恢复及兼容规则见[续填说明](resumable-filling.md)。本轮未改变原五个集合约束；新增集合初始化与已有集合显式升级分开。
+--- 1.0.2/docs/testing.md
++++ 1.1.0/docs/testing.md
+@@ -1,74 +1,80 @@
+-# 第一阶段测试说明
+-
+-## 当前 1.0.2 验收
+-
+-后端81项、前端普通单元16项、Vue组件/路由交互27项，合计124项通过，类型检查与生产构建通过。后文60项和90项均为历史版本记录，不是当前总数。
+-
+-组件测试运行 `cd frontend; pnpm run test:components`，真实挂载Editor、RoutingEditor和TextInput，使用内存路由与可控Promise复现慢请求。JUnit为artifacts/component-tests.xml，控制台记录为component-tests.txt；普通单元与组件可统一运行 `pnpm test`。
+-
+-覆盖保存响应不覆盖新输入、关闭前保存/取消/失败、保存期间新增输入中止关闭或发布、关闭/发布响应保留新输入、截止时间单独提醒与保存反馈、发布失败保留时间、成功发布后清除本次标记、原时间秒级精度、非法JSON不应用、损坏规则可恢复、表情/粘贴/输入法组合和字符计数。
+-
+-## 测试环境与方法
+-
+-Windows、Python 3.12、MongoDB 8.3.11 单节点 survey-rs 副本集、FastAPI TestClient、pytest。前端执行 TypeScript 类型检查与 Vite 生产构建。集成测试连接真实 MongoDB，不用内存模拟库代替事务、索引或聚合。
+-
+-执行：项目根目录运行 scripts/run-tests.ps1。测试为每次运行创建随机 survey_lab_test_* 数据库，结束时仅清理此次生成的测试库。业务库 survey_lab 不会被测试清空。
+-
+-## 实际执行结果
+-
+-第一轮：51 通过、1 失败。失败为幂等回执时间精度差异，已修复为 BSON 毫秒精度。修复后：52 项全部通过。初版 JUnit 原始记录保存在原第一阶段包中，修订结果见当前 artifacts/test-results.xml。测试依赖产生一条 Starlette TestClient 关于未来 HTTP 客户端接口的弃用提示，不影响本轮测试结果。
+-
+-前端类型检查与生产构建通过。依赖安装明确允许 esbuild 必要构建脚本；移除了未使用的图标依赖。
+-
+-补充 8 项前端规则测试，全部通过，覆盖分支路径、失效答案隔离、数值边界、必答与可选、多选数量、组合条件、空答案和 Unicode 码点长度。执行 `cd frontend; pnpm test`，记录见 artifacts/frontend-tests.txt。后端 52 项与前端 8 项合计 60 项测试。
+-
+-## 主要测试用例
+-
+-| 用例 | 步骤与输入 | 预期与实际结果 |
+-| --- | --- | --- |
+-| 注册登录 | 注册随机用户，大小写变体重复注册，错误密码，再登录退出 | 唯一性生效；错误密码 401；退出后无会话，已通过 |
+-| 权限 | 用其他账号读取问卷、版本、统计、答案并尝试关闭 | 404，列表不含他人问卷，已通过 |
+-| 创建发布 | 创建、保存完整四题配置、发布 | 版本生成，状态和版本指针一致，已通过 |
+-| 草稿冲突 | 两次使用同一 revision 保存 | 首次成功，第二次 409，已通过 |
+-| 数字校验 | 0、120、-1、121、18.5、true、字符串、null | 边界合法，其余按约定拒绝，已通过 |
+-| 多选校验 | 两个不同合法选项、一个、三个、重复、未知选项 | 仅配置允许的组合通过，已通过 |
+-| 文本校验 | 空可选题、首尾空白、长度不足 | 空为 null，去空白后校验，已通过 |
+-| 跳转 | 身份选 worker，附带已跳过 q2 答案 | 路径为 q1/q3/q4，q2 不保存，已通过 |
+-| 必答路径 | 身份选 student，遗漏 q2 | 422，返回 q2 错误，已通过 |
+-| 条件 | 比较、区间边界、集合关系、all/any、空答案 | 与既定语义一致，已通过 |
+-| 非法发布 | 回跳、无效目标、未来引用、重复 ID、上下界冲突 | 发布或领域检查拒绝，已通过 |
+-| 非法提交 | 超范围答案、未知题目 | 422，不写入答案，已通过 |
+-| 匿名 | 匿名提交并读取填空内容 | 不保存 user_id，不返回内部标识，已通过 |
+-| 凭证 | 篡改 token、换账号使用 | 401/403，已通过 |
+-| 幂等 | 同 token 重试、三请求并发 | 一个记录、同一回执，已通过 |
+-| 禁止重复 | 两个不同 token 同账号并发提交 | 一次成功一次 409，已通过 |
+-| 允许重复 | 两次开始填写分别提交 | 两份记录，已通过 |
+-| 关闭截止 | 取得 token 后关闭或设置过期 | 拒绝提交，已通过 |
+-| 数值统计 | 两份数值 0 与 20 | 平均值 10，已通过 |
+-| 多选统计 | a/b 与 b/c | 次数 1/2/1，已通过 |
+-| 版本兼容 | v1 开始，修改题目发布 v2，再提交 v1 | v1 收到答案且标题不变，v2 空，已通过 |
+-| 时间与分页 | 未来时间筛选、反向区间、第 2 页空结果 | 正确过滤和返回，已通过 |
+-| 数据约束 | 直接写不含必需字段的 response | MongoDB 拒绝，已通过 |
+-| 扩展入口 | 临时注册继承数字行为的评分处理器 | 校验与发布检查复用，已通过 |
+-
+-## 页面验收记录
+-
+-已使用应用内浏览器登录 demo，检查工作台、编辑器、规则配置和统计。初始 3 份演示回答平均值为 6，多选次数为 MongoDB=2、Python=1、Java=1、Node.js=0。
+-
+-实际填写时选择匿名、已参加工作，确认跳过多选题；输入 41，界面提示超出 0～40 范围；改为 6 并填写“浏览器流程验收样例。”后成功提交。当前本地演示库因此多了一份明确标记的浏览器验收答案，不能再把总数误认成初始 3 份。
+-
+-窄屏编辑器增加题目选择入口，避免隐藏桌面目录后无法切换题目。
+-
+-## 1.0.1 修订验证
+-
+-本轮全量后端79项通过（原52项加新增27项），前端11项通过（原8项加新增3项），共90项。新增用例集中在 test_review_fixes.py、test_migration.py、frontend/tests/statistics.test.mjs；之前的60项是初版历史结果。
+-
+-修订页面已在独立浏览器页验收：4份有效提交显示为1个去重账号；默认按次数统计时两个单选项各50%，切换按人数后各1人/100%，并显示人数交叉说明。未刷新或覆盖用户原编辑页。页面证据为 artifacts/screenshots/review-statistics-people.jpg。
+-
+-新增验证包括：3种不可回答必答配置发布失败且不产生版本，整数区间存在有效点仍可发布；正负超大整数、无穷和NaN不会触发转换异常；极端草稿或答案返回422且无部分写入；8种错误嵌套文档直接写库被拒绝；4份提交来自2个账号，混合匿名实名正确去重，跳过、空白、版本和时间筛选正确；升级失败自动恢复、预检失败零变更、未知版本约束拒绝覆盖。
+-
+-真实本机旧库副本另执行升级、数据哈希和统计比较、恢复、重试，结果见 artifacts/migration-rehearsal.json，旧业务文档未改写。详细操作与限制见 migration-policy.md。
+-
+-## 验证界限
+-
+-不是高并发压力测试、完整渗透测试或所有浏览器覆盖测试。单节点副本集验证事务语义，不代表具备多节点容灾。本机未安装 Docker，容器构建和启动未实际验证。未宣称覆盖率为 100%。
++# 第一阶段测试说明
++
++## 当前1.1.0验收
++
++后端97项、前端单元16项、组件/路由43项，共156项通过，类型检查与生产构建通过。新增后端16项与组件16项，步骤、输入、输出与结果见resume-test-cases.md。8个不同账号通过真实MongoDB并行提交同一问卷；不是吞吐压力测试。
++
++## 历史 1.0.2 验收
++
++后端81项、前端普通单元16项、Vue组件/路由交互27项，合计124项通过，类型检查与生产构建通过。后文60项和90项均为历史版本记录，不是当前总数。
++
++组件测试运行 `cd frontend; pnpm run test:components`，真实挂载Editor、RoutingEditor和TextInput，使用内存路由与可控Promise复现慢请求。JUnit为artifacts/component-tests.xml，控制台记录为component-tests.txt；普通单元与组件可统一运行 `pnpm test`。
++
++覆盖保存响应不覆盖新输入、关闭前保存/取消/失败、保存期间新增输入中止关闭或发布、关闭/发布响应保留新输入、截止时间单独提醒与保存反馈、发布失败保留时间、成功发布后清除本次标记、原时间秒级精度、非法JSON不应用、损坏规则可恢复、表情/粘贴/输入法组合和字符计数。
++
++## 测试环境与方法
++
++Windows、Python 3.12、MongoDB 8.3.11 单节点 survey-rs 副本集、FastAPI TestClient、pytest。前端执行 TypeScript 类型检查与 Vite 生产构建。集成测试连接真实 MongoDB，不用内存模拟库代替事务、索引或聚合。
++
++执行：项目根目录运行 scripts/run-tests.ps1。测试为每次运行创建随机 survey_lab_test_* 数据库，结束时仅清理此次生成的测试库。业务库 survey_lab 不会被测试清空。
++
++## 实际执行结果
++
++第一轮：51 通过、1 失败。失败为幂等回执时间精度差异，已修复为 BSON 毫秒精度。修复后：52 项全部通过。初版 JUnit 原始记录保存在原第一阶段包中，修订结果见当前 artifacts/test-results.xml。测试依赖产生一条 Starlette TestClient 关于未来 HTTP 客户端接口的弃用提示，不影响本轮测试结果。
++
++前端类型检查与生产构建通过。依赖安装明确允许 esbuild 必要构建脚本；移除了未使用的图标依赖。
++
++补充 8 项前端规则测试，全部通过，覆盖分支路径、失效答案隔离、数值边界、必答与可选、多选数量、组合条件、空答案和 Unicode 码点长度。执行 `cd frontend; pnpm test`，记录见 artifacts/frontend-tests.txt。后端 52 项与前端 8 项合计 60 项测试。
++
++## 主要测试用例
++
++| 用例 | 步骤与输入 | 预期与实际结果 |
++| --- | --- | --- |
++| 注册登录 | 注册随机用户，大小写变体重复注册，错误密码，再登录退出 | 唯一性生效；错误密码 401；退出后无会话，已通过 |
++| 权限 | 用其他账号读取问卷、版本、统计、答案并尝试关闭 | 404，列表不含他人问卷，已通过 |
++| 创建发布 | 创建、保存完整四题配置、发布 | 版本生成，状态和版本指针一致，已通过 |
++| 草稿冲突 | 两次使用同一 revision 保存 | 首次成功，第二次 409，已通过 |
++| 数字校验 | 0、120、-1、121、18.5、true、字符串、null | 边界合法，其余按约定拒绝，已通过 |
++| 多选校验 | 两个不同合法选项、一个、三个、重复、未知选项 | 仅配置允许的组合通过，已通过 |
++| 文本校验 | 空可选题、首尾空白、长度不足 | 空为 null，去空白后校验，已通过 |
++| 跳转 | 身份选 worker，附带已跳过 q2 答案 | 路径为 q1/q3/q4，q2 不保存，已通过 |
++| 必答路径 | 身份选 student，遗漏 q2 | 422，返回 q2 错误，已通过 |
++| 条件 | 比较、区间边界、集合关系、all/any、空答案 | 与既定语义一致，已通过 |
++| 非法发布 | 回跳、无效目标、未来引用、重复 ID、上下界冲突 | 发布或领域检查拒绝，已通过 |
++| 非法提交 | 超范围答案、未知题目 | 422，不写入答案，已通过 |
++| 匿名 | 匿名提交并读取填空内容 | 不保存 user_id，不返回内部标识，已通过 |
++| 凭证 | 篡改 token、换账号使用 | 401/403，已通过 |
++| 幂等 | 同 token 重试、三请求并发 | 一个记录、同一回执，已通过 |
++| 禁止重复 | 两个不同 token 同账号并发提交 | 一次成功一次 409，已通过 |
++| 允许重复 | 两次开始填写分别提交 | 两份记录，已通过 |
++| 关闭截止 | 取得 token 后关闭或设置过期 | 拒绝提交，已通过 |
++| 数值统计 | 两份数值 0 与 20 | 平均值 10，已通过 |
++| 多选统计 | a/b 与 b/c | 次数 1/2/1，已通过 |
++| 版本兼容 | v1 开始，修改题目发布 v2，再提交 v1 | v1 收到答案且标题不变，v2 空，已通过 |
++| 时间与分页 | 未来时间筛选、反向区间、第 2 页空结果 | 正确过滤和返回，已通过 |
++| 数据约束 | 直接写不含必需字段的 response | MongoDB 拒绝，已通过 |
++| 扩展入口 | 临时注册继承数字行为的评分处理器 | 校验与发布检查复用，已通过 |
++
++## 页面验收记录
++
++已使用应用内浏览器登录 demo，检查工作台、编辑器、规则配置和统计。初始 3 份演示回答平均值为 6，多选次数为 MongoDB=2、Python=1、Java=1、Node.js=0。
++
++实际填写时选择匿名、已参加工作，确认跳过多选题；输入 41，界面提示超出 0～40 范围；改为 6 并填写“浏览器流程验收样例。”后成功提交。当前本地演示库因此多了一份明确标记的浏览器验收答案，不能再把总数误认成初始 3 份。
++
++窄屏编辑器增加题目选择入口，避免隐藏桌面目录后无法切换题目。
++
++## 1.0.1 修订验证
++
++本轮全量后端79项通过（原52项加新增27项），前端11项通过（原8项加新增3项），共90项。新增用例集中在 test_review_fixes.py、test_migration.py、frontend/tests/statistics.test.mjs；之前的60项是初版历史结果。
++
++修订页面已在独立浏览器页验收：4份有效提交显示为1个去重账号；默认按次数统计时两个单选项各50%，切换按人数后各1人/100%，并显示人数交叉说明。未刷新或覆盖用户原编辑页。页面证据为 artifacts/screenshots/review-statistics-people.jpg。
++
++新增验证包括：3种不可回答必答配置发布失败且不产生版本，整数区间存在有效点仍可发布；正负超大整数、无穷和NaN不会触发转换异常；极端草稿或答案返回422且无部分写入；8种错误嵌套文档直接写库被拒绝；4份提交来自2个账号，混合匿名实名正确去重，跳过、空白、版本和时间筛选正确；升级失败自动恢复、预检失败零变更、未知版本约束拒绝覆盖。
++
++真实本机旧库副本另执行升级、数据哈希和统计比较、恢复、重试，结果见 artifacts/migration-rehearsal.json，旧业务文档未改写。详细操作与限制见 migration-policy.md。
++
++## 验证界限
++
++不是高并发压力测试、完整渗透测试或所有浏览器覆盖测试。单节点副本集验证事务语义，不代表具备多节点容灾。本机未安装 Docker，容器构建和启动未实际验证。未宣称覆盖率为 100%。
++
++交付复核：将后端和数据库定义复制到不含.env、业务数据库的独立目录，确认导入来源为该目录，复用本机已安装依赖执行97项后端测试，全部通过。结果见artifacts/delivery-tests.xml和delivery-check.json；这是独立源码目录复核，不宣称已在全新电脑安装验证。
+--- 1.0.2/frontend/package.json
++++ 1.1.0/frontend/package.json
+@@ -1,30 +1,30 @@
+-{
+-  "name": "survey-lab-web",
+-  "private": true,
+-  "version": "1.0.2",
+-  "type": "module",
+-  "scripts": {
+-    "dev": "vite --host 127.0.0.1",
+-    "build": "vue-tsc --noEmit && vite build",
+-    "test": "pnpm run test:unit && pnpm run test:components",
+-    "preview": "vite preview --host 127.0.0.1",
+-    "format": "prettier --write src",
+-    "test:unit": "node --experimental-strip-types --test tests/*.test.mjs",
+-    "test:components": "vitest run --reporter=default --reporter=junit --outputFile=../artifacts/component-tests.xml"
+-  },
+-  "dependencies": {
+-    "vue": "^3.5.0",
+-    "vue-router": "^4.5.0"
+-  },
+-  "devDependencies": {
+-    "@types/node": "^22.0.0",
+-    "@vitejs/plugin-vue": "^5.2.0",
+-    "@vue/test-utils": "~2.4.11",
+-    "jsdom": "^26.1.0",
+-    "prettier": "~3.6.2",
+-    "typescript": "~5.8.0",
+-    "vite": "^6.4.0",
+-    "vitest": "~3.2.7",
+-    "vue-tsc": "^2.2.0"
+-  }
+-}
++{
++  "name": "survey-lab-web",
++  "private": true,
++  "version": "1.1.0",
++  "type": "module",
++  "scripts": {
++    "dev": "vite --host 127.0.0.1",
++    "build": "vue-tsc --noEmit && vite build",
++    "test": "pnpm run test:unit && pnpm run test:components",
++    "preview": "vite preview --host 127.0.0.1",
++    "format": "prettier --write src",
++    "test:unit": "node --experimental-strip-types --test tests/*.test.mjs",
++    "test:components": "vitest run --reporter=default --reporter=junit --outputFile=../artifacts/component-tests.xml"
++  },
++  "dependencies": {
++    "vue": "^3.5.0",
++    "vue-router": "^4.5.0"
++  },
++  "devDependencies": {
++    "@types/node": "^22.0.0",
++    "@vitejs/plugin-vue": "^5.2.0",
++    "@vue/test-utils": "~2.4.11",
++    "jsdom": "^26.1.0",
++    "prettier": "~3.6.2",
++    "typescript": "~5.8.0",
++    "vite": "^6.4.0",
++    "vitest": "~3.2.7",
++    "vue-tsc": "^2.2.0"
++  }
++}
+--- 1.0.2/frontend/src/App.vue
++++ 1.1.0/frontend/src/App.vue
+@@ -2,11 +2,13 @@
+ import { ref } from "vue";
+ import { useRouter, useRoute } from "vue-router";
+ import { auth, api } from "./api";
++import { pendingWork } from "./pending-work";
+ const router = useRouter(),
+   route = useRoute(),
+   error = ref("");
+ async function logout() {
+   try {
++    if (pendingWork.beforeLogout && !(await pendingWork.beforeLogout())) return;
+     await api("/auth/logout", "POST");
+     auth.user = null;
+     await router.push("/login");
+--- 1.0.2/frontend/src/attempt-progress.ts
++++ 1.1.0/frontend/src/attempt-progress.ts
+@@ -0,0 +1,52 @@
++import type { Definition, Question } from "./types";
++import { matches, validate } from "./rules";
++import { trimText } from "./text.ts";
++
++export function answerValue(q: Question, raw: any): any {
++  if (q.type !== "number" || typeof raw !== "string") return raw;
++  const text = trimText(raw);
++  if (!text) return null;
++  return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(text)
++    ? Number(text)
++    : raw;
++}
++
++export function draftPath(d: Definition, raw: Record<string, any>): Question[] {
++  const result: Question[] = [],
++    effective: Record<string, any> = {};
++  let i = 0;
++  while (
++    i >= 0 &&
++    i < d.questions.length &&
++    result.length < d.questions.length
++  ) {
++    const q = d.questions[i];
++    result.push(q);
++    const value = answerValue(q, raw[q.id]);
++    if (validate(q, value)) break;
++    effective[q.id] = typeof value === "string" ? trimText(value) : value;
++    const target =
++      q.routing.rules.find((r) => matches(r.condition, effective))?.target ??
++      q.routing.default_target;
++    if (target === "END") break;
++    i = target ? d.questions.findIndex((x) => x.id === target) : i + 1;
++  }
++  return result;
++}
++
++export function pruneSkipped(d: Definition, raw: Record<string, any>) {
++  const path = draftPath(d, raw);
++  const positions = new Map(d.questions.map((q, i) => [q.id, i]));
++  for (let i = 1; i < path.length; i++) {
++    const a = positions.get(path[i - 1].id)!,
++      b = positions.get(path[i].id)!;
++    for (let j = a + 1; j < b; j++) delete raw[d.questions[j].id];
++  }
++  const last = path.at(-1);
++  if (last && !validate(last, answerValue(last, raw[last.id]))) {
++    // 若有效路径提前结束，末题以后的内容确定失效。
++    const lastIndex = positions.get(last.id)!;
++    for (let j = lastIndex + 1; j < d.questions.length; j++)
++      delete raw[d.questions[j].id];
++  }
++}
+--- 1.0.2/frontend/src/composables/useAttempt.ts
++++ 1.1.0/frontend/src/composables/useAttempt.ts
+@@ -0,0 +1,160 @@
++import { ref, computed, onBeforeUnmount } from "vue";
++import { api, ApiError, auth } from "../api";
++
++export function useAttempt() {
++  const attempt = ref<any>(null),
++    answers = ref<Record<string, any>>({});
++  const currentId = ref<string | null>(null),
++    baseline = ref("");
++  const saving = ref(false),
++    message = ref(""),
++    error = ref("");
++  const paused = ref<"" | "auth" | "conflict" | "closed">("");
++  const snapshot = () =>
++    JSON.stringify({
++      answers: answers.value,
++      current_question_id: currentId.value,
++    });
++  const dirty = computed(
++    () => !!attempt.value && snapshot() !== baseline.value,
++  );
++  let timer: ReturnType<typeof setTimeout> | undefined;
++  let maximum: ReturnType<typeof setTimeout> | undefined;
++  let running: Promise<boolean> | null = null;
++  let alive = true;
++  function cancelTimers() {
++    clearTimeout(timer);
++    clearTimeout(maximum);
++    timer = maximum = undefined;
++  }
++  function restore(doc: any) {
++    cancelTimers();
++    attempt.value = doc;
++    answers.value = JSON.parse(JSON.stringify(doc.answers));
++    currentId.value = doc.current_question_id;
++    baseline.value = snapshot();
++    paused.value = doc.read_only ? "closed" : "";
++    message.value = doc.read_only
++      ? doc.read_only_reason || "本次填写已结束"
++      : "已恢复服务器保存的进度";
++    error.value = "";
++  }
++  function changed() {
++    if (
++      !attempt.value ||
++      attempt.value.read_only ||
++      attempt.value.status !== "in_progress"
++    )
++      return;
++    message.value = "有修改尚未保存";
++    if (paused.value || !alive) return;
++    clearTimeout(timer);
++    timer = setTimeout(() => void flush(), 600);
++    maximum ??= setTimeout(() => void flush(), 5000);
++  }
++  async function drain(): Promise<boolean> {
++    saving.value = true;
++    error.value = "";
++    try {
++      while (dirty.value) {
++        if (paused.value) return false;
++        const sent = snapshot();
++        const response = await api(`/attempts/${attempt.value._id}`, "PUT", {
++          revision: attempt.value.revision,
++          ...JSON.parse(sent),
++        });
++        if (!alive) return true;
++        attempt.value.revision = response.revision;
++        attempt.value.updated_at = response.updated_at;
++        if (snapshot() === sent) {
++          answers.value = response.answers;
++          // 保存不抢走用户正在编辑的题目；下次恢复使用服务器约束的位置。
++          if (!response.path.includes(currentId.value))
++            currentId.value = response.current_question_id;
++          baseline.value = snapshot();
++        } else baseline.value = sent;
++      }
++      message.value = "已保存到服务器";
++      return true;
++    } catch (e: any) {
++      if (e instanceof ApiError) {
++        if (e.status === 401) paused.value = "auth";
++        if (e.status === 409) paused.value = "conflict";
++      }
++      error.value =
++        paused.value === "auth"
++          ? "登录已过期，当前输入仍保留。请在此重新登录后保存。"
++          : e.message;
++      message.value = "保存未完成";
++      return false;
++    } finally {
++      saving.value = false;
++    }
++  }
++  async function flush(): Promise<boolean> {
++    cancelTimers();
++    if (running) return running;
++    if (!dirty.value) return true;
++    if (!attempt.value || paused.value) return false;
++    running = drain();
++    try {
++      return await running;
++    } finally {
++      running = null;
++    }
++  }
++  async function reload() {
++    if (
++      dirty.value &&
++      !confirm("重新加载将替换本页未保存的输入，确认使用服务器草稿？")
++    )
++      return;
++    try {
++      restore(await api(`/attempts/${attempt.value._id}`));
++    } catch (e: any) {
++      error.value = e.message;
++    }
++  }
++  async function reauthenticate(username: string, password: string) {
++    if (
++      username.trim().toLocaleLowerCase() !==
++      auth.user?.username.toLocaleLowerCase()
++    ) {
++      error.value = "请使用当前填写账号重新登录";
++      return false;
++    }
++    try {
++      const user = await api("/auth/login", "POST", { username, password });
++      if (user.id !== auth.user?.id) {
++        error.value = "账号不匹配，未同步当前输入";
++        return false;
++      }
++      auth.user = user;
++      paused.value = "";
++      return await flush();
++    } catch (e: any) {
++      error.value = e.message;
++      return false;
++    }
++  }
++  onBeforeUnmount(() => {
++    alive = false;
++    cancelTimers();
++  });
++  return {
++    attempt,
++    answers,
++    currentId,
++    dirty,
++    saving,
++    paused,
++    message,
++    error,
++    restore,
++    changed,
++    flush,
++    reload,
++    reauthenticate,
++    cancelTimers,
++  };
++}
+--- 1.0.2/frontend/src/pending-work.ts
++++ 1.1.0/frontend/src/pending-work.ts
+@@ -0,0 +1,4 @@
++// 退出登录前由当前填写页完成保存；页面卸载时解除。
++export const pendingWork: { beforeLogout: null | (() => Promise<boolean>) } = {
++  beforeLogout: null,
++};
+--- 1.0.2/frontend/src/question-types/NumberInput.vue
++++ 1.1.0/frontend/src/question-types/NumberInput.vue
+@@ -5,17 +5,13 @@
+ </script>
+ <template>
+   <input
+-    type="number"
++    type="text"
++    inputmode="decimal"
+     :value="modelValue ?? ''"
+     @input="
+-      emit(
+-        'update:modelValue',
+-        ($event.target as HTMLInputElement).value === ''
+-          ? null
+-          : Number(($event.target as HTMLInputElement).value),
+-      )
++      emit('update:modelValue', ($event.target as HTMLInputElement).value)
+     "
+-    :step="question.validation.integer_only ? 1 : 'any'"
++    :aria-label="question.title"
+     placeholder="请输入数字"
+   />
+ </template>
+--- 1.0.2/frontend/src/rules.ts
++++ 1.1.0/frontend/src/rules.ts
+@@ -68,6 +68,16 @@
+     (Array.isArray(value) && !value.length) ||
+     (typeof value === "string" && !trimText(value));
+   if (blank) return q.required ? "此题必须回答" : "";
++  if (q.type === "single_choice" && !q.options.some((o) => o.id === value))
++    return "请选择有效选项";
++  if (
++    q.type === "multiple_choice" &&
++    (!Array.isArray(value) ||
++      new Set(value).size !== value.length ||
++      value.some((x) => !q.options.some((o) => o.id === x)))
++  )
++    return "请选择有效且不重复的选项";
++  if (q.type === "text" && typeof value !== "string") return "请输入文本";
+   const v = q.validation;
+   if (
+     q.type === "multiple_choice" &&
+--- 1.0.2/frontend/src/views/Fill.vue
++++ 1.1.0/frontend/src/views/Fill.vue
+@@ -1,44 +1,101 @@
+ <script setup lang="ts">
+-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
++import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+ import { useRoute, onBeforeRouteLeave } from "vue-router";
+-import { api, ApiError } from "../api";
+-import { type Definition, typeNames, dateLabel } from "../types";
+-import { pathOf, validate } from "../rules";
++import { api, auth, ApiError } from "../api";
++import { typeNames, dateLabel } from "../types";
++import { validate } from "../rules";
++import { draftPath, answerValue, pruneSkipped } from "../attempt-progress";
++import { useAttempt } from "../composables/useAttempt";
++import { pendingWork } from "../pending-work";
+ import QuestionInput from "../components/QuestionInput.vue";
+-const route = useRoute(),
+-  info = ref<any>(null),
+-  attempt = ref<{
+-    token: string;
+-    definition: Definition;
+-    version: number;
+-  } | null>(null),
+-  anonymous = ref(false),
+-  answers = ref<Record<string, any>>({}),
+-  cursor = ref(0),
+-  error = ref(""),
+-  fieldError = ref(""),
++const route = useRoute();
++const {
++  attempt,
++  answers,
++  currentId,
++  dirty,
++  saving,
++  paused,
++  message,
++  error,
++  restore,
++  changed,
++  flush,
++  reload,
++  reauthenticate,
++  cancelTimers,
++} = useAttempt();
++const info = ref<any>(null),
++  resume = ref<any>(null),
++  anonymous = ref(false);
++const fieldError = ref(""),
+   busy = ref(false),
+   receipt = ref<any>(null);
++const loginName = ref(auth.user?.username || ""),
++  loginPassword = ref("");
+ const path = computed(() =>
+-    attempt.value ? pathOf(attempt.value.definition, answers.value) : [],
++  attempt.value ? draftPath(attempt.value.definition, answers.value) : [],
++);
++const cursor = computed(() =>
++  Math.max(
++    0,
++    path.value.findIndex((q) => q.id === currentId.value),
+   ),
+-  current = computed(() => path.value[cursor.value]);
++);
++const current = computed(() => path.value[cursor.value]);
++let departing = false;
++function displayAnswer(q: any, value: any) {
++  const label = (id: any) =>
++    q.options.find((o: any) => o.id === id)?.label || id;
++  return Array.isArray(value)
++    ? value.map(label).join("、")
++    : q.type === "single_choice"
++      ? label(value)
++      : value;
++}
+ async function load() {
++  error.value = "";
+   try {
+-    info.value = await api(`/public/${route.params.share}`);
++    resume.value = await api(`/public/${route.params.share}/attempt`);
++    if (!resume.value) info.value = await api(`/public/${route.params.share}`);
+   } catch (e: any) {
+     error.value = e.message;
++  }
++}
++function continueAttempt() {
++  restore(resume.value);
++  resume.value = null;
++}
++async function restart() {
++  attempt.value = null;
++  receipt.value = null;
++  anonymous.value = false;
++  await load();
++}
++async function discardResume() {
++  if (!confirm("放弃后会立即删除这份草稿的答案，无法恢复。确认放弃？")) return;
++  busy.value = true;
++  try {
++    await api(`/attempts/${resume.value._id}/abandon`, "POST", {
++      revision: resume.value.revision,
++    });
++    resume.value = null;
++    await load();
++  } catch (e: any) {
++    error.value = e.message;
++  } finally {
++    busy.value = false;
+   }
+ }
+ async function start() {
+   busy.value = true;
+   error.value = "";
+   try {
+-    attempt.value = await api(`/public/${route.params.share}/start`, "POST", {
+-      anonymous: anonymous.value,
+-    });
+-    cursor.value = 0;
+-    answers.value = {};
++    restore(
++      await api(`/public/${route.params.share}/attempt`, "POST", {
++        anonymous: anonymous.value,
++      }),
++    );
+     receipt.value = null;
+   } catch (e: any) {
+     error.value = e.message;
+@@ -46,62 +103,108 @@
+     busy.value = false;
+   }
+ }
+-async function change(value: any) {
+-  if (!current.value) return;
++function change(value: any) {
++  if (!current.value || busy.value || attempt.value.read_only) return;
+   answers.value[current.value.id] = value;
+   fieldError.value = "";
+-  await nextTick();
+-  const ids = new Set(path.value.map((q) => q.id));
+-  for (const key of Object.keys(answers.value))
+-    if (!ids.has(key)) delete answers.value[key];
++  // 仅当当前题合法时清理确定失效的旧路径；不因中间输入删除后续暂存内容。
++  pruneSkipped(attempt.value.definition, answers.value);
++  changed();
++}
++async function previous() {
++  if (cursor.value === 0 || busy.value) return;
++  currentId.value = path.value[cursor.value - 1].id;
++  fieldError.value = "";
++  if (!attempt.value.read_only) {
++    changed();
++    await flush();
++  }
+ }
+ async function next() {
+-  if (!current.value) return;
+-  fieldError.value = validate(current.value, answers.value[current.value.id]);
+-  if (fieldError.value) return;
++  if (!current.value || busy.value) return;
++  if (!attempt.value.read_only) {
++    fieldError.value = validate(
++      current.value,
++      answerValue(current.value, answers.value[current.value.id]),
++    );
++    if (fieldError.value) return;
++  }
+   if (cursor.value < path.value.length - 1) {
+-    cursor.value++;
++    currentId.value = path.value[cursor.value + 1].id;
+     fieldError.value = "";
++    if (!attempt.value.read_only) {
++      changed();
++      await flush();
++    }
+     return;
+   }
++  if (attempt.value.read_only) return;
+   busy.value = true;
+   error.value = "";
++  cancelTimers();
+   try {
+-    receipt.value = await api("/responses", "POST", {
+-      token: attempt.value!.token,
+-      answers: answers.value,
++    if (!(await flush())) return;
++    receipt.value = await api(`/attempts/${attempt.value._id}/submit`, "POST", {
++      revision: attempt.value.revision,
+     });
++    attempt.value.status = "submitted";
++    answers.value = {};
++    info.value = { allow_repeat: attempt.value.definition.allow_repeat };
+   } catch (e: any) {
+     error.value = e.message;
+-    if (e instanceof ApiError && e.details && !Array.isArray(e.details)) {
+-      const first = path.value.findIndex((q) => e.details[q.id]);
+-      if (first >= 0) {
+-        cursor.value = first;
+-        fieldError.value = e.details[path.value[first].id];
++    if (e instanceof ApiError && e.status === 401) paused.value = "auth";
++    if (e instanceof ApiError && e.status === 409) paused.value = "conflict";
++    if (e.details) {
++      const first = path.value.find((q) => e.details[q.id]);
++      if (first) {
++        currentId.value = first.id;
++        fieldError.value = e.details[first.id];
+       }
+     }
+   } finally {
+     busy.value = false;
+   }
+ }
++async function loginAgain() {
++  busy.value = true;
++  try {
++    await reauthenticate(loginName.value, loginPassword.value);
++  } finally {
++    loginPassword.value = "";
++    busy.value = false;
++  }
++}
++async function leave() {
++  if (busy.value) return false;
++  if (departing || !attempt.value || receipt.value || attempt.value.read_only)
++    return true;
++  if (await flush()) return true;
++  departing = confirm(
++    "部分输入尚未保存。离开会丢失未同步部分，已保存内容仍可恢复。确认离开？",
++  );
++  return departing;
++}
+ function unload(e: BeforeUnloadEvent) {
+-  if (attempt.value && !receipt.value && Object.keys(answers.value).length) {
++  if (dirty.value && !receipt.value && !attempt.value?.read_only) {
+     e.preventDefault();
+     e.returnValue = "";
+   }
+ }
++function hidden() {
++  if (document.visibilityState === "hidden" && !paused.value) void flush();
++}
+ onMounted(() => {
+   load();
++  pendingWork.beforeLogout = leave;
+   window.addEventListener("beforeunload", unload);
++  document.addEventListener("visibilitychange", hidden);
+ });
+-onBeforeUnmount(() => window.removeEventListener("beforeunload", unload));
+-onBeforeRouteLeave(
+-  () =>
+-    !attempt.value ||
+-    !!receipt.value ||
+-    !Object.keys(answers.value).length ||
+-    confirm("尚未提交，离开会丢失本次回答。确认离开？"),
+-);
++onBeforeUnmount(() => {
++  pendingWork.beforeLogout = null;
++  window.removeEventListener("beforeunload", unload);
++  document.removeEventListener("visibilitychange", hidden);
++});
++onBeforeRouteLeave(leave);
+ </script>
+ <template>
+   <main class="fill-page">
+@@ -119,9 +222,28 @@
+         <span>提交版本 v{{ receipt.version }}</span
+         ><span>{{ dateLabel(receipt.submitted_at) }}</span>
+       </div>
+-      <button class="button primary" v-if="info?.allow_repeat" @click="start">
++      <button class="button primary" v-if="info?.allow_repeat" @click="restart">
+         再填写一次</button
+       ><router-link class="button" to="/">返回工作台</router-link>
++    </section>
++    <section class="fill-card" v-else-if="resume && !attempt">
++      <span class="eyebrow">CONTINUE YOUR RESPONSE</span>
++      <h1>{{ resume.definition.title }}</h1>
++      <p>找到一份未完成填写，保存于 {{ dateLabel(resume.updated_at) }}。</p>
++      <p class="muted">
++        {{ resume.anonymous ? "匿名填写" : "实名填写" }} · v{{
++          resume.version
++        }}，恢复时保留原选择及版本。
++      </p>
++      <p v-if="resume.read_only" class="alert">
++        {{ resume.read_only_reason }}，可查看已保存内容。
++      </p>
++      <button class="button primary" @click="continueAttempt">
++        {{ resume.read_only ? "查看已保存内容" : "继续填写" }}
++      </button>
++      <button class="button" :disabled="busy" @click="discardResume">
++        放弃草稿
++      </button>
+     </section>
+     <section class="fill-card" v-else-if="info && !attempt">
+       <span class="eyebrow">YOU ARE INVITED</span>
+@@ -144,7 +266,7 @@
+       <p class="input-hint">
+         {{
+           info.allow_repeat ? "本问卷允许重复填写。" : "每个账号仅能提交一次。"
+-        }}回答将在最终提交后保存。
++        }}填写过程会自动保存，登录同一账号可继续填写。匿名选择在开始后固定；未提交内容不计入统计。
+       </p>
+       <button class="button primary" :disabled="busy" @click="start">
+         开始填写 →
+@@ -159,35 +281,79 @@
+         </div>
+       </div>
+       <section class="fill-card answering" :key="current.id">
+-        <span class="eyebrow"
+-          >QUESTION {{ String(cursor + 1).padStart(2, "0") }} /
+-          {{ typeNames[current.type] }}</span
++        <div class="attempt-save-status" role="status" aria-live="polite">
++          {{ saving ? "正在保存…" : dirty ? "当前修改尚未保存" : message }}
++          <button
++            class="text-button"
++            v-if="dirty && !paused"
++            :disabled="saving || busy"
++            @click="flush"
++          >
++            立即保存
++          </button>
++        </div>
++        <p v-if="attempt.read_only" class="alert">
++          {{ attempt.read_only_reason }}。已保存内容仅供查看。
++        </p>
++        <details v-if="attempt.read_only">
++          <summary>查看全部已保存输入</summary>
++          <div
++            v-for="q in attempt.definition.questions.filter((q: any) =>
++              Object.hasOwn(answers, q.id),
++            )"
++            :key="q.id"
++          >
++            <strong>{{ q.title }}</strong>
++            <p>{{ displayAnswer(q, answers[q.id]) }}</p>
++          </div>
++        </details>
++        <p v-if="paused === 'conflict'" class="alert">
++          服务器草稿已变化或问卷已关闭，当前输入保留。<button
++            class="text-button"
++            @click="reload"
++          >
++            重新加载草稿
++          </button>
++        </p>
++        <fieldset
++          :disabled="busy || attempt.read_only || paused === 'conflict'"
++          class="answer-fieldset"
+         >
+-        <h1>
+-          {{ current.title }}
+-          <span class="required" v-if="current.required">*</span>
+-        </h1>
+-        <QuestionInput
+-          :question="current"
+-          :model-value="answers[current.id]"
+-          @update:model-value="change"
+-          :error="fieldError"
+-        />
++          <span class="eyebrow"
++            >QUESTION {{ String(cursor + 1).padStart(2, "0") }} /
++            {{ typeNames[current.type] }}</span
++          >
++          <h1>
++            {{ current.title }}
++            <span class="required" v-if="current.required">*</span>
++          </h1>
++          <QuestionInput
++            :question="current"
++            :model-value="answers[current.id]"
++            @update:model-value="change"
++            :error="fieldError"
++          />
++        </fieldset>
+         <div class="fill-navigation">
+           <button
+             class="button"
+             :disabled="cursor === 0 || busy"
+-            @click="
+-              cursor--;
+-              fieldError = '';
+-            "
++            @click="previous()"
+           >
+             ← 上一题</button
+           ><span class="input-hint"
+-            >{{ anonymous ? "匿名填写" : "实名填写" }} · v{{
++            >{{ attempt.anonymous ? "匿名填写" : "实名填写" }} · v{{
+               attempt.version
+             }}</span
+-          ><button class="button primary" :disabled="busy" @click="next">
++          ><button
++            class="button primary"
++            :disabled="
++              busy ||
++              (attempt.read_only && cursor === path.length - 1) ||
++              (!!paused && !attempt.read_only)
++            "
++            @click="next"
++          >
+             {{
+               busy
+                 ? "正在提交…"
+@@ -203,5 +369,35 @@
+       </p></template
+     >
+     <div v-else-if="!error" class="empty-state">正在准备问卷…</div>
++    <section class="fill-card" v-if="paused === 'auth'">
++      <h2>重新登录并保存</h2>
++      <p>
++        保持本页打开，使用 {{ auth.user?.username }} 重新登录，输入不会被清空。
++      </p>
++      <form @submit.prevent="loginAgain">
++        <label>账号<input v-model="loginName" autocomplete="username" /></label>
++        <label
++          >密码<input
++            v-model="loginPassword"
++            type="password"
++            autocomplete="current-password"
++        /></label>
++        <button class="button primary" :disabled="busy">登录并继续保存</button>
++      </form>
++    </section>
+   </main>
+ </template>
++
++<style scoped>
++.answer-fieldset {
++  border: 0;
++  padding: 0;
++  margin: 1rem 0;
++  min-width: 0;
++}
++.attempt-save-status {
++  color: var(--muted, #52665c);
++  font-size: 0.9rem;
++  margin-bottom: 1rem;
++}
++</style>
+--- 1.0.2/frontend/tests/components/attempt.spec.ts
++++ 1.1.0/frontend/tests/components/attempt.spec.ts
+@@ -0,0 +1,337 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { mount, flushPromises, type VueWrapper } from "@vue/test-utils";
++import { defineComponent, h } from "vue";
++import { createRouter, createMemoryHistory, RouterView } from "vue-router";
++import { api, ApiError, auth } from "../../src/api";
++import { useAttempt } from "../../src/composables/useAttempt";
++import { draftPath, pruneSkipped } from "../../src/attempt-progress";
++import Fill from "../../src/views/Fill.vue";
++import NumberInput from "../../src/question-types/NumberInput.vue";
++import { pendingWork } from "../../src/pending-work";
++vi.mock("../../src/api", async (original) => ({
++  ...(await original<any>()),
++  api: vi.fn(),
++}));
++const request = vi.mocked(api);
++const text = (id: string, required = true) => ({
++  id,
++  type: "text",
++  title: id,
++  required,
++  options: [],
++  validation: {},
++  routing: { rules: [], default_target: null },
++});
++const doc = () => ({
++  _id: "attempt",
++  revision: 1,
++  status: "in_progress",
++  anonymous: true,
++  updated_at: "2026-10-20T00:00:00Z",
++  read_only: false,
++  answers: {},
++  current_question_id: "q1",
++  path: ["q1"],
++  definition: {
++    title: "续填测试",
++    description: "",
++    allow_repeat: true,
++    allow_anonymous: true,
++    questions: [text("q1"), text("q2")],
++  },
++  version: 1,
++});
++function deferred() {
++  let resolve!: (v: any) => void;
++  const promise = new Promise<any>((r) => {
++    resolve = r;
++  });
++  return { promise, resolve };
++}
++const saved = (answers: any, revision = 2, current = "q1") => ({
++  ...doc(),
++  answers,
++  revision,
++  current_question_id: current,
++  path: ["q1", "q2"],
++});
++let wrapper: VueWrapper | undefined;
++let state: ReturnType<typeof useAttempt>;
++function harness() {
++  wrapper = mount(
++    defineComponent({
++      setup() {
++        state = useAttempt();
++        return () => h("div");
++      },
++    }),
++  );
++  state.restore(doc());
++}
++beforeEach(() => {
++  vi.useFakeTimers();
++  request.mockReset();
++  auth.user = { id: "user", username: "demo" };
++});
++afterEach(() => {
++  wrapper?.unmount();
++  wrapper = undefined;
++  vi.useRealTimers();
++});
++
++describe("填写自动保存状态", () => {
++  it("暂停输入后保存原始内容", async () => {
++    harness();
++    request.mockResolvedValue(saved({ q1: "半份答案" }));
++    state.answers.value.q1 = "半份答案";
++    state.changed();
++    await vi.advanceTimersByTimeAsync(600);
++    expect(request).toHaveBeenCalledWith("/attempts/attempt", "PUT", {
++      revision: 1,
++      answers: { q1: "半份答案" },
++      current_question_id: "q1",
++    });
++    expect(state.dirty.value).toBe(false);
++  });
++  it("持续输入也在最长等待时间同步", async () => {
++    harness();
++    request.mockImplementation(async (_p, _m, b: any) => saved(b.answers));
++    for (let i = 0; i < 12; i++) {
++      state.answers.value.q1 = String(i);
++      state.changed();
++      await vi.advanceTimersByTimeAsync(450);
++    }
++    expect(request).toHaveBeenCalled();
++  });
++  it("旧响应不把新输入标记为已保存，并串行补存", async () => {
++    harness();
++    const first = deferred(),
++      second = deferred();
++    request
++      .mockReturnValueOnce(first.promise)
++      .mockReturnValueOnce(second.promise);
++    state.answers.value.q1 = "旧";
++    const saving = state.flush();
++    state.answers.value.q1 = "新";
++    state.changed();
++    first.resolve(saved({ q1: "旧" }));
++    await flushPromises();
++    expect(state.answers.value.q1).toBe("新");
++    expect(state.dirty.value).toBe(true);
++    expect(state.saving.value).toBe(true);
++    expect(request.mock.calls[1][2]).toMatchObject({
++      revision: 2,
++      answers: { q1: "新" },
++    });
++    second.resolve(saved({ q1: "新" }, 3));
++    expect(await saving).toBe(true);
++    expect(state.dirty.value).toBe(false);
++  });
++  it("重复触发保存复用正在执行的请求", async () => {
++    harness();
++    const pending = deferred();
++    request.mockReturnValue(pending.promise);
++    state.answers.value.q1 = "内容";
++    const a = state.flush(),
++      b = state.flush();
++    expect(request).toHaveBeenCalledTimes(1);
++    pending.resolve(saved({ q1: "内容" }));
++    expect(await a).toBe(true);
++    expect(await b).toBe(true);
++  });
++  it("保存失败保留输入，重试后才清除未保存标记", async () => {
++    harness();
++    state.answers.value.q1 = "不要丢失";
++    request.mockRejectedValueOnce(new Error("网络不可用"));
++    expect(await state.flush()).toBe(false);
++    expect(state.dirty.value).toBe(true);
++    expect(state.answers.value.q1).toBe("不要丢失");
++    request.mockResolvedValue(saved({ q1: "不要丢失" }));
++    expect(await state.flush()).toBe(true);
++  });
++  it("冲突暂停自动保存且取消重新加载不丢输入", async () => {
++    harness();
++    state.answers.value.q1 = "本页修改";
++    request.mockRejectedValue(new ApiError("冲突", 409, null));
++    expect(await state.flush()).toBe(false);
++    expect(state.paused.value).toBe("conflict");
++    state.changed();
++    await vi.advanceTimersByTimeAsync(6000);
++    expect(request).toHaveBeenCalledTimes(1);
++    vi.spyOn(window, "confirm").mockReturnValue(false);
++    await state.reload();
++    expect(state.answers.value.q1).toBe("本页修改");
++  });
++  it("登录过期后原页同账号登录，再保存未同步输入", async () => {
++    harness();
++    state.answers.value.q1 = "登录过期仍保留";
++    request.mockRejectedValueOnce(new ApiError("请登录", 401, null));
++    expect(await state.flush()).toBe(false);
++    expect(state.paused.value).toBe("auth");
++    expect(await state.reauthenticate("other", "pw")).toBe(false);
++    expect(request).toHaveBeenCalledTimes(1);
++    request
++      .mockResolvedValueOnce({ id: "user", username: "demo" })
++      .mockResolvedValueOnce(saved({ q1: "登录过期仍保留" }));
++    expect(await state.reauthenticate("demo", "password")).toBe(true);
++    expect(state.answers.value.q1).toBe("登录过期仍保留");
++    expect(state.dirty.value).toBe(false);
++  });
++  it("保存响应不抢走用户返回的前题位置", async () => {
++    harness();
++    state.answers.value.q1 = "完成";
++    request.mockResolvedValue(saved({ q1: "完成" }, 2, "q2"));
++    await state.flush();
++    expect(state.currentId.value).toBe("q1");
++  });
++  it("只读恢复不触发保存", async () => {
++    harness();
++    state.restore({
++      ...saved({ q1: "已保存" }),
++      read_only: true,
++      read_only_reason: "已截止",
++    });
++    state.changed();
++    await vi.advanceTimersByTimeAsync(6000);
++    expect(request).not.toHaveBeenCalled();
++    expect(state.message.value).toBe("已截止");
++    expect(state.answers.value.q1).toBe("已保存");
++  });
++});
++
++async function openFill(resume: any = doc()) {
++  const router = createRouter({
++    history: createMemoryHistory(),
++    routes: [
++      { path: "/survey/:share", component: Fill },
++      { path: "/", component: { template: "<div>home</div>" } },
++    ],
++  });
++  await router.push("/survey/share");
++  await router.isReady();
++  request.mockResolvedValueOnce(resume);
++  wrapper = mount(defineComponent({ render: () => h(RouterView) }), {
++    global: { plugins: [router] },
++  });
++  await flushPromises();
++  return router;
++}
++describe("恢复页面与输入", () => {
++  it("先选择继续，再恢复答案及固定匿名设置", async () => {
++    await openFill(saved({ q1: "之前的输入" }));
++    expect(wrapper!.text()).toContain("找到一份未完成填写");
++    await wrapper!.get("button.primary").trigger("click");
++    expect(wrapper!.get("textarea").element.value).toBe("之前的输入");
++    expect(wrapper!.text()).toContain("匿名填写");
++    expect(wrapper!.find('input[type="checkbox"]').exists()).toBe(false);
++  });
++  it("数字中间状态原样发送，恢复后仍可编辑", async () => {
++    wrapper = mount(NumberInput, {
++      props: { question: { ...text("q1"), type: "number" }, modelValue: "-" },
++    });
++    expect(wrapper.get("input").element.value).toBe("-");
++    await wrapper.get("input").setValue("1.");
++    expect(wrapper.emitted("update:modelValue")!.at(-1)).toEqual(["1."]);
++  });
++  it("提交前等待最新保存完成，提交只携带revision", async () => {
++    const d = doc();
++    d.definition.questions = [text("q1")];
++    d.answers = { q1: "旧输入" } as any;
++    await openFill(d);
++    await wrapper!.get("button.primary").trigger("click");
++    const pending = deferred();
++    request.mockReturnValueOnce(pending.promise).mockResolvedValueOnce({
++      id: "receipt",
++      version: 1,
++      submitted_at: "2026-10-20T00:00:00Z",
++    });
++    await wrapper!.get("textarea").setValue("最新输入");
++    await wrapper!.get(".fill-navigation button.primary").trigger("click");
++    expect(
++      request.mock.calls.filter((c) => c[0].endsWith("/submit")),
++    ).toHaveLength(0);
++    expect(wrapper!.get("fieldset").attributes("disabled")).toBeDefined();
++    pending.resolve(saved({ q1: "最新输入" }, 2));
++    await flushPromises();
++    expect(request).toHaveBeenLastCalledWith(
++      "/attempts/attempt/submit",
++      "POST",
++      { revision: 2 },
++    );
++    expect(wrapper!.text()).toContain("感谢你的认真回答");
++    request.mockResolvedValueOnce(null).mockResolvedValueOnce({
++      title: "续填测试",
++      allow_repeat: true,
++      allow_anonymous: true,
++      version: 1,
++      question_count: 1,
++    });
++    await wrapper!.get("button.primary").trigger("click");
++    await flushPromises();
++    expect(wrapper!.text()).toContain("开始填写");
++    expect(wrapper!.get('input[type="checkbox"]').exists()).toBe(true);
++  });
++  it("主动退出前保存失败必须确认，取消则保留输入", async () => {
++    await openFill();
++    await wrapper!.get("button.primary").trigger("click");
++    await wrapper!.get("textarea").setValue("未同步内容");
++    request.mockRejectedValue(new Error("网络失败"));
++    vi.spyOn(window, "confirm").mockReturnValue(false);
++    expect(await pendingWork.beforeLogout!()).toBe(false);
++    expect(wrapper!.get("textarea").element.value).toBe("未同步内容");
++  });
++  it("截止后的草稿仍可进入只读页面查看全部已保存内容", async () => {
++    await openFill({
++      ...saved({ q1: "前题", q2: "后题" }),
++      read_only: true,
++      read_only_reason: "问卷已关闭",
++    });
++    await wrapper!.get("button.primary").trigger("click");
++    expect(wrapper!.text()).toContain("问卷已关闭");
++    expect(wrapper!.get("fieldset").attributes("disabled")).toBeDefined();
++    expect(wrapper!.get("details").text()).toContain("后题");
++    expect(request).toHaveBeenCalledTimes(1);
++  });
++  it("路由离开先保存，失败且取消时仍停留原页面", async () => {
++    const router = await openFill();
++    await wrapper!.get("button.primary").trigger("click");
++    await wrapper!.get("textarea").setValue("还没有保存");
++    request.mockRejectedValue(new Error("网络失败"));
++    vi.spyOn(window, "confirm").mockReturnValue(false);
++    await router.push("/");
++    expect(router.currentRoute.value.path).toBe("/survey/share");
++    expect(wrapper!.get("textarea").element.value).toBe("还没有保存");
++    request.mockResolvedValue(saved({ q1: "还没有保存" }));
++    await router.push("/");
++    expect(router.currentRoute.value.path).toBe("/");
++  });
++  it("未完成前题不使用无效数值跳转，也不误删后续暂存内容", () => {
++    const d: any = doc().definition;
++    d.questions = [
++      {
++        ...text("q1"),
++        type: "number",
++        validation: { min: 0 },
++        routing: {
++          rules: [
++            {
++              condition: { question_id: "q1", operator: "gt", value: 2 },
++              target: "q3",
++            },
++          ],
++          default_target: null,
++        },
++      },
++      text("q2"),
++      text("q3"),
++    ];
++    const raw: any = { q1: "-", q2: "第二题", q3: "第三题" };
++    expect(draftPath(d, raw).map((q) => q.id)).toEqual(["q1"]);
++    pruneSkipped(d, raw);
++    expect(raw.q3).toBe("第三题");
++    raw.q1 = "3";
++    pruneSkipped(d, raw);
++    expect(raw.q2).toBeUndefined();
++    expect(draftPath(d, raw).map((q) => q.id)).toEqual(["q1", "q3"]);
++  });
++});
+--- 1.0.2/README.md
++++ 1.1.0/README.md
+@@ -2,7 +2,7 @@
+ 
+ 问序是《当代数据管理系统》大作业第一阶段实现，包含完整的问卷创建、发布、条件填写与结果统计流程。前端采用 Vue 3 与 TypeScript，后端采用 FastAPI 与 PyMongo，所有业务数据和登录会话保存到 MongoDB。
+ 
+-当前修订为1.0.2，已修复四项编辑交互问题，详见 [编辑器修订说明](docs/editor-fixes.md)。当前交付包为 artifacts/survey-lab-phase1-editor-fixes.zip，后端81项、前端普通单元16项、Vue组件交互27项，共124项测试通过。原第一阶段包和1.0.1六项问题修订包均保留。
++当前修订为1.1.0，新增填写自动保存、跨设备断点续填、草稿并发检查与原子提交，详见[续填设计与接口](docs/resumable-filling.md)。当前交付包为 artifacts/survey-lab-phase1-resumable.zip。后端97项、前端普通单元16项、组件交互43项，共156项测试通过。此前三个基线包保留。
+ 
+ ## 已有数据库升级
+ 
+@@ -73,7 +73,7 @@
+ - 后端重算路径，只保存有效路径上的答案。
+ - 按发布版本、时间范围统计提交份数与去重人数，选项支持次数/人数切换，填空分页和按作答次数计算的数值平均值。
+ 
+-第一阶段只允许向后跳转或结束，不支持循环问卷；未实现自动保存、断点续填、文件题、多人协作、跨版本合并统计。匿名表示对创建者隐藏账号身份，不代表对数据库管理员或服务运营者不可关联。
++第一阶段只允许向后跳转或结束，不支持循环问卷；填写过程自动保存，同一账号可继续服务器已确认保存的进度；未实现本地持久恢复缓存、文件题、多人协作、跨版本合并统计。匿名表示对创建者隐藏账号身份，不代表对数据库管理员或服务运营者不可关联。
+ 
+ ## 文档入口
+ 
+@@ -113,3 +113,9 @@
+ 本轮修订使用 `scripts/package.py --label phase1-review1`。默认标签的已有基线与当前源码不同时会拒绝覆盖，请使用新的标签保留历史。
+ 
+ 编辑器修订1.0.2使用 `scripts/package.py --label phase1-editor-fixes`。前端 `pnpm test` 会运行普通单元和Vue组件交互两组测试。若已打开旧编辑页，请先保存本地修改再刷新；本轮没有数据库结构变更，不需再次升级集合约束。
++
++## 填写恢复与本轮交付
++
++进入原问卷链接后选择“继续填写”。输入停顿后自动保存，切题时立即保存；只有最新修改确认后才显示已保存。关闭/截止后可只读查看草稿。放弃草稿会删除草稿答案，已提交统计不受影响。升级仅新增attempts集合和索引，原五个集合约束不变；已有1.0.2数据库直接正常启动即可。旧页面尚未提交的输入无法事后恢复，请先处理后再刷新。
++
++本轮打包命令：`.\.runtime\Scripts\python.exe scripts/package.py --label phase1-resumable`。详细测试步骤见[续填测试用例](docs/resume-test-cases.md)。
+--- 1.0.2/scripts/export-resume-evidence.py
++++ 1.1.0/scripts/export-resume-evidence.py
+@@ -0,0 +1,41 @@
++"""对照1.0.2不可变包导出本轮源码差异，不覆盖旧基线。"""
++
++from difflib import unified_diff
++from pathlib import Path
++from zipfile import ZipFile
++
++ROOT = Path(__file__).resolve().parents[1]
++skip = {"node_modules", "dist", "__pycache__", ".pytest_cache"}
++with ZipFile(ROOT / "artifacts/survey-lab-phase1-editor-fixes.zip") as baseline:
++    names = set(baseline.namelist())
++    files = [ROOT / "README.md"]
++    for folder in ("backend", "frontend", "database", "docs", "scripts"):
++        files.extend(
++            p
++            for p in (ROOT / folder).rglob("*")
++            if p.is_file()
++            and not skip.intersection(p.relative_to(ROOT).parts)
++            and ".egg-info" not in str(p)
++            and p.suffix != ".pyc"
++        )
++    chunks = []
++    for path in sorted(files):
++        name = path.relative_to(ROOT).as_posix()
++        try:
++            before = baseline.read(name).decode("utf-8") if name in names else ""
++            after = path.read_text("utf-8")
++        except UnicodeError:
++            continue
++        if before != after:
++            chunks.extend(
++                unified_diff(
++                    before.splitlines(True),
++                    after.splitlines(True),
++                    fromfile="1.0.2/" + name,
++                    tofile="1.1.0/" + name,
++                )
++            )
++(ROOT / "artifacts/resumable-filling.diff").write_text(
++    "".join(chunks), encoding="utf-8"
++)
++print("Resume revision diff generated; previous packages preserved.")
+--- 1.0.2/scripts/package.py
++++ 1.1.0/scripts/package.py
+@@ -76,6 +76,11 @@
+         "component-tests.txt",
+         "editor-fixes.diff",
+         "editor-browser-check.json",
++        "resumable-filling.diff",
++        "resume-browser-check.json",
++        "resume-compatibility-check.json",
++        "delivery-tests.xml",
++        "delivery-check.json",
+     ):
+         if (artifact / name).exists():
+             z.write(artifact / name, "artifacts/" + name)

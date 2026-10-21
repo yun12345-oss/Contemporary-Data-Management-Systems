@@ -1,0 +1,1727 @@
+--- review1/frontend/src/views/Editor.vue
++++ editor-fixes/frontend/src/views/Editor.vue
+@@ -1,93 +1,42 @@
+ <script setup lang="ts">
+ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+ import { useRoute, onBeforeRouteLeave } from "vue-router";
+-import { api } from "../api";
+-import {
+-  type Survey,
+-  type Question,
+-  typeNames,
+-  makeQuestion,
+-  makeId,
+-} from "../types";
++import { useSurveyEditor } from "../composables/useSurveyEditor";
++import { parseRouting } from "../routing-validation";
++import { type Question, typeNames, makeQuestion, makeId } from "../types";
+ import RoutingEditor from "../components/RoutingEditor.vue";
+ import QuestionInput from "../components/QuestionInput.vue";
+-const route = useRoute(),
+-  survey = ref<Survey | null>(null),
+-  selected = ref(0),
+-  error = ref(""),
+-  message = ref(""),
+-  busy = ref(false),
+-  saved = ref(""),
+-  deadline = ref(""),
++const route = useRoute();
++const sid = String(route.params.id);
++const {
++  survey,
++  deadline,
++  dirty,
++  deadlineDirty,
++  pendingChanges,
++  busy,
++  operation,
++  error,
++  message,
++  statusText,
++  load,
++  save,
++  publish,
++  close,
++  canLeave,
++  unload,
++} = useSurveyEditor(sid);
++const selected = ref(0),
+   preview = ref(false),
+   jsonOpen = ref(false),
+   jsonText = ref(""),
+-  jsonError = ref("");
+-const dirty = computed(
+-    () => !!survey.value && JSON.stringify(survey.value.draft) !== saved.value,
+-  ),
+-  question = computed(() => survey.value?.draft.questions[selected.value]);
+-const sid = String(route.params.id);
+-async function load() {
+-  try {
+-    survey.value = await api(`/surveys/${sid}`);
+-    saved.value = JSON.stringify(survey.value!.draft);
+-    const d = survey.value!.deadline;
+-    if (d) {
+-      const date = new Date(d);
+-      deadline.value = new Date(
+-        date.getTime() - date.getTimezoneOffset() * 60000,
+-      )
+-        .toISOString()
+-        .slice(0, 16);
+-    }
+-  } catch (e: any) {
+-    error.value = e.message;
+-  }
+-}
+-async function save() {
+-  if (!survey.value) return false;
+-  error.value = "";
+-  try {
+-    survey.value = await api(`/surveys/${sid}/draft`, "PUT", {
+-      revision: survey.value.revision,
+-      draft: survey.value.draft,
+-    });
+-    saved.value = JSON.stringify(survey.value!.draft);
+-    message.value = "草稿已保存";
+-    return true;
+-  } catch (e: any) {
+-    error.value = e.message;
+-    return false;
+-  }
+-}
+-async function publish() {
+-  busy.value = true;
+-  message.value = "";
+-  try {
+-    if (dirty.value && !(await save())) return;
+-    if (!confirm("发布当前内容为新版本？已发布版本和历史答案会保留。")) return;
+-    await api(`/surveys/${sid}/publish`, "POST", {
+-      revision: survey.value!.revision,
+-      deadline: deadline.value ? new Date(deadline.value).toISOString() : null,
+-    });
+-    await load();
+-    message.value = `已发布 v${survey.value!.current_version}，可以分享填写链接`;
+-  } catch (e: any) {
+-    error.value = e.message;
+-  } finally {
+-    busy.value = false;
+-  }
+-}
+-async function close() {
+-  if (!confirm("关闭后将停止接收提交，已有数据保留。确认关闭？")) return;
+-  try {
+-    await api(`/surveys/${sid}/status`, "PATCH", { status: "closed" });
+-    await load();
+-    message.value = "问卷已关闭";
+-  } catch (e: any) {
+-    error.value = e.message;
+-  }
++  jsonError = ref(""),
++  jsonQuestionId = ref(""),
++  closeConfirm = ref(false);
++const question = computed(() => survey.value?.draft.questions[selected.value]);
++async function confirmClose() {
++  closeConfirm.value = false;
++  await close();
+ }
+ function add(type: string) {
+   if (!survey.value || survey.value.draft.questions.length >= 100) return;
+@@ -115,19 +64,26 @@
+   else q.validation[key] = Number(value);
+ }
+ function openJson() {
++  jsonQuestionId.value = question.value!.id;
+   jsonText.value = JSON.stringify(question.value!.routing, null, 2);
+   jsonError.value = "";
+   jsonOpen.value = true;
+ }
+ function applyJson() {
+   try {
+-    const parsed = JSON.parse(jsonText.value);
+-    if (!Array.isArray(parsed.rules) || !("default_target" in parsed))
+-      throw Error("需要 rules 数组和 default_target 字段");
+-    question.value!.routing = parsed;
++    const index = survey.value!.draft.questions.findIndex(
++      (q) => q.id === jsonQuestionId.value,
++    );
++    if (index < 0) throw new Error("正在编辑的题目已不存在");
++    const parsed = parseRouting(
++      jsonText.value,
++      survey.value!.draft.questions,
++      index,
++    );
++    survey.value!.draft.questions[index].routing = parsed;
+     jsonOpen.value = false;
+   } catch (e: any) {
+-    jsonError.value = e.message;
++    jsonError.value = e.message + "；配置未应用";
+   }
+ }
+ async function copy() {
+@@ -140,23 +96,20 @@
+     message.value = `${location.origin}/survey/${survey.value!.share_code}`;
+   }
+ }
+-function unload(e: BeforeUnloadEvent) {
+-  if (dirty.value) {
+-    e.preventDefault();
+-    e.returnValue = "";
+-  }
+-}
+ onMounted(() => {
+   load();
+   window.addEventListener("beforeunload", unload);
+ });
+ onBeforeUnmount(() => window.removeEventListener("beforeunload", unload));
+-onBeforeRouteLeave(() => !dirty.value || confirm("有未保存的修改，确认离开？"));
++onBeforeRouteLeave(canLeave);
+ </script>
+ <template>
+   <main class="page editor-page">
+     <div class="alert error" v-if="error" role="alert">{{ error }}</div>
+     <div class="alert success" v-if="message" role="status">{{ message }}</div>
++    <p v-if="busy" class="alert" role="status">
++      正在处理本次操作。可以继续编辑，新修改会保留；请等待完成后再离开。
++    </p>
+     <template v-if="survey"
+       ><div class="editor-header">
+         <div>
+@@ -168,21 +121,11 @@
+                 : "尚未发布"
+             }}</span>
+           </h1>
+-          <p class="muted">
+-            {{ dirty ? "有未保存的修改" : "草稿已同步" }} ·
+-            编辑不会改变已发布版本
+-          </p>
++          <p class="muted">{{ statusText }} · 编辑不会改变已发布版本</p>
+         </div>
+         <div class="actions">
+           <button class="button" @click="preview = true">预览</button
+-          ><button
+-            class="button"
+-            :disabled="busy"
+-            @click="
+-              busy = true;
+-              save().finally(() => (busy = false));
+-            "
+-          >
++          ><button class="button" :disabled="busy" @click="save">
+             保存草稿</button
+           ><button class="button primary" :disabled="busy" @click="publish">
+             发布新版本 ↗
+@@ -431,7 +374,12 @@
+           <label
+             >截止时间<input type="datetime-local" v-model="deadline"
+           /></label>
+-          <p class="input-hint">截止时间在发布时生效；留空表示不限制。</p>
++          <p class="input-hint">
++            截止时间在发布时生效；留空表示不限制。保存草稿不会保存截止时间。
++          </p>
++          <p v-if="deadlineDirty" class="field-error" role="status">
++            截止时间尚未发布，离开页面将丢失此项本地修改。
++          </p>
+           <template v-if="survey.current_version"
+             ><div class="sidebar-divider"></div>
+             <h3>已发布问卷</h3>
+@@ -447,12 +395,48 @@
+             ><button
+               class="text-button danger-text"
+               v-if="survey.status === 'published'"
+-              @click="close"
++              @click="closeConfirm = true"
++              :disabled="busy"
+             >
+               关闭问卷
+             </button></template
+           >
+         </aside>
++      </div>
++      <div
++        class="modal-backdrop"
++        v-if="closeConfirm"
++        @click.self="closeConfirm = false"
++        @keydown.esc="closeConfirm = false"
++      >
++        <section
++          class="modal"
++          role="dialog"
++          aria-modal="true"
++          aria-label="关闭问卷确认"
++        >
++          <h2>关闭问卷</h2>
++          <p>
++            {{
++              dirty
++                ? "将先保存当前草稿，保存失败时不会关闭问卷。"
++                : "关闭后将停止接收提交，已有答案和发布版本保留。"
++            }}
++          </p>
++          <p v-if="deadlineDirty" class="field-error">
++            截止时间尚未发布。关闭不会使其生效，此项修改仍保留在本页，离开前会提醒。
++          </p>
++          <div class="actions">
++            <button class="button" @click="closeConfirm = false">取消</button
++            ><button
++              class="button primary"
++              :disabled="busy"
++              @click="confirmClose"
++            >
++              {{ dirty ? "保存草稿并关闭" : "确认关闭" }}
++            </button>
++          </div>
++        </section>
+       </div>
+       <div class="modal-backdrop" v-if="preview" @click.self="preview = false">
+         <section
+@@ -498,9 +482,15 @@
+         >
+           <h2>高级跳转配置</h2>
+           <p class="muted">
+-            支持 all / any 组合；发布时检查所有引用、类型和跳转目标。
++            支持 all / any
++            组合；应用前检查结构、引用、类型和跳转目标，发布时后端再次检查。
+           </p>
+-          <textarea class="code-input" v-model="jsonText" rows="18"></textarea>
++          <textarea
++            class="code-input"
++            v-model="jsonText"
++            rows="18"
++            aria-label="跳转规则 JSON"
++          ></textarea>
+           <p class="field-error" v-if="jsonError">{{ jsonError }}</p>
+           <div class="actions">
+             <button class="button" @click="jsonOpen = false">取消</button
+--- review1/frontend/src/composables/useSurveyEditor.ts
++++ editor-fixes/frontend/src/composables/useSurveyEditor.ts
+@@ -0,0 +1,225 @@
++import { computed, ref, watch } from "vue";
++import { api } from "../api";
++import type { Definition, Survey } from "../types";
++
++type Metadata = Pick<
++  Survey,
++  "revision" | "status" | "current_version" | "deadline" | "updated_at"
++>;
++export function localDeadline(value: string | null): string {
++  if (!value) return "";
++  const date = new Date(value);
++  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
++    .toISOString()
++    .slice(0, 16);
++}
++
++export function useSurveyEditor(sid: string) {
++  const survey = ref<Survey | null>(null),
++    deadline = ref(""),
++    saved = ref(""),
++    publishedDeadline = ref(""),
++    error = ref(""),
++    message = ref(""),
++    operation = ref<"" | "saving" | "publishing" | "closing">("");
++  const dirty = computed(
++    () => !!survey.value && JSON.stringify(survey.value.draft) !== saved.value,
++  );
++  const deadlineDirty = computed(
++    () => !!survey.value && deadline.value !== publishedDeadline.value,
++  );
++  const busy = computed(() => operation.value !== "");
++  const pendingChanges = computed(() => dirty.value || deadlineDirty.value);
++  const statusText = computed(() =>
++    [
++      dirty.value ? "有未保存的草稿修改" : "草稿已同步",
++      deadlineDirty.value ? "截止时间尚未发布" : "",
++    ]
++      .filter(Boolean)
++      .join(" · "),
++  );
++  watch(
++    [() => (survey.value ? JSON.stringify(survey.value.draft) : ""), deadline],
++    () => {
++      // 用户继续编辑后，旧的成功提示不应再描述当前尚未保存/发布的状态。
++      message.value = "";
++    },
++    { flush: "sync" },
++  );
++
++  async function load() {
++    try {
++      const incoming = await api<Survey>(`/surveys/${sid}`);
++      survey.value = incoming;
++      saved.value = JSON.stringify(incoming.draft);
++      deadline.value = publishedDeadline.value = localDeadline(
++        incoming.deadline,
++      );
++    } catch (e: any) {
++      error.value = e.message;
++    }
++  }
++  function metadata(incoming: Metadata) {
++    if (!survey.value) return;
++    // 只合并服务器元数据，绝不以响应中的 draft 覆盖当前输入。
++    survey.value.revision = incoming.revision;
++    survey.value.status = incoming.status;
++    survey.value.current_version = incoming.current_version;
++    survey.value.deadline = incoming.deadline;
++    survey.value.updated_at = incoming.updated_at;
++  }
++  function snapshot(): Definition {
++    return JSON.parse(JSON.stringify(survey.value!.draft));
++  }
++  async function persist(draft: Definition) {
++    const response = await api<Survey>(`/surveys/${sid}/draft`, "PUT", {
++      revision: survey.value!.revision,
++      draft,
++    });
++    metadata(response);
++    saved.value = JSON.stringify(response.draft);
++  }
++  function saveFeedback() {
++    return [
++      dirty.value ? "本次草稿已保存；等待期间的新修改仍未保存" : "草稿已保存",
++      deadlineDirty.value ? "截止时间尚未发布，发布新版本后生效" : "",
++    ]
++      .filter(Boolean)
++      .join("；");
++  }
++  async function save() {
++    if (busy.value || !survey.value) return false;
++    operation.value = "saving";
++    error.value = "";
++    message.value = "";
++    try {
++      await persist(snapshot());
++      message.value = saveFeedback();
++      return true;
++    } catch (e: any) {
++      error.value = e.message;
++      return false;
++    } finally {
++      operation.value = "";
++    }
++  }
++  async function publish() {
++    if (busy.value || !survey.value) return false;
++    if (
++      !window.confirm(
++        "发布本次确认的内容与截止时间为新版本？历史版本和答案会保留。",
++      )
++    )
++      return false;
++    const draft = snapshot(),
++      deadlineSnapshot = deadline.value;
++    operation.value = "publishing";
++    error.value = "";
++    message.value = "";
++    try {
++      const deadlineToPublish =
++        deadlineSnapshot === publishedDeadline.value
++          ? survey.value.deadline
++          : deadlineSnapshot
++            ? new Date(deadlineSnapshot).toISOString()
++            : null;
++      if (dirty.value) await persist(draft);
++      if (dirty.value || deadline.value !== deadlineSnapshot) {
++        message.value =
++          "保存期间有新的修改，本次未发布。修改已保留，请检查后再次发布。";
++        return false;
++      }
++      const response = await api<{ version: number; survey: Metadata }>(
++        `/surveys/${sid}/publish`,
++        "POST",
++        { revision: survey.value.revision, deadline: deadlineToPublish },
++      );
++      metadata(response.survey);
++      publishedDeadline.value = localDeadline(response.survey.deadline);
++      message.value =
++        `已发布 v${response.version}` +
++        (pendingChanges.value
++          ? "；等待期间的新修改已保留，尚未保存或发布"
++          : "，可以分享填写链接");
++      return true;
++    } catch (e: any) {
++      error.value = e.message;
++      return false;
++    } finally {
++      operation.value = "";
++    }
++  }
++  async function close() {
++    if (busy.value || !survey.value) return false;
++    operation.value = "closing";
++    error.value = "";
++    message.value = "";
++    let savedDuringClose = false;
++    try {
++      if (dirty.value) {
++        await persist(snapshot());
++        savedDuringClose = true;
++      }
++      if (dirty.value) {
++        message.value =
++          "保存期间有新的草稿修改，本次未关闭。请检查后再次确认。";
++        return false;
++      }
++      const response = await api<{ ok: boolean; survey: Metadata }>(
++        `/surveys/${sid}/status`,
++        "PATCH",
++        { status: "closed", revision: survey.value.revision },
++      );
++      metadata(response.survey);
++      message.value =
++        "问卷已关闭" +
++        (dirty.value ? "；等待期间的新草稿修改仍未保存" : "") +
++        (deadlineDirty.value
++          ? "；截止时间尚未发布，仍保留在本页，关闭不会使其生效"
++          : "");
++      return true;
++    } catch (e: any) {
++      error.value =
++        (savedDuringClose ? "草稿已保存，但关闭失败：" : "") + e.message;
++      return false;
++    } finally {
++      operation.value = "";
++    }
++  }
++  function canLeave() {
++    if (busy.value) {
++      error.value = "操作进行中，请等待完成后再离开";
++      return false;
++    }
++    return (
++      !pendingChanges.value ||
++      window.confirm(
++        "有未保存的草稿或尚未发布的截止时间，确认离开并放弃这些本地修改？",
++      )
++    );
++  }
++  function unload(e: BeforeUnloadEvent) {
++    if (pendingChanges.value || busy.value) {
++      e.preventDefault();
++      e.returnValue = "";
++    }
++  }
++  return {
++    survey,
++    deadline,
++    dirty,
++    deadlineDirty,
++    pendingChanges,
++    busy,
++    operation,
++    error,
++    message,
++    statusText,
++    load,
++    save,
++    publish,
++    close,
++    canLeave,
++    unload,
++  };
++}
+--- review1/frontend/src/routing-validation.ts
++++ editor-fixes/frontend/src/routing-validation.ts
+@@ -0,0 +1,193 @@
++import type { Condition, Question } from "./types";
++type ObjectValue = Record<string, unknown>;
++export const operators: Record<string, { id: string; name: string }[]> = {
++  single_choice: [
++    { id: "eq", name: "等于" },
++    { id: "ne", name: "不等于" },
++  ],
++  multiple_choice: [
++    { id: "contains_any", name: "包含任一" },
++    { id: "contains_all", name: "包含全部" },
++    { id: "set_equals", name: "完全相同" },
++  ],
++  number: [
++    { id: "eq", name: "等于" },
++    { id: "ne", name: "不等于" },
++    { id: "gt", name: "大于" },
++    { id: "gte", name: "大于等于" },
++    { id: "lt", name: "小于" },
++    { id: "lte", name: "小于等于" },
++    { id: "between", name: "介于（包含边界）" },
++  ],
++};
++function check(ok: unknown, path: string, message: string): asserts ok {
++  if (!ok) throw new Error(`${path}：${message}`);
++}
++function object(value: unknown, path: string): asserts value is ObjectValue {
++  check(
++    value !== null && typeof value === "object" && !Array.isArray(value),
++    path,
++    "必须是对象",
++  );
++}
++function keys(value: ObjectValue, expected: string[], path: string) {
++  check(
++    Object.keys(value).length === expected.length &&
++      expected.every((k) => Object.hasOwn(value, k)),
++    path,
++    `需要且仅允许字段 ${expected.join("、")}`,
++  );
++}
++function safeNumber(value: unknown): value is number {
++  return (
++    typeof value === "number" &&
++    Number.isFinite(value) &&
++    Math.abs(value) <= 1e15
++  );
++}
++
++/** 渲染安全边界：允许数字输入暂时为空，但不允许缺失容器、条件或数组。 */
++export function assertRoutingShape(
++  value: unknown,
++): asserts value is Question["routing"] {
++  object(value, "跳转配置");
++  keys(value, ["rules", "default_target"], "跳转配置");
++  check(
++    Array.isArray(value.rules) && value.rules.length <= 20,
++    "rules",
++    "需要数组，最多20条",
++  );
++  check(
++    value.default_target === null || typeof value.default_target === "string",
++    "default_target",
++    "必须是题目ID或null",
++  );
++  let nodes = 0;
++  function shape(c: unknown, path: string, depth = 0) {
++    check(depth <= 5 && ++nodes <= 2000, path, "条件过深或节点过多");
++    object(c, path);
++    if (Object.hasOwn(c, "all") || Object.hasOwn(c, "any")) {
++      const key = Object.hasOwn(c, "all") ? "all" : "any";
++      keys(c, [key], path);
++      const children = c[key];
++      check(
++        Array.isArray(children) &&
++          children.length >= 1 &&
++          children.length <= 20,
++        path,
++        "组合条件需要1～20项",
++      );
++      children.forEach((child, i) =>
++        shape(child, `${path}.${key}[${i}]`, depth + 1),
++      );
++      return;
++    }
++    keys(c, ["question_id", "operator", "value"], path);
++    check(
++      typeof c.question_id === "string" && typeof c.operator === "string",
++      path,
++      "来源题目与运算符必须是字符串",
++    );
++    if (c.operator === "between")
++      check(
++        Array.isArray(c.value) && c.value.length === 2,
++        path,
++        "区间值必须是两个元素的数组",
++      );
++    if (["contains_any", "contains_all", "set_equals"].includes(c.operator))
++      check(Array.isArray(c.value), path, "多选条件值必须是数组");
++  }
++  value.rules.forEach((rule, i) => {
++    const path = `第${i + 1}条规则`;
++    object(rule, path);
++    keys(rule, ["condition", "target"], path);
++    check(typeof rule.target === "string", path, "目标必须是字符串");
++    shape(rule.condition, `${path}.condition`);
++  });
++}
++
++export function validateRouting(
++  value: unknown,
++  questions: Question[],
++  index: number,
++): asserts value is Question["routing"] {
++  assertRoutingShape(value);
++  check(index >= 0 && index < questions.length, "跳转配置", "当前题目不存在");
++  const positions = new Map(questions.map((q, i) => [q.id, i]));
++  check(positions.size === questions.length, "问卷", "题目ID重复");
++  function target(t: string | null, path: string, nullable = false) {
++    check(
++      (nullable && t === null) ||
++        (typeof t === "string" &&
++          (t === "END" || (positions.has(t) && positions.get(t)! > index))),
++      path,
++      "目标只能是后续题目或 END",
++    );
++  }
++  function condition(c: Condition, path: string) {
++    if (c.all) {
++      c.all.forEach((x, i) => condition(x, `${path}.all[${i}]`));
++      return;
++    }
++    if (c.any) {
++      c.any.forEach((x, i) => condition(x, `${path}.any[${i}]`));
++      return;
++    }
++    const position = positions.get(c.question_id!);
++    check(
++      position !== undefined && position <= index,
++      path,
++      "只能引用当前或之前存在的题目",
++    );
++    const q = questions[position];
++    check(
++      operators[q.type]?.some((o) => o.id === c.operator),
++      path,
++      "运算符与题型不匹配",
++    );
++    const ids = new Set(q.options.map((o) => o.id));
++    if (q.type === "single_choice")
++      check(
++        typeof c.value === "string" && ids.has(c.value),
++        path,
++        "引用了不存在的选项",
++      );
++    else if (q.type === "multiple_choice")
++      check(
++        Array.isArray(c.value) &&
++          c.value.length > 0 &&
++          new Set(c.value).size === c.value.length &&
++          c.value.every((x: unknown) => typeof x === "string" && ids.has(x)),
++        path,
++        "需要非空、无重复且存在的选项数组",
++      );
++    else {
++      const values = c.operator === "between" ? c.value : [c.value];
++      check(
++        Array.isArray(values) && values.every(safeNumber),
++        path,
++        "比较值必须有限且绝对值不超过10¹⁵",
++      );
++      check(
++        c.operator !== "between" || values[0] <= values[1],
++        path,
++        "区间下界不能大于上界",
++      );
++    }
++  }
++  value.rules.forEach((rule, i) => {
++    condition(rule.condition, `第${i + 1}条规则.condition`);
++    target(rule.target, `第${i + 1}条规则.target`);
++  });
++  target(value.default_target, "default_target", true);
++}
++export function parseRouting(
++  text: string,
++  questions: Question[],
++  index: number,
++): Question["routing"] {
++  check(text.length <= 1_000_000, "跳转配置", "内容过大");
++  const value: unknown = JSON.parse(text);
++  validateRouting(value, questions, index);
++  return value;
++}
+--- review1/frontend/src/components/RoutingEditor.vue
++++ editor-fixes/frontend/src/components/RoutingEditor.vue
+@@ -1,29 +1,26 @@
+ <script setup lang="ts">
+ import type { Question, Condition } from "../types";
++import { computed } from "vue";
++import { operators, assertRoutingShape } from "../routing-validation";
+ const props = defineProps<{
+   question: Question;
+   questions: Question[];
+   index: number;
+ }>();
+-const operators: Record<string, { id: string; name: string }[]> = {
+-  single_choice: [
+-    { id: "eq", name: "等于" },
+-    { id: "ne", name: "不等于" },
+-  ],
+-  multiple_choice: [
+-    { id: "contains_any", name: "包含任一" },
+-    { id: "contains_all", name: "包含全部" },
+-    { id: "set_equals", name: "完全相同" },
+-  ],
+-  number: [
+-    { id: "eq", name: "等于" },
+-    { id: "gt", name: "大于" },
+-    { id: "gte", name: "大于等于" },
+-    { id: "lt", name: "小于" },
+-    { id: "lte", name: "小于等于" },
+-    { id: "between", name: "介于（包含边界）" },
+-  ],
+-};
++const structuralProblem = computed(() => {
++  try {
++    assertRoutingShape(props.question.routing);
++    return "";
++  } catch (e: any) {
++    return e.message;
++  }
++});
++const safeRules = computed(() =>
++  structuralProblem.value ? [] : props.question.routing.rules,
++);
++function clearInvalid() {
++  props.question.routing = { rules: [], default_target: null };
++}
+ function add() {
+   const q = props.question;
+   if (!operators[q.type]) return;
+@@ -69,7 +66,9 @@
+         class="text-button"
+         @click="add"
+         :disabled="
+-          !operators[question.type] || question.routing.rules.length >= 20
++          !!structuralProblem ||
++          !operators[question.type] ||
++          safeRules.length >= 20
+         "
+       >
+         ＋ 添加规则
+@@ -78,11 +77,16 @@
+     <p class="input-hint">
+       按优先级采用第一条满足的规则，仅跳往后续题目。文本题可设置默认去向。
+     </p>
+-    <div
+-      v-for="(rule, ri) in question.routing.rules"
+-      :key="ri"
+-      class="rule-row"
+-    >
++    <div v-if="structuralProblem" class="alert error" role="alert">
++      跳转配置损坏：{{ structuralProblem }}。请使用高级 JSON 修正或<button
++        type="button"
++        class="text-button"
++        @click="clearInvalid"
++      >
++        清空损坏的跳转配置</button
++      >。
++    </div>
++    <div v-for="(rule, ri) in safeRules" :key="ri" class="rule-row">
+       <span class="rule-number">{{ ri + 1 }}</span
+       ><template v-if="!rule.condition.all && !rule.condition.any"
+         ><select
+@@ -148,7 +152,7 @@
+         ×
+       </button>
+     </div>
+-    <label class="inline-field"
++    <label v-if="!structuralProblem" class="inline-field"
+       >未匹配时<select v-model="question.routing.default_target">
+         <option :value="null">按顺序进入下一题</option>
+         <option v-for="(q, qi) in questions.slice(index + 1)" :value="q.id">
+--- review1/frontend/src/question-types/TextInput.vue
++++ editor-fixes/frontend/src/question-types/TextInput.vue
+@@ -1,16 +1,67 @@
+ <script setup lang="ts">
++import { ref, computed, watch } from "vue";
+ import type { Question } from "../types";
+-defineProps<{ question: Question; modelValue: any }>();
+-const emit = defineEmits(["update:modelValue"]);
++import { textLength } from "../text";
++const props = defineProps<{ question: Question; modelValue: any }>();
++const emit = defineEmits<{ "update:modelValue": [value: string] }>();
++const raw = ref(String(props.modelValue ?? "")),
++  composing = ref(false);
++let lastEmitted = raw.value;
++const limit = computed(() => props.question.validation.max_length ?? 10000);
++const count = computed(() => textLength(raw.value));
++watch(
++  () => props.modelValue,
++  (value) => {
++    if (!composing.value) {
++      raw.value = String(value ?? "");
++      lastEmitted = raw.value;
++    }
++  },
++);
++watch(
++  () => props.question.id,
++  () => {
++    composing.value = false;
++    raw.value = String(props.modelValue ?? "");
++    lastEmitted = raw.value;
++  },
++);
++function commit() {
++  if (raw.value !== lastEmitted) {
++    lastEmitted = raw.value;
++    emit("update:modelValue", raw.value);
++  }
++}
++function input(event: Event) {
++  raw.value = (event.target as HTMLTextAreaElement).value;
++  if (!composing.value && !(event as InputEvent).isComposing) commit();
++}
++function compositionEnd(event: Event) {
++  composing.value = false;
++  raw.value = (event.target as HTMLTextAreaElement).value;
++  commit();
++}
+ </script>
+ <template>
+   <textarea
+-    :value="modelValue || ''"
+-    @input="
+-      emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)
+-    "
++    :value="raw"
++    @input="input"
++    @compositionstart="composing = true"
++    @compositionend="compositionEnd"
+     rows="4"
+     placeholder="请填写你的回答"
+-    :maxlength="question.validation.max_length || 10000"
++    :aria-label="question.title || '文本回答'"
++    :aria-invalid="!composing && count > limit"
++    :aria-describedby="`${question.id}-text-count`"
+   ></textarea>
++  <p class="input-hint" :id="`${question.id}-text-count`" aria-live="polite">
++    {{
++      composing
++        ? "正在输入…"
++        : `${count} / ${limit} 字符（去首尾空白，按 Unicode 码点）`
++    }}
++  </p>
++  <p v-if="!composing && count > limit" class="field-error" role="alert">
++    文本超出允许长度，内容已保留，请缩短后继续。
++  </p>
+ </template>
+--- review1/frontend/src/text.ts
++++ editor-fixes/frontend/src/text.ts
+@@ -0,0 +1,11 @@
++/** 与后端一致：去除首尾空白后，按 Unicode 码点计数。 */
++export function trimText(value: string): string {
++  // Python str.strip 的空白集合：不把 ECMAScript 特有的 FEFF 当作空白。
++  return value.replace(
++    /^[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/gu,
++    "",
++  );
++}
++export function textLength(value: string): number {
++  return Array.from(trimText(value)).length;
++}
+--- review1/frontend/src/rules.ts
++++ editor-fixes/frontend/src/rules.ts
+@@ -1,4 +1,5 @@
+ import type { Condition, Definition, Question } from "./types";
++import { textLength, trimText } from "./text.ts";
+ export function matches(c: Condition, answers: Record<string, any>): boolean {
+   if (c.all) return c.all.every((x) => matches(x, answers));
+   if (c.any) return c.any.some((x) => matches(x, answers));
+@@ -50,7 +51,7 @@
+     seen.add(q.id);
+     result.push(q);
+     const raw = answers[q.id];
+-    effective[q.id] = typeof raw === "string" ? raw.trim() : raw;
++    effective[q.id] = typeof raw === "string" ? trimText(raw) : raw;
+     const rule = q.routing.rules.find((r) => matches(r.condition, effective));
+     const target = rule ? rule.target : q.routing.default_target;
+     if (target === "END") break;
+@@ -65,7 +66,7 @@
+     value === null ||
+     value === "" ||
+     (Array.isArray(value) && !value.length) ||
+-    (typeof value === "string" && !value.trim());
++    (typeof value === "string" && !trimText(value));
+   if (blank) return q.required ? "此题必须回答" : "";
+   const v = q.validation;
+   if (
+@@ -76,8 +77,8 @@
+     return "选择数量不符合要求";
+   if (
+     q.type === "text" &&
+-    (Array.from(value.trim()).length < (v.min_length ?? 0) ||
+-      Array.from(value.trim()).length > (v.max_length ?? 10000))
++    (textLength(value) < (v.min_length ?? 0) ||
++      textLength(value) > (v.max_length ?? 10000))
+   )
+     return "文本长度不符合要求";
+   if (q.type === "number") {
+--- review1/frontend/tests/components/editor.spec.ts
++++ editor-fixes/frontend/tests/components/editor.spec.ts
+@@ -0,0 +1,426 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { mount, flushPromises, type VueWrapper } from "@vue/test-utils";
++import { createRouter, createMemoryHistory, RouterView } from "vue-router";
++import { defineComponent, h } from "vue";
++import Editor from "../../src/views/Editor.vue";
++import { api } from "../../src/api";
++vi.mock("../../src/api", () => ({ api: vi.fn() }));
++const request = vi.mocked(api);
++const initial = {
++  _id: "survey",
++  share_code: "share",
++  status: "published",
++  revision: 1,
++  current_version: 1,
++  deadline: null,
++  created_at: "2026-10-01T00:00:00Z",
++  updated_at: "2026-10-01T00:00:00Z",
++  draft: {
++    title: "原始问卷",
++    description: "说明",
++    allow_anonymous: true,
++    allow_repeat: true,
++    questions: [
++      {
++        id: "q1",
++        type: "text",
++        title: "建议",
++        required: false,
++        options: [],
++        validation: {},
++        routing: { rules: [], default_target: null },
++      },
++    ],
++  },
++};
++const meta = (
++  revision = 2,
++  status = "published",
++  deadline: string | null = null,
++) => ({
++  revision,
++  status,
++  current_version: status === "published" ? 2 : 1,
++  deadline,
++  updated_at: "2026-10-19T00:00:00Z",
++});
++function deferred<T = any>() {
++  let resolve!: (v: T) => void, reject!: (e: Error) => void;
++  const promise = new Promise<T>((a, b) => {
++    resolve = a;
++    reject = b;
++  });
++  return { promise, resolve, reject };
++}
++let wrapper: VueWrapper, router: ReturnType<typeof createRouter>;
++async function open() {
++  router = createRouter({
++    history: createMemoryHistory(),
++    routes: [
++      { path: "/surveys/:id/edit", component: Editor },
++      { path: "/outside", component: { template: "<p>外部页面</p>" } },
++      { path: "/:pathMatch(.*)*", component: { template: "<p>其他页面</p>" } },
++    ],
++  });
++  await router.push("/surveys/survey/edit");
++  await router.isReady();
++  wrapper = mount(
++    defineComponent(() => () => h(RouterView)),
++    { global: { plugins: [router] }, attachTo: document.body },
++  );
++  await flushPromises();
++  return wrapper;
++}
++function button(text: string) {
++  const b = wrapper.findAll("button").find((b) => b.text() === text);
++  if (!b) throw Error("button missing: " + text);
++  return b;
++}
++const title = () => wrapper.get('input[aria-label="问卷标题"]');
++const deadline = () => wrapper.get('input[type="datetime-local"]');
++beforeEach(() => {
++  request.mockReset();
++  request.mockImplementation(async () => structuredClone(initial));
++  vi.spyOn(window, "confirm").mockReturnValue(true);
++});
++afterEach(() => {
++  wrapper?.unmount();
++  document.body.innerHTML = "";
++});
++
++describe("编辑器保存、关闭、发布和离开", () => {
++  it("继续编辑后清除过期的保存反馈，修改状态仍正确", async () => {
++    request.mockImplementation(async (_p, m, b: any) =>
++      m === "PUT"
++        ? { ...structuredClone(initial), revision: 2, draft: b.draft }
++        : structuredClone(initial),
++    );
++    await open();
++    await deadline().setValue("2030-01-01T12:30");
++    await button("保存草稿").trigger("click");
++    await flushPromises();
++    expect(wrapper.find('[role="status"].success').text()).toContain(
++      "草稿已保存",
++    );
++    await deadline().setValue("");
++    await title().setValue("新的编辑");
++    expect(wrapper.find('[role="status"].success').exists()).toBe(false);
++    expect(wrapper.text()).toContain("有未保存的草稿修改");
++  });
++  it("保存响应不覆盖等待期间的新输入，下一次保存使用新revision", async () => {
++    const save = deferred();
++    request.mockImplementation(async (_p, m) =>
++      m === "PUT" ? save.promise : structuredClone(initial),
++    );
++    await open();
++    await title().setValue("请求时的标题");
++    await button("保存草稿").trigger("click");
++    expect(request.mock.calls.find((c) => c[1] === "PUT")?.[2]).toMatchObject({
++      revision: 1,
++      draft: { title: "请求时的标题" },
++    });
++    await title().setValue("等待期间的新标题");
++    save.resolve({
++      ...structuredClone(initial),
++      revision: 2,
++      draft: { ...structuredClone(initial.draft), title: "请求时的标题" },
++    });
++    await flushPromises();
++    expect((title().element as HTMLInputElement).value).toBe(
++      "等待期间的新标题",
++    );
++    expect(wrapper.text()).toContain("有未保存的草稿修改");
++    await button("保存草稿").trigger("click");
++    expect(
++      request.mock.calls.filter((c) => c[1] === "PUT").at(-1)?.[2],
++    ).toMatchObject({ revision: 2, draft: { title: "等待期间的新标题" } });
++  });
++  it("保存失败保留草稿并恢复操作按钮", async () => {
++    request.mockImplementation(async (_p, m) => {
++      if (m === "PUT") throw Error("网络错误");
++      return structuredClone(initial);
++    });
++    await open();
++    await title().setValue("不能丢失");
++    await button("保存草稿").trigger("click");
++    await flushPromises();
++    expect((title().element as HTMLInputElement).value).toBe("不能丢失");
++    expect(wrapper.text()).toContain("网络错误");
++    expect(wrapper.text()).toContain("有未保存的草稿修改");
++    expect(button("保存草稿").attributes("disabled")).toBeUndefined();
++  });
++  it("取消关闭不保存、不关闭、不覆盖草稿", async () => {
++    await open();
++    await title().setValue("本地内容");
++    await button("关闭问卷").trigger("click");
++    expect(wrapper.get('[aria-label="关闭问卷确认"]').text()).toContain(
++      "先保存",
++    );
++    await button("取消").trigger("click");
++    expect(request.mock.calls.filter((c) => c[1])).toHaveLength(0);
++    expect((title().element as HTMLInputElement).value).toBe("本地内容");
++  });
++  it("有修改时先保存再关闭，关闭不重新GET覆盖内容", async () => {
++    request.mockImplementation(async (_p, m, b: any) => {
++      if (m === "PUT")
++        return { ...structuredClone(initial), revision: 2, draft: b.draft };
++      if (m === "PATCH") return { ok: true, survey: meta(3, "closed") };
++      return structuredClone(initial);
++    });
++    await open();
++    await title().setValue("关闭前保存");
++    await button("关闭问卷").trigger("click");
++    await button("保存草稿并关闭").trigger("click");
++    await flushPromises();
++    expect(request.mock.calls.filter((c) => c[1]).map((c) => c[1])).toEqual([
++      "PUT",
++      "PATCH",
++    ]);
++    expect(request.mock.calls.find((c) => c[1] === "PATCH")?.[2]).toMatchObject(
++      { revision: 2 },
++    );
++    expect(request.mock.calls.filter((c) => !c[1])).toHaveLength(1);
++    expect((title().element as HTMLInputElement).value).toBe("关闭前保存");
++    expect(wrapper.text()).toContain("问卷已关闭");
++  });
++  it("关闭前保存失败，不发送关闭请求", async () => {
++    request.mockImplementation(async (_p, m) => {
++      if (m === "PUT") throw Error("保存失败");
++      return structuredClone(initial);
++    });
++    await open();
++    await title().setValue("保留");
++    await button("关闭问卷").trigger("click");
++    await button("保存草稿并关闭").trigger("click");
++    await flushPromises();
++    expect(request.mock.calls.some((c) => c[1] === "PATCH")).toBe(false);
++    expect((title().element as HTMLInputElement).value).toBe("保留");
++    expect(wrapper.text()).toContain("保存失败");
++  });
++  it("关闭前保存期间又编辑时中止关闭，保留新增输入", async () => {
++    const save = deferred();
++    request.mockImplementation(async (_p, m) =>
++      m === "PUT" ? save.promise : structuredClone(initial),
++    );
++    await open();
++    await title().setValue("快照");
++    await button("关闭问卷").trigger("click");
++    await button("保存草稿并关闭").trigger("click");
++    await title().setValue("新增输入");
++    save.resolve({
++      ...structuredClone(initial),
++      revision: 2,
++      draft: { ...structuredClone(initial.draft), title: "快照" },
++    });
++    await flushPromises();
++    expect(request.mock.calls.some((c) => c[1] === "PATCH")).toBe(false);
++    expect(wrapper.text()).toContain("本次未关闭");
++    expect((title().element as HTMLInputElement).value).toBe("新增输入");
++  });
++  it("关闭请求期间输入仍保留，关闭失败也不覆盖", async () => {
++    const patch = deferred();
++    request.mockImplementation(async (_p, m) =>
++      m === "PATCH" ? patch.promise : structuredClone(initial),
++    );
++    await open();
++    await button("关闭问卷").trigger("click");
++    await button("确认关闭").trigger("click");
++    await title().setValue("关闭等待期间输入");
++    patch.reject(Error("关闭请求失败"));
++    await flushPromises();
++    expect((title().element as HTMLInputElement).value).toBe(
++      "关闭等待期间输入",
++    );
++    expect(wrapper.text()).toContain("关闭请求失败");
++    expect(wrapper.text()).toContain("有未保存的草稿修改");
++  });
++  it("截止时间单独标记待发布，保存草稿不能假装已保存该时间", async () => {
++    request.mockImplementation(async (_p, m, b: any) =>
++      m === "PUT"
++        ? { ...structuredClone(initial), revision: 2, draft: b.draft }
++        : structuredClone(initial),
++    );
++    await open();
++    await deadline().setValue("2030-01-01T12:30");
++    expect(wrapper.text()).toContain("截止时间尚未发布");
++    await button("保存草稿").trigger("click");
++    await flushPromises();
++    expect(wrapper.text()).toContain("发布新版本后生效");
++    expect((deadline().element as HTMLInputElement).value).toBe(
++      "2030-01-01T12:30",
++    );
++    const event = new Event("beforeunload", { cancelable: true });
++    window.dispatchEvent(event);
++    expect(event.defaultPrevented).toBe(true);
++    vi.mocked(window.confirm).mockReturnValue(false);
++    await router.push("/outside");
++    expect(router.currentRoute.value.path).toBe("/surveys/survey/edit");
++  });
++  it("发布失败保留截止时间的待发布状态", async () => {
++    request.mockImplementation(async (_p, m) => {
++      if (m === "POST") throw Error("发布失败");
++      return structuredClone(initial);
++    });
++    await open();
++    await deadline().setValue("2030-01-01T12:30");
++    await button("发布新版本 ↗").trigger("click");
++    await flushPromises();
++    expect(wrapper.text()).toContain("发布失败");
++    expect(wrapper.text()).toContain("截止时间尚未发布");
++  });
++  it("发布等待期间的新草稿和时间不被响应覆盖", async () => {
++    const publish = deferred();
++    request.mockImplementation(async (_p, m) =>
++      m === "POST" ? publish.promise : structuredClone(initial),
++    );
++    await open();
++    await deadline().setValue("2030-01-01T12:30");
++    await button("发布新版本 ↗").trigger("click");
++    await title().setValue("发布期间新增");
++    await deadline().setValue("2031-01-01T12:30");
++    publish.resolve({
++      version: 2,
++      survey: meta(2, "published", new Date("2030-01-01T12:30").toISOString()),
++    });
++    await flushPromises();
++    expect((title().element as HTMLInputElement).value).toBe("发布期间新增");
++    expect((deadline().element as HTMLInputElement).value).toBe(
++      "2031-01-01T12:30",
++    );
++    expect(wrapper.text()).toContain("截止时间尚未发布");
++    expect(wrapper.text()).toContain("有未保存的草稿修改");
++  });
++  it("发布前保存期间新增输入，中止发布", async () => {
++    const save = deferred();
++    request.mockImplementation(async (_p, m) =>
++      m === "PUT" ? save.promise : structuredClone(initial),
++    );
++    await open();
++    await title().setValue("本次快照");
++    await button("发布新版本 ↗").trigger("click");
++    await title().setValue("新的内容");
++    save.resolve({
++      ...structuredClone(initial),
++      revision: 2,
++      draft: { ...structuredClone(initial.draft), title: "本次快照" },
++    });
++    await flushPromises();
++    expect(request.mock.calls.some((c) => c[1] === "POST")).toBe(false);
++    expect(wrapper.text()).toContain("本次未发布");
++  });
++  it("有进行中的保存时，禁止重复操作和路由离开", async () => {
++    const save = deferred();
++    request.mockImplementation(async (_p, m) =>
++      m === "PUT" ? save.promise : structuredClone(initial),
++    );
++    await open();
++    await title().setValue("保存中");
++    await button("保存草稿").trigger("click");
++    expect(button("发布新版本 ↗").attributes("disabled")).toBeDefined();
++    expect(button("关闭问卷").attributes("disabled")).toBeDefined();
++    await router.push("/outside");
++    expect(router.currentRoute.value.path).toBe("/surveys/survey/edit");
++    save.resolve({ ...structuredClone(initial), revision: 2 });
++    await flushPromises();
++  });
++  it("损坏JSON拒绝应用，原配置与编辑器保持可用", async () => {
++    await open();
++    await button("高级：编辑组合条件 JSON").trigger("click");
++    await wrapper
++      .get('textarea[aria-label="跳转规则 JSON"]')
++      .setValue('{"rules":[{}],"default_target":null}');
++    await button("应用配置").trigger("click");
++    expect(wrapper.text()).toContain("配置未应用");
++    expect(wrapper.find('[aria-label="编辑组合条件"]').exists()).toBe(true);
++    await button("取消").trigger("click");
++    expect(wrapper.text()).not.toContain("配置损坏");
++    expect(title().exists()).toBe(true);
++  });
++  it("关闭请求成功也保留等待期间的新输入", async () => {
++    const patch = deferred();
++    request.mockImplementation(async (_p, m) =>
++      m === "PATCH" ? patch.promise : structuredClone(initial),
++    );
++    await open();
++    await button("关闭问卷").trigger("click");
++    await button("确认关闭").trigger("click");
++    await title().setValue("关闭期间的新草稿");
++    patch.resolve({ ok: true, survey: meta(2, "closed") });
++    await flushPromises();
++    expect((title().element as HTMLInputElement).value).toBe(
++      "关闭期间的新草稿",
++    );
++    expect(wrapper.text()).toContain("有未保存的草稿修改");
++    expect(wrapper.text()).toContain("问卷已关闭");
++  });
++  it("草稿已保存但关闭失败时保留成功保存的信息", async () => {
++    request.mockImplementation(async (_p, m, b: any) => {
++      if (m === "PUT")
++        return { ...structuredClone(initial), revision: 2, draft: b.draft };
++      if (m === "PATCH") throw Error("版本冲突");
++      return structuredClone(initial);
++    });
++    await open();
++    await title().setValue("已保存草稿");
++    await button("关闭问卷").trigger("click");
++    await button("保存草稿并关闭").trigger("click");
++    await flushPromises();
++    expect(wrapper.text()).toContain("草稿已保存，但关闭失败");
++    expect(wrapper.text()).toContain("草稿已同步");
++    expect((title().element as HTMLInputElement).value).toBe("已保存草稿");
++  });
++  it("截止时间未发布时关闭有明确确认，成功后仍保留待发布状态", async () => {
++    request.mockImplementation(async (_p, m) =>
++      m === "PATCH"
++        ? { ok: true, survey: meta(2, "closed") }
++        : structuredClone(initial),
++    );
++    await open();
++    await deadline().setValue("2030-01-01T12:30");
++    await button("关闭问卷").trigger("click");
++    expect(wrapper.get('[aria-label="关闭问卷确认"]').text()).toContain(
++      "关闭不会使其生效",
++    );
++    await button("确认关闭").trigger("click");
++    await flushPromises();
++    expect(wrapper.text()).toContain("截止时间尚未发布");
++    expect((deadline().element as HTMLInputElement).value).toBe(
++      "2030-01-01T12:30",
++    );
++    expect(request.mock.calls.some((c) => c[1] === "POST")).toBe(false);
++  });
++  it("成功发布清除本次截止时间标记，无新修改即可离开", async () => {
++    request.mockImplementation(async (_p, m, b: any) =>
++      m === "POST"
++        ? { version: 2, survey: meta(2, "published", b.deadline) }
++        : structuredClone(initial),
++    );
++    await open();
++    await deadline().setValue("2030-01-01T12:30");
++    await button("发布新版本 ↗").trigger("click");
++    await flushPromises();
++    expect(wrapper.text()).not.toContain("截止时间尚未发布");
++    expect(wrapper.text()).toContain("已发布 v2");
++    vi.mocked(window.confirm).mockClear();
++    await router.push("/outside");
++    expect(router.currentRoute.value.path).toBe("/outside");
++    expect(window.confirm).not.toHaveBeenCalled();
++  });
++  it("未修改截止时间时发布保留服务器秒级精度", async () => {
++    const old = {
++      ...structuredClone(initial),
++      deadline: "2030-01-01T12:30:45.123Z",
++    };
++    request.mockImplementation(async (_p, m, b: any) =>
++      m === "POST"
++        ? { version: 2, survey: meta(2, "published", b.deadline) }
++        : old,
++    );
++    await open();
++    await button("发布新版本 ↗").trigger("click");
++    await flushPromises();
++    expect(request.mock.calls.find((c) => c[1] === "POST")?.[2]).toMatchObject({
++      deadline: old.deadline,
++    });
++  });
++});
+--- review1/frontend/tests/components/inputs.spec.ts
++++ editor-fixes/frontend/tests/components/inputs.spec.ts
+@@ -0,0 +1,110 @@
++import { afterEach, describe, it, expect } from "vitest";
++import { mount } from "@vue/test-utils";
++import TextInput from "../../src/question-types/TextInput.vue";
++import RoutingEditor from "../../src/components/RoutingEditor.vue";
++import { validate } from "../../src/rules";
++import { reactive } from "vue";
++const q = {
++  id: "q1",
++  type: "text",
++  title: "一个字符",
++  required: true,
++  options: [],
++  validation: { max_length: 1 },
++  routing: { rules: [], default_target: null },
++};
++const wrappers: any[] = [];
++afterEach(() => {
++  wrappers.splice(0).forEach((w) => w.unmount());
++});
++function text() {
++  const w = mount(TextInput, {
++    props: { question: structuredClone(q), modelValue: "" },
++  });
++  wrappers.push(w);
++  return w;
++}
++describe("文本组件与后端的码点长度口径", () => {
++  it("一个表情可实际输入，上限1时不使用UTF-16 maxlength", async () => {
++    const w = text();
++    const input = w.get("textarea");
++    expect(input.attributes("maxlength")).toBeUndefined();
++    await input.setValue("😀");
++    expect((input.element as HTMLTextAreaElement).value).toBe("😀");
++    expect(w.emitted("update:modelValue")?.at(-1)).toEqual(["😀"]);
++    expect(w.text()).toContain("1 / 1");
++    expect(w.find('[role="alert"]').exists()).toBe(false);
++    expect(validate(q, "😀")).toBe("");
++  });
++  it("粘贴多个表情保留全文，显示超限且规则拒绝", async () => {
++    const w = text();
++    await w.get("textarea").setValue("😀😀");
++    expect((w.get("textarea").element as HTMLTextAreaElement).value).toBe(
++      "😀😀",
++    );
++    expect(w.text()).toContain("2 / 1");
++    expect(w.get('[role="alert"]').text()).toContain("内容已保留");
++    expect(validate(q, "😀😀")).not.toBe("");
++  });
++  it("中文组合输入结束前不提交中间内容，不提前提示超限", async () => {
++    const w = text();
++    const input = w.get("textarea");
++    await input.trigger("compositionstart");
++    (input.element as HTMLTextAreaElement).value = "zhong";
++    await input.trigger("input", { isComposing: true });
++    expect(w.emitted("update:modelValue")).toBeUndefined();
++    expect(w.find('[role="alert"]').exists()).toBe(false);
++    (input.element as HTMLTextAreaElement).value = "中";
++    await input.trigger("compositionend");
++    expect(w.emitted("update:modelValue")).toEqual([["中"]]);
++    expect(w.text()).toContain("1 / 1");
++  });
++  it("组合结束后的重复input不重复发出更新，计数去除首尾空白", async () => {
++    const w = text();
++    const input = w.get("textarea");
++    await input.trigger("compositionstart");
++    (input.element as HTMLTextAreaElement).value = " 😀 ";
++    await input.trigger("compositionend");
++    await input.trigger("input");
++    expect(w.emitted("update:modelValue")).toEqual([[" 😀 "]]);
++    expect(w.text()).toContain("1 / 1");
++  });
++  it("外部模型更新可以清空实际输入", async () => {
++    const w = text();
++    await w.get("textarea").setValue("😀");
++    await w.setProps({ modelValue: "新" });
++    await w.setProps({ modelValue: "" });
++    expect((w.get("textarea").element as HTMLTextAreaElement).value).toBe("");
++    expect(w.text()).toContain("0 / 1");
++  });
++});
++describe("规则组件防御性渲染", () => {
++  for (const routing of [
++    null,
++    { rules: [{}], default_target: null },
++    {
++      rules: [
++        {
++          condition: { question_id: "q1", operator: "between", value: null },
++          target: "END",
++        },
++      ],
++      default_target: null,
++    },
++  ]) {
++    it("损坏配置显示错误且可明确清空：" + JSON.stringify(routing), async () => {
++      const question = reactive({ ...structuredClone(q), routing }) as any;
++      const w = mount(RoutingEditor, {
++        props: { question, questions: [question], index: 0 },
++      });
++      wrappers.push(w);
++      expect(w.get('[role="alert"]').text()).toContain("跳转配置损坏");
++      const clear = w
++        .findAll("button")
++        .find((b) => b.text() === "清空损坏的跳转配置")!;
++      await clear.trigger("click");
++      expect(question.routing).toEqual({ rules: [], default_target: null });
++      expect(w.find('[role="alert"]').exists()).toBe(false);
++    });
++  }
++});
+--- review1/frontend/tests/routing.test.mjs
++++ editor-fixes/frontend/tests/routing.test.mjs
+@@ -0,0 +1,105 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import { readFileSync } from "node:fs";
++import { parseRouting, assertRoutingShape } from "../src/routing-validation.ts";
++const qs = JSON.parse(
++  readFileSync(
++    new URL("../../database/examples/survey_version.json", import.meta.url),
++    "utf8",
++  ),
++).definition.questions;
++test("规则缺少 condition 不允许应用", () =>
++  assert.throws(
++    () => parseRouting('{"rules":[{}],"default_target":null}', qs, 0),
++    /第1条规则/,
++  ));
++test("结构、类型、引用、顺序与数值边界均检查", () => {
++  const invalid = [
++    null,
++    [],
++    { rules: [], default_target: null, extra: 1 },
++    {
++      rules: [
++        {
++          condition: { question_id: "q_hours", operator: "gt", value: 18 },
++          target: "END",
++        },
++      ],
++      default_target: null,
++    },
++    {
++      rules: [
++        {
++          condition: {
++            question_id: "q_role",
++            operator: "eq",
++            value: "missing",
++          },
++          target: "END",
++        },
++      ],
++      default_target: null,
++    },
++    {
++      rules: [
++        {
++          condition: { question_id: "q_role", operator: "eq", value: "worker" },
++          target: "q_role",
++        },
++      ],
++      default_target: null,
++    },
++  ];
++  for (const value of invalid)
++    assert.throws(() => parseRouting(JSON.stringify(value), qs, 0));
++});
++test("有效组合条件保留不改变", () => {
++  const value = {
++    rules: [
++      {
++        condition: {
++          all: [
++            { question_id: "q_role", operator: "eq", value: "worker" },
++            { question_id: "q_hours", operator: "between", value: [0, 40] },
++          ],
++        },
++        target: "END",
++      },
++    ],
++    default_target: null,
++  };
++  assert.deepEqual(parseRouting(JSON.stringify(value), qs, 2), value);
++});
++test("区间与多选值结构损坏不会进入渲染", () => {
++  for (const c of [
++    { question_id: "q_hours", operator: "between", value: null },
++    { question_id: "q_tools", operator: "contains_all", value: "mongo" },
++  ])
++    assert.throws(() =>
++      assertRoutingShape({
++        rules: [{ condition: c, target: "END" }],
++        default_target: null,
++      }),
++    );
++});
++test("组合条件层数、空数组与超大数值不通过", () => {
++  let c = { question_id: "q_hours", operator: "gt", value: 1 };
++  for (let i = 0; i < 7; i++) c = { all: [c] };
++  for (const condition of [
++    c,
++    { all: [] },
++    { all: [], any: [] },
++    { question_id: "q_hours", operator: "between", value: [20, 10] },
++    { question_id: "q_hours", operator: "gt", value: 1e20 },
++  ])
++    assert.throws(() =>
++      parseRouting(
++        JSON.stringify({
++          rules: [{ condition, target: "END" }],
++          default_target: null,
++        }),
++        qs,
++        2,
++      ),
++    );
++});
+--- review1/backend/app/main.py
++++ editor-fixes/backend/app/main.py
+@@ -7,6 +7,7 @@
+ from fastapi.staticfiles import StaticFiles
+ from fastapi.exceptions import RequestValidationError
+ from pymongo.errors import DuplicateKeyError, PyMongoError, WriteError
++from pymongo import ReturnDocument
+ from app.config import settings, ROOT
+ from app.database import connect, initialize
+ from app.errors import BusinessError, require
+@@ -46,7 +47,7 @@
+ 
+     app = FastAPI(
+         title="问序 Survey Lab",
+-        version="1.0.1",
++        version="1.0.2",
+         description="MongoDB 问卷系统第一阶段 API",
+         lifespan=lifespan,
+     )
+@@ -136,7 +137,7 @@
+     @app.get("/api/health")
+     def health(database=Depends(db)):
+         database.command("ping")
+-        return {"status": "ok", "version": "1.0.1"}
++        return {"status": "ok", "version": "1.0.2"}
+ 
+     @app.post("/api/auth/register", status_code=201)
+     def register(body: Credentials, response: Response, database=Depends(db)):
+@@ -243,14 +244,19 @@
+         sid: str, body: StatusChange, database=Depends(db), user=Depends(current_user)
+     ):
+         surveys.owned(database, sid, user)
+-        database.surveys.update_one(
+-            {"_id": sid},
++        query = {"_id": sid, "owner_id": user["_id"]}
++        if body.revision is not None:
++            query["revision"] = body.revision
++        updated = database.surveys.find_one_and_update(
++            query,
+             {
+                 "$set": {"status": body.status, "updated_at": now()},
+                 "$inc": {"revision": 1, "activity_seq": 1},
+             },
+-        )
+-        return {"ok": True}
++            return_document=ReturnDocument.AFTER,
++        )
++        require(updated is not None, "问卷已被其他窗口修改，请先核对服务器状态", 409)
++        return {"ok": True, "survey": surveys.survey_metadata(updated)}
+ 
+     @app.get("/api/surveys/{sid}/versions")
+     def versions(sid: str, database=Depends(db), user=Depends(current_user)):
+--- review1/backend/app/schemas.py
++++ editor-fixes/backend/app/schemas.py
+@@ -75,6 +75,7 @@
+ 
+ class StatusChange(StrictModel):
+     status: Literal["closed"]
++    revision: int | None = Field(default=None, ge=1)
+ 
+ 
+ class StartAttempt(StrictModel):
+--- review1/backend/app/services/surveys.py
++++ editor-fixes/backend/app/services/surveys.py
+@@ -72,7 +72,7 @@
+             "rule_engine_version": 1,
+         }
+         db.survey_versions.insert_one(version, session=session)
+-        db.surveys.update_one(
++        updated = db.surveys.find_one_and_update(
+             {"_id": survey_id},
+             {
+                 "$set": {
+@@ -84,10 +84,18 @@
+                 "$inc": {"revision": 1, "activity_seq": 1},
+             },
+             session=session,
++            return_document=ReturnDocument.AFTER,
+         )
+-        return version
++        return {**version, "survey": survey_metadata(updated)}
+ 
+     return transact(db, work)
++
++
++def survey_metadata(survey):
++    return {
++        key: survey[key]
++        for key in ("revision", "status", "current_version", "deadline", "updated_at")
++    }
+ 
+ 
+ def available(survey):
+--- review1/backend/tests/test_editor_metadata.py
++++ editor-fixes/backend/tests/test_editor_metadata.py
+@@ -0,0 +1,46 @@
++def test_publish_returns_committed_metadata_without_embedding_it_in_version(
++    client, published, database
++):
++    sid = published["_id"]
++    r = client.post(
++        f"/api/surveys/{sid}/publish",
++        json={
++            "revision": published["revision"],
++            "deadline": "2030-01-01T12:30:45.123Z",
++        },
++    )
++    assert r.status_code == 200
++    data = r.json()
++    assert data["version"] == 2
++    assert data["survey"]["revision"] == published["revision"] + 1
++    assert (
++        data["survey"]["current_version"] == 2
++        and data["survey"]["status"] == "published"
++    )
++    assert data["survey"]["deadline"] == "2030-01-01T12:30:45.123000+00:00"
++    assert "draft" not in data["survey"]
++    assert "survey" not in database.survey_versions.find_one({"_id": data["_id"]})
++
++
++def test_close_revision_conflict_preserves_state_and_returns_metadata(
++    client, published, database
++):
++    sid = published["_id"]
++    old = published["revision"]
++    saved = client.put(
++        f"/api/surveys/{sid}/draft", json={"revision": old, "draft": published["draft"]}
++    ).json()
++    conflict = client.patch(
++        f"/api/surveys/{sid}/status", json={"status": "closed", "revision": old}
++    )
++    assert conflict.status_code == 409
++    assert database.surveys.find_one({"_id": sid})["status"] == "published"
++    closed = client.patch(
++        f"/api/surveys/{sid}/status",
++        json={"status": "closed", "revision": saved["revision"]},
++    )
++    assert closed.status_code == 200
++    body = closed.json()
++    assert body["ok"] and body["survey"]["status"] == "closed"
++    assert body["survey"]["revision"] == saved["revision"] + 1
++    assert "draft" not in body["survey"]

@@ -1,0 +1,10 @@
+{
+  "scope": "独立断点续填验收问卷；原问卷未修改",
+  "close_and_reopen_restored_raw_input": true,
+  "anonymous_and_version_preserved": true,
+  "continued_and_submitted": true,
+  "response_count": 1,
+  "numeric_answer": 7,
+  "submitted_draft_answers_cleared": true,
+  "text_and_number_verified_in_mongodb": true
+}

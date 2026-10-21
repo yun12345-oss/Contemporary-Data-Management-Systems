@@ -1,0 +1,151 @@
+{
+  "users": [
+    {
+      "keys": [
+        [
+          "username_key",
+          1
+        ]
+      ],
+      "name": "username_unique",
+      "unique": true
+    }
+  ],
+  "sessions": [
+    {
+      "keys": [
+        [
+          "token_hash",
+          1
+        ]
+      ],
+      "name": "session_token_unique",
+      "unique": true
+    },
+    {
+      "keys": [
+        [
+          "expires_at",
+          1
+        ]
+      ],
+      "name": "session_expiry",
+      "expireAfterSeconds": 0
+    }
+  ],
+  "surveys": [
+    {
+      "keys": [
+        [
+          "owner_id",
+          1
+        ],
+        [
+          "created_at",
+          -1
+        ]
+      ],
+      "name": "owner_created"
+    },
+    {
+      "keys": [
+        [
+          "share_code",
+          1
+        ]
+      ],
+      "name": "share_unique",
+      "unique": true
+    }
+  ],
+  "survey_versions": [
+    {
+      "keys": [
+        [
+          "survey_id",
+          1
+        ],
+        [
+          "version",
+          1
+        ]
+      ],
+      "name": "survey_version_unique",
+      "unique": true
+    }
+  ],
+  "responses": [
+    {
+      "keys": [
+        [
+          "survey_id",
+          1
+        ],
+        [
+          "version",
+          1
+        ],
+        [
+          "submitted_at",
+          -1
+        ]
+      ],
+      "name": "survey_statistics"
+    },
+    {
+      "keys": [
+        [
+          "attempt_id",
+          1
+        ]
+      ],
+      "name": "attempt_unique",
+      "unique": true
+    },
+    {
+      "keys": [
+        [
+          "survey_id",
+          1
+        ],
+        [
+          "respondent_key",
+          1
+        ]
+      ],
+      "name": "respondent_lookup"
+    }
+  ],
+  "attempts": [
+    {
+      "keys": [
+        [
+          "survey_id",
+          1
+        ],
+        [
+          "respondent_key",
+          1
+        ]
+      ],
+      "name": "one_active_attempt",
+      "unique": true,
+      "partialFilterExpression": {
+        "status": "in_progress"
+      }
+    },
+    {
+      "keys": [
+        [
+          "respondent_key",
+          1
+        ],
+        [
+          "updated_at",
+          -1
+        ]
+      ],
+      "name": "attempt_owner_updated"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "source": "独立交付目录，不含.env和业务数据库",
+  "runtime": "复用本机已安装的锁定依赖，未声称全新电脑安装",
+  "source_root_checked": true,
+  "backend_tests": 97,
+  "failures": 0,
+  "errors": 0,
+  "frontend_unit_tests": 16,
+  "frontend_component_tests": 43,
+  "total_unique_tests": 156,
+  "note": "交付目录97项为后端重复验证，不重复计入156项；单节点MongoDB副本集，8用户为正确性测试。"
+}

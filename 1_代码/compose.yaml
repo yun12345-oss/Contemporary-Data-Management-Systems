@@ -1,0 +1,29 @@
+services:
+  mongo:
+    image: mongo:8.0
+    command: ["mongod", "--replSet", "survey-rs", "--bind_ip_all"]
+    volumes: ["survey_data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  mongo-init:
+    image: mongo:8.0
+    depends_on:
+      mongo: {condition: service_healthy}
+    entrypoint: ["mongosh", "--host", "mongo:27017", "--quiet", "--eval"]
+    command:
+      - "try { rs.initiate({_id:'survey-rs',members:[{_id:0,host:'mongo:27017'}]}) } catch(e) { if(e.code!==23) throw e }; for(let i=0;i<60;i++){if(db.hello().isWritablePrimary) quit(0);sleep(1000)};quit(1)"
+  app:
+    build: .
+    ports: ["127.0.0.1:8000:8000"]
+    environment:
+      MONGO_URI: mongodb://mongo:27017/?replicaSet=survey-rs
+      MONGO_DB: survey_lab
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env first}
+      COOKIE_SECURE: "false"
+    depends_on:
+      mongo-init: {condition: service_completed_successfully}
+volumes:
+  survey_data:

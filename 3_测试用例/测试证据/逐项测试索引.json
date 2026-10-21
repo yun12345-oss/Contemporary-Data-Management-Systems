@@ -1,0 +1,1094 @@
+[
+  {
+    "kind": "后端",
+    "name": "test_partial_raw_input_resume_across_login_and_device",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_revision_conflict_does_not_overwrite",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_parallel_begin_has_one_active_attempt",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_skip_cleanup_and_recover_valid_position",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_read_only_restore_but_no_save_submit[closed]",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_read_only_restore_but_no_save_submit[expired]",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_pinned_version_and_anonymity_atomic_idempotent_submit",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_abandon_clears_answers_rejects_late_save_and_allows_new",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_drafts_not_in_statistics_and_account_isolation",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_bad_raw_structure_no_partial_write[answers0]",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_bad_raw_structure_no_partial_write[answers1]",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_bad_raw_structure_no_partial_write[answers2]",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_bad_raw_structure_no_partial_write[answers3]",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_direct_database_schema_rejects_malformed_attempt",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_submit_transaction_rolls_back_response_on_failure",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_eight_users_parallel_mixed_paths_and_statistics",
+    "source": "backend/tests/test_attempts.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_number_bounds[0-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_number_bounds[120-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_number_bounds[-1-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_number_bounds[121-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_number_bounds[18.5-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_number_bounds[True-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_number_bounds[18-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_number_bounds[None-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_multiple[value0-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_multiple[value1-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_multiple[value2-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_multiple[value3-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_multiple[value4-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_routing_discards_skipped",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_routing_requires_visited",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[eq-2-2-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[ne-2-3-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[gt-2-2-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[gte-2-2-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[lt-2-1-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[lte-2-2-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[between-value6-4-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[contains_any-value7-answer7-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[contains_all-value8-answer8-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[set_equals-value9-answer9-True]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_operators[ne-2-None-False]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_combination",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_invalid_targets[q1]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_invalid_targets[missing]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_invalid_targets[42]",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_future_reference",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_duplicate_ids",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_unknown_question",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_optional_text",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_config_conflict",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_extension_entry",
+    "source": "backend/tests/test_domain.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_publish_returns_committed_metadata_without_embedding_it_in_version",
+    "source": "backend/tests/test_editor_metadata.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_close_revision_conflict_preserves_state_and_returns_metadata",
+    "source": "backend/tests/test_editor_metadata.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_full_flow_idempotency_and_anonymity",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_permission_isolation",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_token_other_user",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_invalid_answer_no_write",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_close_and_deadline",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_concurrent_repeat_forbidden",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_concurrent_same_attempt",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_repeat_allowed",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_old_version_after_publish",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_optimistic_edit_and_invalid_publish",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_multiple_and_average",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_no_login_and_csrf",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_auth_casefold_logout",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_token_tamper",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_time_and_pagination",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_database_validation",
+    "source": "backend/tests/test_integration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_upgrade_old_data_and_explicit_rollback",
+    "source": "backend/tests/test_migration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_failed_upgrade_restores_constraints",
+    "source": "backend/tests/test_migration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_preflight_invalid_data_leaves_every_validator_unchanged",
+    "source": "backend/tests/test_migration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_startup_never_overwrites_unknown_or_future_schema",
+    "source": "backend/tests/test_migration.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_unanswerable_required_questions_rejected[multiple]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_unanswerable_required_questions_rejected[integer]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_unanswerable_required_questions_rejected[text]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_integer_interval_with_valid_point[0.1-1]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_integer_interval_with_valid_point[-0.9-0]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_integer_interval_with_valid_point[1-1]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_extreme_domain_numbers_never_overflow[10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_extreme_domain_numbers_never_overflow[-10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_extreme_domain_numbers_never_overflow[inf]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_extreme_domain_numbers_never_overflow[-inf]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_extreme_domain_numbers_never_overflow[nan]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_extreme_config_rejected_before_bson",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_extreme_submission_rejected_without_write",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_nested_extreme_condition_rejected",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_counts_people_anonymous_and_repeat",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_deep_database_constraints[responses-answers-value0]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_deep_database_constraints[responses-answers-value1]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_deep_database_constraints[responses-answers-value2]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_deep_database_constraints[responses-version_id-42]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_deep_database_constraints[responses-respondent_key-False]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_deep_database_constraints[survey_versions-definition-value5]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_deep_database_constraints[surveys-draft-value6]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "后端",
+    "name": "test_deep_database_constraints[surveys-share_code-42]",
+    "source": "backend/tests/test_review_fixes.py",
+    "evidence": "测试证据/自动测试结果/test-results.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "填写自动保存状态 > 暂停输入后保存原始内容",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "填写自动保存状态 > 持续输入也在最长等待时间同步",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "填写自动保存状态 > 旧响应不把新输入标记为已保存，并串行补存",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "填写自动保存状态 > 重复触发保存复用正在执行的请求",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "填写自动保存状态 > 保存失败保留输入，重试后才清除未保存标记",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "填写自动保存状态 > 冲突暂停自动保存且取消重新加载不丢输入",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "填写自动保存状态 > 登录过期后原页同账号登录，再保存未同步输入",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "填写自动保存状态 > 保存响应不抢走用户返回的前题位置",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "填写自动保存状态 > 只读恢复不触发保存",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "恢复页面与输入 > 先选择继续，再恢复答案及固定匿名设置",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "恢复页面与输入 > 数字中间状态原样发送，恢复后仍可编辑",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "恢复页面与输入 > 提交前等待最新保存完成，提交只携带revision",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "恢复页面与输入 > 主动退出前保存失败必须确认，取消则保留输入",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "恢复页面与输入 > 截止后的草稿仍可进入只读页面查看全部已保存内容",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "恢复页面与输入 > 路由离开先保存，失败且取消时仍停留原页面",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "恢复页面与输入 > 未完成前题不使用无效数值跳转，也不误删后续暂存内容",
+    "source": "frontend/tests/components/attempt.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 继续编辑后清除过期的保存反馈，修改状态仍正确",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 保存响应不覆盖等待期间的新输入，下一次保存使用新revision",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 保存失败保留草稿并恢复操作按钮",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 取消关闭不保存、不关闭、不覆盖草稿",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 有修改时先保存再关闭，关闭不重新GET覆盖内容",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 关闭前保存失败，不发送关闭请求",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 关闭前保存期间又编辑时中止关闭，保留新增输入",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 关闭请求期间输入仍保留，关闭失败也不覆盖",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 截止时间单独标记待发布，保存草稿不能假装已保存该时间",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 发布失败保留截止时间的待发布状态",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 发布等待期间的新草稿和时间不被响应覆盖",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 发布前保存期间新增输入，中止发布",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 有进行中的保存时，禁止重复操作和路由离开",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 损坏JSON拒绝应用，原配置与编辑器保持可用",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 关闭请求成功也保留等待期间的新输入",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 草稿已保存但关闭失败时保留成功保存的信息",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 截止时间未发布时关闭有明确确认，成功后仍保留待发布状态",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 成功发布清除本次截止时间标记，无新修改即可离开",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "编辑器保存、关闭、发布和离开 > 未修改截止时间时发布保留服务器秒级精度",
+    "source": "frontend/tests/components/editor.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "文本组件与后端的码点长度口径 > 一个表情可实际输入，上限1时不使用UTF-16 maxlength",
+    "source": "frontend/tests/components/inputs.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "文本组件与后端的码点长度口径 > 粘贴多个表情保留全文，显示超限且规则拒绝",
+    "source": "frontend/tests/components/inputs.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "文本组件与后端的码点长度口径 > 中文组合输入结束前不提交中间内容，不提前提示超限",
+    "source": "frontend/tests/components/inputs.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "文本组件与后端的码点长度口径 > 组合结束后的重复input不重复发出更新，计数去除首尾空白",
+    "source": "frontend/tests/components/inputs.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "文本组件与后端的码点长度口径 > 外部模型更新可以清空实际输入",
+    "source": "frontend/tests/components/inputs.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "规则组件防御性渲染 > 损坏配置显示错误且可明确清空：null",
+    "source": "frontend/tests/components/inputs.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "规则组件防御性渲染 > 损坏配置显示错误且可明确清空：{\"rules\":[{}],\"default_target\":null}",
+    "source": "frontend/tests/components/inputs.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "组件",
+    "name": "规则组件防御性渲染 > 损坏配置显示错误且可明确清空：{\"rules\":[{\"condition\":{\"question_id\":\"q1\",\"operator\":\"between\",\"value\":null},\"target\":\"END\"}],\"default_target\":null}",
+    "source": "frontend/tests/components/inputs.spec.ts",
+    "evidence": "测试证据/自动测试结果/component-tests.xml",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "规则缺少 condition 不允许应用",
+    "source": "frontend/tests/routing.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "结构、类型、引用、顺序与数值边界均检查",
+    "source": "frontend/tests/routing.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "有效组合条件保留不改变",
+    "source": "frontend/tests/routing.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "区间与多选值结构损坏不会进入渲染",
+    "source": "frontend/tests/routing.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "组合条件层数、空数组与超大数值不通过",
+    "source": "frontend/tests/routing.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "学生路径包含工具题，工作路径跳过工具题",
+    "source": "frontend/tests/rules.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "先前路径失效的答案不能参与后续条件",
+    "source": "frontend/tests/rules.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "数字范围包含边界并拒绝非整数",
+    "source": "frontend/tests/rules.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "必答与可选空值保持区分",
+    "source": "frontend/tests/rules.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "多选数量约束",
+    "source": "frontend/tests/rules.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "组合条件和区间边界",
+    "source": "frontend/tests/rules.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "未回答的非等于条件也不满足",
+    "source": "frontend/tests/rules.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "Unicode 长度按码点计数",
+    "source": "frontend/tests/rules.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "重复作答的次数与去重人数分别选择分子和分母",
+    "source": "frontend/tests/statistics.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "空数据百分比为零",
+    "source": "frontend/tests/statistics.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  },
+  {
+    "kind": "普通单元",
+    "name": "允许单选多次改变答案形成重叠人数",
+    "source": "frontend/tests/statistics.test.mjs",
+    "evidence": "测试证据/自动测试结果/frontend-tests.txt",
+    "result": "通过"
+  }
+]

@@ -1,0 +1,1 @@
+{"schema_version":1,"survey_id":"example-survey-id","version_id":"example-version-id","version":1,"anonymous":true,"answers":[{"question_id":"q_role","value":"worker"},{"question_id":"q_hours","value":4},{"question_id":"q_feedback","value":"建议增加数据建模讨论。"}],"path":["q_role","q_hours","q_feedback"],"note":"结构说明示例；真实记录还包含服务端生成的 _id、attempt_id、respondent_key、submitted_at，不可直接导入。"}

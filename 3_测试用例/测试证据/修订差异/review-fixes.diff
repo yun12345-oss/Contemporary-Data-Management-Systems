@@ -1,0 +1,994 @@
+--- initial/backend/app/domain/questions.py
++++ review1/backend/app/domain/questions.py
+@@ -2,6 +2,8 @@
+ 
+ import math
+ from app.errors import require
++from app.domain.numbers import safe_number, NUMBER_LIMIT
++from app.aggregation import option_counts
+ 
+ 
+ class QuestionType:
+@@ -25,15 +27,7 @@
+     operators = {"eq", "ne"}
+ 
+     def summarize(self, db, base, q):
+-        counts = {
+-            r["_id"]: r["n"]
+-            for r in db.responses.aggregate(
+-                base + [{"$group": {"_id": "$answers.value", "n": {"$sum": 1}}}]
+-            )
+-        }
+-        return {
+-            "options": [{**o, "count": counts.get(o["id"], 0)} for o in q["options"]]
+-        }
++        return {"options": option_counts(db, base, q["options"])}
+ 
+     def check_config(self, q):
+         super().check_config(q)
+@@ -68,6 +62,9 @@
+             and 0 <= low <= high <= len(q["options"]),
+             "多选数量限制不合法",
+         )
++        require(
++            not q["required"] or max(1, low) <= high, "必答多选题必须允许至少选择一项"
++        )
+ 
+     def validate(self, q, value):
+         require(
+@@ -98,6 +95,10 @@
+             "文本长度限制不合法",
+         )
+         require(not q["options"], "填空题不能包含选项")
++        require(
++            not q["required"] or high >= max(1, low),
++            "必答文本题必须允许输入至少一个字符",
++        )
+ 
+     def validate(self, q, value):
+         require(isinstance(value, str), "请输入文本")
+@@ -137,22 +138,24 @@
+         super().check_config(q)
+         v = q["validation"]
+         require(
+-            all(
+-                type(v[k]) in (int, float) and math.isfinite(v[k])
+-                for k in ("min", "max")
+-                if k in v
+-            ),
+-            "数字范围必须是有限数值",
++            all(safe_number(v[k]) for k in ("min", "max") if k in v),
++            "数字范围必须有限，且绝对值不超过 10¹⁵",
+         )
+         require(
+             v.get("min", -math.inf) <= v.get("max", math.inf), "最小值不能超过最大值"
+         )
+         require(type(v.get("integer_only", False)) is bool, "整数限制必须是布尔值")
++        low, high = v.get("min", -NUMBER_LIMIT), v.get("max", NUMBER_LIMIT)
++        require(
++            not (q["required"] and v.get("integer_only"))
++            or math.ceil(low) <= math.floor(high),
++            "必答整数题的范围内不存在合法整数",
++        )
+         require(not q["options"], "填空题不能包含选项")
+ 
+     def validate(self, q, value):
+         require(
+-            type(value) in (int, float) and math.isfinite(value) and abs(value) <= 1e15,
++            safe_number(value),
+             "请输入有效数字（绝对值不超过 10¹⁵）",
+         )
+         v = q["validation"]
+--- initial/backend/app/domain/numbers.py
++++ review1/backend/app/domain/numbers.py
+@@ -0,0 +1,26 @@
++"""所有 JSON 数值使用同一安全边界，避免浮点转换溢出和 BSON 编码失败。"""
++
++import math
++
++NUMBER_LIMIT = 10**15
++
++
++def safe_number(value):
++    return (
++        type(value) in (int, float)
++        and -NUMBER_LIMIT <= value <= NUMBER_LIMIT
++        and (type(value) is int or math.isfinite(value))
++    )
++
++
++def check_json_numbers(value, depth=0):
++    if depth > 32:
++        raise ValueError("请求数据嵌套过深")
++    if type(value) in (int, float) and not safe_number(value):
++        raise ValueError("数值必须有限，且绝对值不超过 10¹⁵")
++    if isinstance(value, dict):
++        for item in value.values():
++            check_json_numbers(item, depth + 1)
++    elif isinstance(value, list):
++        for item in value:
++            check_json_numbers(item, depth + 1)
+--- initial/backend/app/domain/rules.py
++++ review1/backend/app/domain/rules.py
+@@ -1,9 +1,9 @@
+ """有限条件语言。禁止 eval；所有引用在发布前检查。"""
+ 
+-import math
+ import operator
+ from app.errors import require, BusinessError
+ from app.domain.questions import handler, validate_answer
++from app.domain.numbers import safe_number
+ 
+ COMPARATORS = {
+     "eq": operator.eq,
+@@ -60,8 +60,8 @@
+             "数字条件格式不正确",
+         )
+         require(
+-            all(type(x) in (int, float) and math.isfinite(x) for x in values),
+-            "条件值必须是有限数字",
++            all(safe_number(x) for x in values),
++            "条件值必须有限，且绝对值不超过 10¹⁵",
+         )
+         require(op != "between" or values[0] <= values[1], "区间下界不能超过上界")
+ 
+--- initial/backend/app/schemas.py
++++ review1/backend/app/schemas.py
+@@ -1,10 +1,17 @@
+ from datetime import datetime
+ from typing import Literal
+-from pydantic import BaseModel, Field, ConfigDict, field_validator
++from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
++from app.domain.numbers import check_json_numbers
+ 
+ 
+ class StrictModel(BaseModel):
+     model_config = ConfigDict(extra="forbid")
++
++    @model_validator(mode="before")
++    @classmethod
++    def bounded_numbers(cls, value):
++        check_json_numbers(value)
++        return value
+ 
+ 
+ class Credentials(StrictModel):
+@@ -17,6 +24,16 @@
+     label: str = Field(min_length=1, max_length=200)
+ 
+ 
++class RoutingRule(StrictModel):
++    condition: dict
++    target: str = Field(min_length=1, max_length=64)
++
++
++class Routing(StrictModel):
++    rules: list[RoutingRule] = Field(default_factory=list, max_length=20)
++    default_target: str | None = Field(default=None, max_length=64)
++
++
+ class Question(StrictModel):
+     id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")
+     type: str = Field(min_length=1, max_length=40)
+@@ -24,7 +41,7 @@
+     required: bool = False
+     options: list[Option] = Field(default_factory=list, max_length=100)
+     validation: dict = Field(default_factory=dict)
+-    routing: dict = Field(default_factory=lambda: {"rules": [], "default_target": None})
++    routing: Routing = Field(default_factory=Routing)
+ 
+ 
+ class Definition(StrictModel):
+--- initial/backend/app/main.py
++++ review1/backend/app/main.py
+@@ -6,7 +6,7 @@
+ from fastapi.responses import JSONResponse, FileResponse
+ from fastapi.staticfiles import StaticFiles
+ from fastapi.exceptions import RequestValidationError
+-from pymongo.errors import DuplicateKeyError, PyMongoError
++from pymongo.errors import DuplicateKeyError, PyMongoError, WriteError
+ from app.config import settings, ROOT
+ from app.database import connect, initialize
+ from app.errors import BusinessError, require
+@@ -46,7 +46,7 @@
+ 
+     app = FastAPI(
+         title="问序 Survey Lab",
+-        version="1.0.0",
++        version="1.0.1",
+         description="MongoDB 问卷系统第一阶段 API",
+         lifespan=lifespan,
+     )
+@@ -79,7 +79,8 @@
+     async def validation_error(request, exc):
+         return JSONResponse(
+             {
+-                "error": "请求字段格式不正确",
++                "error": "请求字段格式不正确："
++                + exc.errors()[0]["msg"].removeprefix("Value error, "),
+                 "details": [
+                     {"field": ".".join(map(str, e["loc"])), "message": e["msg"]}
+                     for e in exc.errors()
+@@ -94,11 +95,25 @@
+             {"error": "记录已存在或操作重复，请刷新后重试"}, status_code=409
+         )
+ 
++    @app.exception_handler(OverflowError)
++    async def numeric_overflow(request, exc):
++        logging.warning("Rejected numeric overflow on %s", request.url.path)
++        return JSONResponse({"error": "数值超出可存储范围"}, status_code=422)
++
+     @app.exception_handler(PyMongoError)
+     async def storage_error(request, exc):
+         logging.exception("MongoDB operation failed")
+         return JSONResponse({"error": "数据库暂时不可用，请稍后重试"}, status_code=503)
+ 
++    @app.exception_handler(WriteError)
++    async def document_error(request, exc):
++        if exc.code == 121:
++            return JSONResponse(
++                {"error": "数据结构不符合数据库约束，请检查输入"}, status_code=422
++            )
++        logging.exception("MongoDB write failed")
++        return JSONResponse({"error": "数据库写入失败，请稍后重试"}, status_code=503)
++
+     def db(request: Request):
+         return request.app.state.db
+ 
+@@ -121,7 +136,7 @@
+     @app.get("/api/health")
+     def health(database=Depends(db)):
+         database.command("ping")
+-        return {"status": "ok", "version": "1.0.0"}
++        return {"status": "ok", "version": "1.0.1"}
+ 
+     @app.post("/api/auth/register", status_code=201)
+     def register(body: Credentials, response: Response, database=Depends(db)):
+--- initial/backend/app/database.py
++++ review1/backend/app/database.py
+@@ -3,22 +3,34 @@
+ from pymongo.read_concern import ReadConcern
+ from pymongo.write_concern import WriteConcern
+ from app.config import ROOT, settings
++from app.errors import require
+ 
+ 
+ def connect():
+     return MongoClient(settings.mongo_uri, tz_aware=True, serverSelectionTimeoutMS=5000)
+ 
+ 
++def validator_definitions():
++    return json.loads((ROOT / "database/collection_validators.json").read_text("utf-8"))
++
++
+ def initialize(db):
+-    validators = json.loads(
+-        (ROOT / "database/collection_validators.json").read_text("utf-8")
+-    )
+-    existing = set(db.list_collection_names())
++    """仅初始化新集合；已有约束不符时停止，不能在启动时隐式迁移。"""
++    validators = validator_definitions()
++    existing = {c["name"]: c.get("options", {}) for c in db.list_collections()}
++    for name, schema in validators.items():
++        if name in existing:
++            options = existing[name]
++            require(
++                options.get("validator") == {"$jsonSchema": schema}
++                and options.get("validationLevel", "strict") == "strict"
++                and options.get("validationAction", "error") == "error",
++                "数据库约束与当前程序不一致。请停止写入，先运行 backend/scripts/upgrade_database.py --check，再显式升级；启动不会修改已有约束。",
++                500,
++            )
+     for name, schema in validators.items():
+         spec = {"$jsonSchema": schema}
+-        if name in existing:
+-            db.command("collMod", name, validator=spec, validationLevel="strict")
+-        else:
++        if name not in existing:
+             db.create_collection(name, validator=spec)
+     definitions = json.loads((ROOT / "database/indexes.json").read_text("utf-8"))
+     for name, indexes in definitions.items():
+--- initial/backend/app/migration.py
++++ review1/backend/app/migration.py
+@@ -0,0 +1,119 @@
++"""显式升级集合约束。维护窗口运行，先全量预检，再记录可恢复日志。"""
++
++import hashlib
++import json
++from pathlib import Path
++from datetime import datetime, timezone
++from bson import json_util
++from app.config import ROOT
++from app.database import validator_definitions
++from app.errors import require
++
++
++def canonical(value):
++    return json_util.dumps(value, sort_keys=True)
++
++
++def fingerprint(value):
++    return hashlib.sha256(canonical(value).encode()).hexdigest()
++
++
++def write_journal(path, journal):
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    temp = path.with_suffix(".tmp")
++    temp.write_text(canonical(journal), encoding="utf-8")
++    temp.replace(path)
++
++
++def inspect_upgrade(db):
++    target = validator_definitions()
++    legacy = json.loads(
++        (ROOT / "database/legacy/collection_validators.v1.json").read_text("utf-8")
++    )
++    options = {c["name"]: c.get("options", {}) for c in db.list_collections()}
++    require(
++        set(target) <= set(options),
++        "已有库缺少集合，请先检查数据库，不自动推断迁移路径",
++        409,
++    )
++    report = {}
++    for name, schema in target.items():
++        current = options[name].get("validator", {})
++        require(
++            current in ({"$jsonSchema": legacy[name]}, {"$jsonSchema": schema}),
++            f"{name} 的校验器不是已知旧版或目标版，停止升级",
++            409,
++        )
++        invalid = db[name].count_documents({"$nor": [{"$jsonSchema": schema}]})
++        report[name] = {
++            "count": db[name].count_documents({}),
++            "invalid": invalid,
++            "needs_upgrade": current != {"$jsonSchema": schema},
++        }
++    return report, options
++
++
++def set_options(db, name, options):
++    db.command(
++        "collMod",
++        name,
++        validator=options.get("validator", {}),
++        validationLevel=options.get("validationLevel", "strict"),
++        validationAction=options.get("validationAction", "error"),
++    )
++
++
++def rollback(db, path):
++    journal = json_util.loads(Path(path).read_text("utf-8"))
++    require(journal["database"] == db.name, "恢复日志不属于此数据库", 409)
++    targets = journal["target"]
++    options = {c["name"]: c.get("options", {}) for c in db.list_collections()}
++    for name, before in journal["before"].items():
++        require(
++            options.get(name, {}).get("validator", {})
++            in (before.get("validator", {}), {"$jsonSchema": targets[name]}),
++            "数据库约束已被其他操作改变，拒绝覆盖",
++            409,
++        )
++    for name, before in journal["before"].items():
++        set_options(db, name, before)
++    journal["state"] = "rolled_back"
++    write_journal(path, journal)
++    return journal
++
++
++def upgrade(db, path):
++    path = Path(path)
++    require(not path.exists(), "升级日志已存在，不能覆盖；请使用新路径", 409)
++    report, options = inspect_upgrade(db)
++    require(
++        not any(r["invalid"] for r in report.values()),
++        "旧数据不符合新约束，升级未执行。请先查看 --check 结果并制定修复方案。",
++        409,
++    )
++    target = validator_definitions()
++    journal = {
++        "database": db.name,
++        "started_at": datetime.now(timezone.utc),
++        "state": "prepared",
++        "before": {n: options[n] for n in target},
++        "target": target,
++        "target_hash": fingerprint(target),
++        "report": report,
++        "applied": [],
++    }
++    write_journal(path, journal)
++    try:
++        for name, schema in target.items():
++            set_options(db, name, {"validator": {"$jsonSchema": schema}})
++            journal["applied"].append(name)
++            journal["state"] = "applying"
++            write_journal(path, journal)
++        journal["state"] = "complete"
++        write_journal(path, journal)
++        return journal
++    except Exception:
++        # 普通失败自动恢复；进程中断时可以用相同日志显式 --rollback。
++        rollback(db, path)
++        raise
+--- initial/backend/app/services/statistics.py
++++ review1/backend/app/services/statistics.py
+@@ -1,6 +1,7 @@
+ from app.errors import require
+ from app.services.surveys import owned
+ from app.domain.questions import handler
++from app.aggregation import population
+ 
+ 
+ def select_version(db, sid, user, version):
+@@ -27,7 +28,7 @@
+ def aggregate(db, sid, user, version=None, start=None, end=None):
+     ver = select_version(db, sid, user, version)
+     match = query_filter(sid, ver["version"], start, end)
+-    total = db.responses.count_documents(match)
++    totals = population(db, [{"$match": match}])
+     questions = []
+     for q in ver["definition"]["questions"]:
+         base = [
+@@ -40,19 +41,21 @@
+                 }
+             },
+         ]
+-        count = list(db.responses.aggregate(base + [{"$count": "n"}]))
++        counts = population(db, base)
+         item = {
+             "id": q["id"],
+             "title": q["title"],
+             "type": q["type"],
+-            "answered": count[0]["n"] if count else 0,
++            "answered": counts["total"],
++            "respondent_count": counts["respondent_count"],
+         }
+         item.update(handler(q["type"]).summarize(db, base, q))
+         questions.append(item)
+     return {
+         "version": ver["version"],
+         "title": ver["definition"]["title"],
+-        "total": total,
++        "total": totals["total"],
++        "respondent_count": totals["respondent_count"],
+         "questions": questions,
+     }
+ 
+--- initial/backend/app/aggregation.py
++++ review1/backend/app/aggregation.py
+@@ -0,0 +1,50 @@
++"""两阶段分组去重，不将全部填写者 ID 聚合进一个大数组。"""
++
++
++def population(db, pipeline):
++    rows = list(
++        db.responses.aggregate(
++            pipeline
++            + [
++                {"$group": {"_id": "$respondent_key", "n": {"$sum": 1}}},
++                {
++                    "$group": {
++                        "_id": None,
++                        "total": {"$sum": "$n"},
++                        "respondent_count": {"$sum": 1},
++                    }
++                },
++            ]
++        )
++    )
++    return rows[0] if rows else {"total": 0, "respondent_count": 0}
++
++
++def option_counts(db, pipeline, options):
++    rows = db.responses.aggregate(
++        pipeline
++        + [
++            {
++                "$group": {
++                    "_id": {"option": "$answers.value", "person": "$respondent_key"},
++                    "n": {"$sum": 1},
++                }
++            },
++            {
++                "$group": {
++                    "_id": "$_id.option",
++                    "count": {"$sum": "$n"},
++                    "respondent_count": {"$sum": 1},
++                }
++            },
++        ]
++    )
++    counts = {r["_id"]: r for r in rows}
++    return [
++        {
++            **o,
++            "count": counts.get(o["id"], {}).get("count", 0),
++            "respondent_count": counts.get(o["id"], {}).get("respondent_count", 0),
++        }
++        for o in options
++    ]
+--- initial/frontend/src/views/Statistics.vue
++++ review1/frontend/src/views/Statistics.vue
+@@ -3,6 +3,7 @@
+ import { useRoute } from "vue-router";
+ import { api } from "../api";
+ import { typeNames, dateLabel } from "../types";
++import { optionCount, optionPercent, type CountBasis } from "../statistics";
+ const route = useRoute(),
+   sid = String(route.params.id),
+   versions = ref<any[]>([]),
+@@ -15,7 +16,8 @@
+   end = ref(""),
+   values = ref<any>(null),
+   valueQ = ref<any>(null),
+-  page = ref(1);
++  page = ref(1),
++  basis = ref<CountBasis>("responses");
+ const shown = computed(
+   () =>
+     stats.value?.questions.filter(
+@@ -103,6 +105,13 @@
+         </select></label
+       >
+     </section>
++    <label class="stats-basis"
++      >选项统计口径
++      <select v-model="basis" aria-label="选项统计口径">
++        <option value="responses">按作答次数</option>
++        <option value="people">按去重人数</option>
++      </select>
++    </label>
+     <div class="alert error" v-if="error">{{ error }}</div>
+     <div class="empty-state" v-if="busy">正在计算统计…</div>
+     <template v-else-if="stats"
+@@ -113,6 +122,10 @@
+           ><span>份有效提交</span>
+         </div>
+         <div>
++          <strong>{{ stats.respondent_count }}</strong
++          ><span>人填写（去重账号）</span>
++        </div>
++        <div>
+           <strong>{{ stats.questions.length }}</strong
+           ><span>道题目</span>
+         </div>
+@@ -121,14 +134,22 @@
+           ><span>当前统计版本</span>
+         </div>
+         <p>
+-          被跳过或未回答的题目不计入该题回答人数。<br />多选百分比以该题回答人数为分母。
++          人数在所选版本和时间范围内按账号去重，匿名与实名合并计数。<br />
++          {{
++            basis === "people"
++              ? "百分比以该题去重作答人数为分母。重复填写时，单选各项人数也可能交叉。"
++              : "百分比以该题有效作答次数为分母。"
++          }}<br />
++          跳过或空白不计入该题；各选项百分比之和可能超过 100%。
+         </p>
+       </div>
+       <section class="stats-grid">
+         <article class="panel question-stats" v-for="q in shown" :key="q.id">
+           <div class="inline-heading">
+             <span class="badge">{{ typeNames[q.type] }}</span
+-            ><span class="muted">{{ q.answered }} 人回答</span>
++            ><span class="muted"
++              >{{ q.answered }} 次作答 · {{ q.respondent_count }} 人</span
++            >
+           </div>
+           <h2>{{ q.title }}</h2>
+           <template v-if="q.options"
+@@ -136,28 +157,25 @@
+               <div>
+                 <span>{{ o.label }}</span
+                 ><strong
+-                  >{{ o.count }}
++                  >{{ optionCount(o, basis) }}
++                  {{ basis === "people" ? "人" : "次" }}
++                  <small>{{ o.count }} 次 / {{ o.respondent_count }} 人</small>
+                   <small
+-                    >{{
+-                      q.answered
+-                        ? ((o.count / q.answered) * 100).toFixed(1)
+-                        : "0"
+-                    }}%</small
++                    >{{ optionPercent(o, q, basis).toFixed(1) }}%</small
+                   ></strong
+                 >
+               </div>
+               <div class="bar-track">
+                 <span
+                   :style="{
+-                    width:
+-                      (q.answered ? (o.count / q.answered) * 100 : 0) + '%',
++                    width: optionPercent(o, q, basis) + '%',
+                   }"
+                 ></span>
+               </div></div></template
+           ><template v-else-if="q.type === 'number'"
+             ><div class="numeric-result">
+               <span
+-                >平均值<strong>{{
++                >平均值（按作答次数）<strong>{{
+                   q.average === null ? "—" : Number(q.average.toFixed(2))
+                 }}</strong></span
+               ><span
+--- initial/frontend/src/statistics.ts
++++ review1/frontend/src/statistics.ts
+@@ -0,0 +1,16 @@
++export type CountBasis = "responses" | "people";
++export function optionCount(
++  option: { count: number; respondent_count: number },
++  basis: CountBasis,
++): number {
++  return basis === "people" ? option.respondent_count : option.count;
++}
++export function optionPercent(
++  option: { count: number; respondent_count: number },
++  question: { answered: number; respondent_count: number },
++  basis: CountBasis,
++): number {
++  const denominator =
++    basis === "people" ? question.respondent_count : question.answered;
++  return denominator ? (optionCount(option, basis) / denominator) * 100 : 0;
++}
+--- initial/backend/tests/test_review_fixes.py
++++ review1/backend/tests/test_review_fixes.py
+@@ -0,0 +1,229 @@
++from copy import deepcopy
++from datetime import timedelta
++from uuid import uuid4
++
++import pytest
++from fastapi.testclient import TestClient
++from pymongo.errors import WriteError
++from app.domain.questions import handler, validate_answer
++from app.domain.rules import check_definition
++from app.errors import BusinessError
++from app.security import now
++from conftest import publish_survey, start
++
++
++@pytest.mark.parametrize("kind", ["multiple", "integer", "text"])
++def test_unanswerable_required_questions_rejected(client, definition, database, kind):
++    if kind == "multiple":
++        definition["questions"][1]["validation"] = {"max_choices": 0}
++    elif kind == "integer":
++        definition["questions"][2]["validation"] = {
++            "min": 0.1,
++            "max": 0.9,
++            "integer_only": True,
++        }
++    else:
++        definition["questions"][3]["required"] = True
++        definition["questions"][3]["validation"] = {"max_length": 0}
++    survey = client.post("/api/surveys", json={"title": "不可回答配置"}).json()
++    saved = client.put(
++        f"/api/surveys/{survey['_id']}/draft", json={"revision": 1, "draft": definition}
++    )
++    assert saved.status_code == 200
++    result = client.post(
++        f"/api/surveys/{survey['_id']}/publish",
++        json={"revision": saved.json()["revision"]},
++    )
++    assert result.status_code == 422
++    assert database.survey_versions.count_documents({"survey_id": survey["_id"]}) == 0
++    current = database.surveys.find_one({"_id": survey["_id"]})
++    assert current["status"] == "draft" and current["current_version"] == 0
++
++
++@pytest.mark.parametrize("low,high", [(0.1, 1), (-0.9, 0), (1, 1)])
++def test_integer_interval_with_valid_point(definition, low, high):
++    definition["questions"][2]["validation"] = {
++        "min": low,
++        "max": high,
++        "integer_only": True,
++    }
++    check_definition(definition)
++
++
++@pytest.mark.parametrize(
++    "value", [10**400, -(10**400), float("inf"), float("-inf"), float("nan")]
++)
++def test_extreme_domain_numbers_never_overflow(definition, value):
++    with pytest.raises(BusinessError):
++        validate_answer(definition["questions"][2], value)
++    definition["questions"][2]["validation"]["max"] = value
++    with pytest.raises(BusinessError):
++        check_definition(definition)
++
++
++def test_extreme_config_rejected_before_bson(client, definition, database):
++    survey = client.post("/api/surveys", json={"title": "极端数字"}).json()
++    definition["questions"][2]["validation"]["max"] = 10**20
++    response = client.put(
++        f"/api/surveys/{survey['_id']}/draft", json={"revision": 1, "draft": definition}
++    )
++    assert response.status_code == 422
++    current = database.surveys.find_one({"_id": survey["_id"]})
++    assert current["revision"] == 1 and not current["draft"]["questions"]
++
++
++def test_extreme_submission_rejected_without_write(client, published, database):
++    token = start(client, published)
++    r = client.post(
++        "/api/responses",
++        json={"token": token, "answers": {"q1": "worker", "q3": 10**400}},
++    )
++    assert r.status_code == 422
++    assert database.responses.count_documents({"survey_id": published["_id"]}) == 0
++
++
++def test_nested_extreme_condition_rejected(client, definition):
++    survey = client.post("/api/surveys", json={"title": "条件数字"}).json()
++    definition["questions"][2]["routing"]["rules"] = [
++        {
++            "condition": {
++                "all": [{"question_id": "q3", "operator": "gt", "value": 10**400}]
++            },
++            "target": "END",
++        }
++    ]
++    assert (
++        client.put(
++            f"/api/surveys/{survey['_id']}/draft",
++            json={"revision": 1, "draft": definition},
++        ).status_code
++        == 422
++    )
++
++
++def test_counts_people_anonymous_and_repeat(client, definition, app, database):
++    definition["allow_repeat"] = True
++    survey = publish_survey(client, definition)
++    sid = survey["_id"]
++
++    def answer(c, data, anonymous):
++        return c.post(
++            "/api/responses",
++            json={"token": start(c, survey, anonymous), "answers": data},
++        )
++
++    assert (
++        answer(client, {"q1": "student", "q2": ["a", "b"], "q3": 20}, True).status_code
++        == 200
++    )
++    assert (
++        answer(client, {"q1": "student", "q2": ["b", "c"], "q3": 30}, False).status_code
++        == 200
++    )
++    assert answer(client, {"q1": "worker", "q3": 40}, True).status_code == 200
++    split = now()
++    with TestClient(app) as other:
++        assert (
++            other.post(
++                "/api/auth/register",
++                json={
++                    "username": "counts_" + uuid4().hex[:12],
++                    "password": "StrongPass123",
++                },
++            ).status_code
++            == 201
++        )
++        assert (
++            answer(
++                other, {"q1": "student", "q2": ["a", "c"], "q3": 50, "q4": "建议"}, True
++            ).status_code
++            == 200
++        )
++    stats = client.get(f"/api/surveys/{sid}/statistics").json()
++    assert stats["total"] == 4 and stats["respondent_count"] == 2
++    single, multiple, number, text = stats["questions"]
++    assert single["answered"] == 4 and single["respondent_count"] == 2
++    assert [(o["count"], o["respondent_count"]) for o in single["options"]] == [
++        (3, 2),
++        (1, 1),
++    ]
++    assert multiple["answered"] == 3 and multiple["respondent_count"] == 2
++    assert [(o["count"], o["respondent_count"]) for o in multiple["options"]] == [
++        (2, 2),
++        (2, 1),
++        (2, 2),
++    ]
++    assert text["answered"] == 1 and text["respondent_count"] == 1
++    assert number["average"] == 35
++    assert "respondent_key" not in str(stats)
++    # 同一筛选内去重；不存在的未来时间窗口返回零。
++    empty = client.get(
++        f"/api/surveys/{sid}/statistics?start=2100-01-01T00:00:00Z"
++    ).json()
++    assert empty["total"] == 0 and empty["respondent_count"] == 0
++    assert all(q["respondent_count"] == 0 for q in empty["questions"])
++    # 仅将测试构造的最后一条时间推进一天，验证筛选不沿用全局人数。
++    database.responses.update_one(
++        {
++            "survey_id": sid,
++            "answers": {"$elemMatch": {"question_id": "q3", "value": 50}},
++        },
++        {"$set": {"submitted_at": split + timedelta(days=1)}},
++    )
++    filtered = client.get(
++        f"/api/surveys/{sid}/statistics",
++        params={"start": (split + timedelta(hours=1)).isoformat()},
++    ).json()
++    assert filtered["total"] == filtered["respondent_count"] == 1
++    draft = client.get(f"/api/surveys/{sid}").json()
++    assert (
++        client.post(
++            f"/api/surveys/{sid}/publish", json={"revision": draft["revision"]}
++        ).status_code
++        == 200
++    )
++    new = client.get(f"/api/surveys/{sid}/statistics?version=2").json()
++    assert new["total"] == new["respondent_count"] == 0
++    assert (
++        client.get(f"/api/surveys/{sid}/statistics?version=1").json()[
++            "respondent_count"
++        ]
++        == 2
++    )
++
++
++@pytest.mark.parametrize(
++    "collection,field,value",
++    [
++        ("responses", "answers", [{"value": 20}]),
++        ("responses", "answers", [{"question_id": "q3", "value": True}]),
++        ("responses", "answers", [{"question_id": "q3", "value": {"bad": 1}}]),
++        ("responses", "version_id", 42),
++        ("responses", "respondent_key", False),
++        ("survey_versions", "definition", {}),
++        ("surveys", "draft", {}),
++        ("surveys", "share_code", 42),
++    ],
++)
++def test_deep_database_constraints(
++    client, published, database, collection, field, value
++):
++    if collection == "responses":
++        assert (
++            client.post(
++                "/api/responses",
++                json={
++                    "token": start(client, published),
++                    "answers": {"q1": "worker", "q3": 20},
++                },
++            ).status_code
++            == 200
++        )
++        doc = database.responses.find_one({"survey_id": published["_id"]})
++    elif collection == "survey_versions":
++        doc = database.survey_versions.find_one({"survey_id": published["_id"]})
++    else:
++        doc = database.surveys.find_one({"_id": published["_id"]})
++    doc[field] = value
++    with pytest.raises(WriteError):
++        database[collection].replace_one({"_id": doc["_id"]}, doc)
+--- initial/backend/tests/test_migration.py
++++ review1/backend/tests/test_migration.py
+@@ -0,0 +1,126 @@
++import json
++from uuid import uuid4
++from pathlib import Path
++import pytest
++from app.config import ROOT
++from app.database import initialize, validator_definitions
++from app.errors import BusinessError
++from app.migration import inspect_upgrade, upgrade, rollback
++import app.migration as migration
++from conftest import start
++
++
++def legacy_copy(database, source):
++    name = "survey_lab_test_legacy_" + uuid4().hex
++    db = database.client[name]
++    old = json.loads(
++        (ROOT / "database/legacy/collection_validators.v1.json").read_text("utf-8")
++    )
++    for collection, schema in old.items():
++        db.create_collection(collection, validator={"$jsonSchema": schema})
++        docs = list(source[collection].find({}))
++        if docs:
++            db[collection].insert_many(docs)
++    return db
++
++
++def test_upgrade_old_data_and_explicit_rollback(client, published, database, tmp_path):
++    token = start(client, published, True)
++    assert (
++        client.post(
++            "/api/responses",
++            json={"token": token, "answers": {"q1": "worker", "q3": 20}},
++        ).status_code
++        == 200
++    )
++    db = legacy_copy(database, database)
++    try:
++        before = {
++            n: list(db[n].find({}).sort("_id", 1)) for n in validator_definitions()
++        }
++        with pytest.raises(BusinessError):
++            initialize(db)
++        report, _ = inspect_upgrade(db)
++        assert all(r["invalid"] == 0 and r["needs_upgrade"] for r in report.values())
++        path = tmp_path / "upgrade.json"
++        assert upgrade(db, path)["state"] == "complete"
++        initialize(db)
++        assert all(
++            list(db[n].find({}).sort("_id", 1)) == docs for n, docs in before.items()
++        )
++        assert not any(r["needs_upgrade"] for r in inspect_upgrade(db)[0].values())
++        assert rollback(db, path)["state"] == "rolled_back"
++        assert all(r["needs_upgrade"] for r in inspect_upgrade(db)[0].values())
++    finally:
++        database.client.drop_database(db.name)
++
++
++def test_failed_upgrade_restores_constraints(client, database, tmp_path, monkeypatch):
++    db = legacy_copy(database, database)
++    try:
++        original = migration.set_options
++        counter = [0]
++
++        def fail_once(db, name, options):
++            counter[0] += 1
++            if counter[0] == 3:
++                raise RuntimeError("simulated interruption")
++            return original(db, name, options)
++
++        monkeypatch.setattr(migration, "set_options", fail_once)
++        path = tmp_path / "failed.json"
++        with pytest.raises(RuntimeError):
++            upgrade(db, path)
++        assert json.loads(path.read_text())["state"] == "rolled_back"
++        assert all(r["needs_upgrade"] for r in inspect_upgrade(db)[0].values())
++    finally:
++        database.client.drop_database(db.name)
++
++
++def test_preflight_invalid_data_leaves_every_validator_unchanged(
++    client, database, tmp_path
++):
++    db = legacy_copy(database, database)
++    try:
++        # 旧约束允许 share_code 为数字，目标约束不允许。
++        from app.security import now
++
++        db.surveys.insert_one(
++            {
++                "_id": "legacy",
++                "owner_id": "user",
++                "share_code": 42,
++                "status": "draft",
++                "draft": {},
++                "revision": 1,
++                "current_version": 0,
++                "schema_version": 1,
++            }
++        )
++        report, _ = inspect_upgrade(db)
++        assert report["surveys"]["invalid"] == 1
++        with pytest.raises(BusinessError):
++            upgrade(db, tmp_path / "blocked.json")
++        assert not (tmp_path / "blocked.json").exists()
++        assert all(r["needs_upgrade"] for r in inspect_upgrade(db)[0].values())
++    finally:
++        database.client.drop_database(db.name)
++
++
++def test_startup_never_overwrites_unknown_or_future_schema(client, database):
++    db = legacy_copy(database, database)
++    try:
++        future = {
++            "$jsonSchema": {
++                "bsonType": "object",
++                "properties": {"schema_version": {"enum": [1, 2]}},
++            }
++        }
++        db.command("collMod", "surveys", validator=future)
++        with pytest.raises(BusinessError):
++            initialize(db)
++        with pytest.raises(BusinessError):
++            inspect_upgrade(db)
++        assert db.surveys.options()["validator"] == future
++    finally:
++        database.client.drop_database(db.name)

@@ -1,0 +1,324 @@
+{
+  "notice": "脱敏说明样例；日期为Extended JSON，哈希非真实凭据；不是数据库导出或种子文件",
+  "collections": {
+    "users": {
+      "_id": "111111111111111111111111",
+      "username": "Student_A",
+      "username_key": "student_a",
+      "password_hash": "$argon2id$示意哈希不可用于登录",
+      "created_at": {
+        "$date": "2026-10-20T09:00:00Z"
+      },
+      "schema_version": 1
+    },
+    "sessions": {
+      "_id": "888888888888888888888888",
+      "token_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "user_id": "111111111111111111111111",
+      "expires_at": {
+        "$date": "2026-10-27T09:00:00Z"
+      }
+    },
+    "surveys": {
+      "_id": "333333333333333333333333",
+      "owner_id": "111111111111111111111111",
+      "share_code": "abcdefabcdefabcdefabcdef",
+      "status": "draft",
+      "draft": {
+        "title": "课程学习与实践调查",
+        "description": "",
+        "allow_anonymous": false,
+        "allow_repeat": false,
+        "questions": []
+      },
+      "deadline": null,
+      "revision": 1,
+      "current_version": 0,
+      "created_at": {
+        "$date": "2026-10-20T09:10:00Z"
+      },
+      "updated_at": {
+        "$date": "2026-10-20T09:10:00Z"
+      },
+      "activity_seq": 0,
+      "schema_version": 1
+    },
+    "survey_versions": {
+      "_id": "444444444444444444444444",
+      "survey_id": "333333333333333333333333",
+      "version": 1,
+      "definition": {
+        "title": "课程学习与实践调查",
+        "description": "用于说明文档结构与路径的脱敏示例",
+        "allow_anonymous": true,
+        "allow_repeat": true,
+        "questions": [
+          {
+            "id": "q_role",
+            "type": "single_choice",
+            "title": "你的身份",
+            "required": true,
+            "options": [
+              {
+                "id": "student",
+                "label": "学生"
+              },
+              {
+                "id": "worker",
+                "label": "已工作"
+              }
+            ],
+            "validation": {},
+            "routing": {
+              "rules": [
+                {
+                  "condition": {
+                    "question_id": "q_role",
+                    "operator": "eq",
+                    "value": "worker"
+                  },
+                  "target": "q_age"
+                }
+              ],
+              "default_target": null
+            }
+          },
+          {
+            "id": "q_tools",
+            "type": "multiple_choice",
+            "title": "使用过哪些工具",
+            "required": true,
+            "options": [
+              {
+                "id": "mongo",
+                "label": "MongoDB"
+              },
+              {
+                "id": "python",
+                "label": "Python"
+              },
+              {
+                "id": "java",
+                "label": "Java"
+              }
+            ],
+            "validation": {
+              "min_choices": 2,
+              "max_choices": 2
+            },
+            "routing": {
+              "rules": [
+                {
+                  "condition": {
+                    "question_id": "q_tools",
+                    "operator": "contains_all",
+                    "value": [
+                      "mongo",
+                      "python"
+                    ]
+                  },
+                  "target": "q_feedback"
+                }
+              ],
+              "default_target": null
+            }
+          },
+          {
+            "id": "q_age",
+            "type": "number",
+            "title": "年龄",
+            "required": true,
+            "options": [],
+            "validation": {
+              "min": 0,
+              "max": 120,
+              "integer_only": true
+            },
+            "routing": {
+              "rules": [
+                {
+                  "condition": {
+                    "question_id": "q_age",
+                    "operator": "between",
+                    "value": [
+                      60,
+                      120
+                    ]
+                  },
+                  "target": "END"
+                }
+              ],
+              "default_target": null
+            }
+          },
+          {
+            "id": "q_feedback",
+            "type": "text",
+            "title": "建议",
+            "required": false,
+            "options": [],
+            "validation": {
+              "min_length": 2,
+              "max_length": 100
+            },
+            "routing": {
+              "rules": [],
+              "default_target": "END"
+            }
+          }
+        ]
+      },
+      "published_at": {
+        "$date": "2026-10-20T09:20:00Z"
+      },
+      "schema_version": 1,
+      "rule_engine_version": 1
+    },
+    "attempts": {
+      "_id": "555555555555555555555555",
+      "survey_id": "333333333333333333333333",
+      "version_id": "444444444444444444444444",
+      "respondent_key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "anonymous": true,
+      "status": "in_progress",
+      "raw_answers": {
+        "q_role": "worker",
+        "q_age": "-"
+      },
+      "current_question_id": "q_age",
+      "revision": 2,
+      "created_at": {
+        "$date": "2026-10-20T10:00:00Z"
+      },
+      "updated_at": {
+        "$date": "2026-10-20T10:01:00Z"
+      },
+      "schema_version": 1
+    },
+    "responses": {
+      "_id": "666666666666666666666666",
+      "survey_id": "333333333333333333333333",
+      "version_id": "444444444444444444444444",
+      "version": 1,
+      "attempt_id": "abababababababababababab",
+      "respondent_key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "anonymous": false,
+      "answers": [
+        {
+          "question_id": "q_role",
+          "value": "student"
+        },
+        {
+          "question_id": "q_tools",
+          "value": [
+            "mongo",
+            "java"
+          ]
+        },
+        {
+          "question_id": "q_age",
+          "value": 20
+        },
+        {
+          "question_id": "q_feedback",
+          "value": "增加实践案例"
+        }
+      ],
+      "path": [
+        "q_role",
+        "q_tools",
+        "q_age",
+        "q_feedback"
+      ],
+      "submitted_at": {
+        "$date": "2026-10-20T10:02:00Z"
+      },
+      "schema_version": 1,
+      "user_id": "111111111111111111111111"
+    }
+  },
+  "additional_response": {
+    "_id": "777777777777777777777777",
+    "survey_id": "333333333333333333333333",
+    "version_id": "444444444444444444444444",
+    "version": 1,
+    "attempt_id": "555555555555555555555555",
+    "respondent_key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "anonymous": true,
+    "answers": [
+      {
+        "question_id": "q_role",
+        "value": "worker"
+      },
+      {
+        "question_id": "q_age",
+        "value": 40
+      },
+      {
+        "question_id": "q_feedback",
+        "value": null
+      }
+    ],
+    "path": [
+      "q_role",
+      "q_age",
+      "q_feedback"
+    ],
+    "submitted_at": {
+      "$date": "2026-10-20T10:03:00Z"
+    },
+    "schema_version": 1
+  },
+  "submitted_attempt": {
+    "_id": "555555555555555555555555",
+    "survey_id": "333333333333333333333333",
+    "version_id": "444444444444444444444444",
+    "respondent_key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "anonymous": true,
+    "status": "submitted",
+    "raw_answers": {},
+    "current_question_id": "q_feedback",
+    "revision": 4,
+    "created_at": {
+      "$date": "2026-10-20T10:00:00Z"
+    },
+    "updated_at": {
+      "$date": "2026-10-20T10:03:00Z"
+    },
+    "schema_version": 1,
+    "response_id": "777777777777777777777777"
+  },
+  "abandoned_attempt": {
+    "_id": "999999999999999999999999",
+    "survey_id": "333333333333333333333333",
+    "version_id": "444444444444444444444444",
+    "respondent_key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "anonymous": true,
+    "status": "abandoned",
+    "raw_answers": {},
+    "current_question_id": "q_age",
+    "revision": 3,
+    "created_at": {
+      "$date": "2026-10-20T10:00:00Z"
+    },
+    "updated_at": {
+      "$date": "2026-10-20T10:04:00Z"
+    },
+    "schema_version": 1
+  },
+  "expected_paths": [
+    [
+      "q_role",
+      "q_tools",
+      "q_age",
+      "q_feedback"
+    ],
+    [
+      "q_role",
+      "q_age",
+      "q_feedback"
+    ]
+  ],
+  "sample_numeric_average": 30,
+  "business_tests_rerun": false
+}

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="43" failures="0" errors="0" time="0.8122459">
+    <testsuite name="tests/components/attempt.spec.ts" timestamp="2026-10-20T12:58:32.615Z" hostname="LAPTOP-Q5N7R5J2" tests="16" failures="0" errors="0" skipped="0" time="0.2286456">
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 暂停输入后保存原始内容" time="0.0252343">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 持续输入也在最长等待时间同步" time="0.0068332">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 旧响应不把新输入标记为已保存，并串行补存" time="0.0055174">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 重复触发保存复用正在执行的请求" time="0.0042069">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 保存失败保留输入，重试后才清除未保存标记" time="0.0037264">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 冲突暂停自动保存且取消重新加载不丢输入" time="0.0067314">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 登录过期后原页同账号登录，再保存未同步输入" time="0.0024717">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 保存响应不抢走用户返回的前题位置" time="0.0021193">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 只读恢复不触发保存" time="0.0029926">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 先选择继续，再恢复答案及固定匿名设置" time="0.0719441">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 数字中间状态原样发送，恢复后仍可编辑" time="0.006892">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 提交前等待最新保存完成，提交只携带revision" time="0.036951">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 主动退出前保存失败必须确认，取消则保留输入" time="0.0146236">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 截止后的草稿仍可进入只读页面查看全部已保存内容" time="0.014432">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 路由离开先保存，失败且取消时仍停留原页面" time="0.0202186">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 未完成前题不使用无效数值跳转，也不误删后续暂存内容" time="0.0013289">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/components/editor.spec.ts" timestamp="2026-10-20T12:58:32.622Z" hostname="LAPTOP-Q5N7R5J2" tests="19" failures="0" errors="0" skipped="0" time="0.4885823">
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 继续编辑后清除过期的保存反馈，修改状态仍正确" time="0.1096578">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 保存响应不覆盖等待期间的新输入，下一次保存使用新revision" time="0.0333081">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 保存失败保留草稿并恢复操作按钮" time="0.0203651">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 取消关闭不保存、不关闭、不覆盖草稿" time="0.025288">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 有修改时先保存再关闭，关闭不重新GET覆盖内容" time="0.0247448">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 关闭前保存失败，不发送关闭请求" time="0.0228127">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 关闭前保存期间又编辑时中止关闭，保留新增输入" time="0.0276797">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 关闭请求期间输入仍保留，关闭失败也不覆盖" time="0.0207901">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 截止时间单独标记待发布，保存草稿不能假装已保存该时间" time="0.0275369">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 发布失败保留截止时间的待发布状态" time="0.0154559">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 发布等待期间的新草稿和时间不被响应覆盖" time="0.0185689">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 发布前保存期间新增输入，中止发布" time="0.0150662">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 有进行中的保存时，禁止重复操作和路由离开" time="0.0167649">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 损坏JSON拒绝应用，原配置与编辑器保持可用" time="0.0134204">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 关闭请求成功也保留等待期间的新输入" time="0.0187808">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 草稿已保存但关闭失败时保留成功保存的信息" time="0.0311444">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 截止时间未发布时关闭有明确确认，成功后仍保留待发布状态" time="0.0166199">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 成功发布清除本次截止时间标记，无新修改即可离开" time="0.0184317">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 未修改截止时间时发布保留服务器秒级精度" time="0.0101153">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/components/inputs.spec.ts" timestamp="2026-10-20T12:58:32.629Z" hostname="LAPTOP-Q5N7R5J2" tests="8" failures="0" errors="0" skipped="0" time="0.095018">
+        <testcase classname="tests/components/inputs.spec.ts" name="文本组件与后端的码点长度口径 &gt; 一个表情可实际输入，上限1时不使用UTF-16 maxlength" time="0.0412933">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="文本组件与后端的码点长度口径 &gt; 粘贴多个表情保留全文，显示超限且规则拒绝" time="0.0077283">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="文本组件与后端的码点长度口径 &gt; 中文组合输入结束前不提交中间内容，不提前提示超限" time="0.0080185">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="文本组件与后端的码点长度口径 &gt; 组合结束后的重复input不重复发出更新，计数去除首尾空白" time="0.0040807">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="文本组件与后端的码点长度口径 &gt; 外部模型更新可以清空实际输入" time="0.0069152">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="规则组件防御性渲染 &gt; 损坏配置显示错误且可明确清空：null" time="0.0123483">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="规则组件防御性渲染 &gt; 损坏配置显示错误且可明确清空：{&quot;rules&quot;:[{}],&quot;default_target&quot;:null}" time="0.0061253">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="规则组件防御性渲染 &gt; 损坏配置显示错误且可明确清空：{&quot;rules&quot;:[{&quot;condition&quot;:{&quot;question_id&quot;:&quot;q1&quot;,&quot;operator&quot;:&quot;between&quot;,&quot;value&quot;:null},&quot;target&quot;:&quot;END&quot;}],&quot;default_target&quot;:null}" time="0.006479">
+        </testcase>
+    </testsuite>
+</testsuites>

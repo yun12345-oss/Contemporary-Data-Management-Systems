@@ -1,0 +1,28 @@
+{
+  "application_version": "1.1.0",
+  "document_revision": "完整详版",
+  "detailed_sections": 16,
+  "collection_count": 6,
+  "field_count": 54,
+  "explicit_index_count": 11,
+  "report_mongodb_subsections": 13,
+  "implementation_unchanged": true,
+  "definition_checked_with_actual_domain_code": true,
+  "example_paths_checked_with_actual_evaluate": true,
+  "example_schema_subset_checked_offline": true,
+  "mongodb_insertion_or_explain_executed": false,
+  "business_tests_rerun": false,
+  "existing_unique_business_tests": 156,
+  "report_chapters": [
+    "一、项目目标",
+    "二、系统设计",
+    "三、MongoDB设计",
+    "四、跳转设计",
+    "五、校验设计",
+    "六、AI使用过程",
+    "七、测试结果",
+    "八、遇到的问题",
+    "九、如何解决"
+  ],
+  "relative_links_valid": true
+}

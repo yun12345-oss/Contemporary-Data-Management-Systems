@@ -1,0 +1,13 @@
+.runtime/
+.venv/
+.env
+.local/
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+coverage/
+*.egg-info/
+artifacts/browser/
