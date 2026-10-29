@@ -1,0 +1,2595 @@
+{
+  "application_version": "2.0.2",
+  "execution_date": "2026-10-25",
+  "material_date": "2026-10-26",
+  "unique_count": 260,
+  "notes": "154后端+90组件+16逻辑；独立解压复测和4审查诊断不重复计数；本次材料示例另记。",
+  "tests": [
+    {
+      "id": "T001",
+      "category": "后端",
+      "test_name": "test_partial_raw_input_resume_across_login_and_device",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T002",
+      "category": "后端",
+      "test_name": "test_revision_conflict_does_not_overwrite",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T003",
+      "category": "后端",
+      "test_name": "test_parallel_begin_has_one_active_attempt",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T004",
+      "category": "后端",
+      "test_name": "test_skip_cleanup_and_recover_valid_position",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T005",
+      "category": "后端",
+      "test_name": "test_read_only_restore_but_no_save_submit[closed]",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T006",
+      "category": "后端",
+      "test_name": "test_read_only_restore_but_no_save_submit[expired]",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T007",
+      "category": "后端",
+      "test_name": "test_pinned_version_and_anonymity_atomic_idempotent_submit",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T008",
+      "category": "后端",
+      "test_name": "test_abandon_clears_answers_rejects_late_save_and_allows_new",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T009",
+      "category": "后端",
+      "test_name": "test_drafts_not_in_statistics_and_account_isolation",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T010",
+      "category": "后端",
+      "test_name": "test_bad_raw_structure_no_partial_write[answers0]",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T011",
+      "category": "后端",
+      "test_name": "test_bad_raw_structure_no_partial_write[answers1]",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T012",
+      "category": "后端",
+      "test_name": "test_bad_raw_structure_no_partial_write[answers2]",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T013",
+      "category": "后端",
+      "test_name": "test_bad_raw_structure_no_partial_write[answers3]",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T014",
+      "category": "后端",
+      "test_name": "test_direct_database_schema_rejects_malformed_attempt",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T015",
+      "category": "后端",
+      "test_name": "test_submit_transaction_rolls_back_response_on_failure",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T016",
+      "category": "后端",
+      "test_name": "test_eight_users_parallel_mixed_paths_and_statistics",
+      "class_or_source": "tests.test_attempts",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T017",
+      "category": "后端",
+      "test_name": "test_number_bounds[0-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T018",
+      "category": "后端",
+      "test_name": "test_number_bounds[120-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T019",
+      "category": "后端",
+      "test_name": "test_number_bounds[-1-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T020",
+      "category": "后端",
+      "test_name": "test_number_bounds[121-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T021",
+      "category": "后端",
+      "test_name": "test_number_bounds[18.5-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T022",
+      "category": "后端",
+      "test_name": "test_number_bounds[True-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T023",
+      "category": "后端",
+      "test_name": "test_number_bounds[18-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T024",
+      "category": "后端",
+      "test_name": "test_number_bounds[None-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T025",
+      "category": "后端",
+      "test_name": "test_multiple[value0-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T026",
+      "category": "后端",
+      "test_name": "test_multiple[value1-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T027",
+      "category": "后端",
+      "test_name": "test_multiple[value2-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T028",
+      "category": "后端",
+      "test_name": "test_multiple[value3-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T029",
+      "category": "后端",
+      "test_name": "test_multiple[value4-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T030",
+      "category": "后端",
+      "test_name": "test_routing_discards_skipped",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T031",
+      "category": "后端",
+      "test_name": "test_routing_requires_visited",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T032",
+      "category": "后端",
+      "test_name": "test_operators[eq-2-2-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T033",
+      "category": "后端",
+      "test_name": "test_operators[ne-2-3-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T034",
+      "category": "后端",
+      "test_name": "test_operators[gt-2-2-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T035",
+      "category": "后端",
+      "test_name": "test_operators[gte-2-2-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T036",
+      "category": "后端",
+      "test_name": "test_operators[lt-2-1-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T037",
+      "category": "后端",
+      "test_name": "test_operators[lte-2-2-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T038",
+      "category": "后端",
+      "test_name": "test_operators[between-value6-4-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T039",
+      "category": "后端",
+      "test_name": "test_operators[contains_any-value7-answer7-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T040",
+      "category": "后端",
+      "test_name": "test_operators[contains_all-value8-answer8-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T041",
+      "category": "后端",
+      "test_name": "test_operators[set_equals-value9-answer9-True]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T042",
+      "category": "后端",
+      "test_name": "test_operators[ne-2-None-False]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T043",
+      "category": "后端",
+      "test_name": "test_combination",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T044",
+      "category": "后端",
+      "test_name": "test_invalid_targets[q1]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T045",
+      "category": "后端",
+      "test_name": "test_invalid_targets[missing]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T046",
+      "category": "后端",
+      "test_name": "test_invalid_targets[42]",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T047",
+      "category": "后端",
+      "test_name": "test_future_reference",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T048",
+      "category": "后端",
+      "test_name": "test_duplicate_ids",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T049",
+      "category": "后端",
+      "test_name": "test_unknown_question",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T050",
+      "category": "后端",
+      "test_name": "test_optional_text",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T051",
+      "category": "后端",
+      "test_name": "test_config_conflict",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T052",
+      "category": "后端",
+      "test_name": "test_extension_entry",
+      "class_or_source": "tests.test_domain",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T053",
+      "category": "后端",
+      "test_name": "test_publish_returns_committed_metadata_without_embedding_it_in_version",
+      "class_or_source": "tests.test_editor_metadata",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T054",
+      "category": "后端",
+      "test_name": "test_close_revision_conflict_preserves_state_and_returns_metadata",
+      "class_or_source": "tests.test_editor_metadata",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T055",
+      "category": "后端",
+      "test_name": "test_full_flow_idempotency_and_anonymity",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T056",
+      "category": "后端",
+      "test_name": "test_permission_isolation",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T057",
+      "category": "后端",
+      "test_name": "test_token_other_user",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T058",
+      "category": "后端",
+      "test_name": "test_invalid_answer_no_write",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T059",
+      "category": "后端",
+      "test_name": "test_close_and_deadline",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T060",
+      "category": "后端",
+      "test_name": "test_concurrent_repeat_forbidden",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T061",
+      "category": "后端",
+      "test_name": "test_concurrent_same_attempt",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T062",
+      "category": "后端",
+      "test_name": "test_repeat_allowed",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T063",
+      "category": "后端",
+      "test_name": "test_old_version_after_publish",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T064",
+      "category": "后端",
+      "test_name": "test_optimistic_edit_and_invalid_publish",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T065",
+      "category": "后端",
+      "test_name": "test_multiple_and_average",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T066",
+      "category": "后端",
+      "test_name": "test_no_login_and_csrf",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T067",
+      "category": "后端",
+      "test_name": "test_auth_casefold_logout",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T068",
+      "category": "后端",
+      "test_name": "test_token_tamper",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T069",
+      "category": "后端",
+      "test_name": "test_time_and_pagination",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T070",
+      "category": "后端",
+      "test_name": "test_database_validation",
+      "class_or_source": "tests.test_integration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T071",
+      "category": "后端",
+      "test_name": "test_upgrade_old_data_and_explicit_rollback",
+      "class_or_source": "tests.test_migration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T072",
+      "category": "后端",
+      "test_name": "test_failed_upgrade_restores_constraints",
+      "class_or_source": "tests.test_migration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T073",
+      "category": "后端",
+      "test_name": "test_preflight_invalid_data_leaves_every_validator_unchanged",
+      "class_or_source": "tests.test_migration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T074",
+      "category": "后端",
+      "test_name": "test_startup_never_overwrites_unknown_or_future_schema",
+      "class_or_source": "tests.test_migration",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T075",
+      "category": "后端",
+      "test_name": "test_versions_branch_restore_and_immutable_snapshot",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T076",
+      "category": "后端",
+      "test_name": "test_concurrent_version_allocation_one_revision",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T077",
+      "category": "后端",
+      "test_name": "test_version_failure_rolls_back_sequence",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T078",
+      "category": "后端",
+      "test_name": "test_source_credentials_cannot_be_forged[version]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T079",
+      "category": "后端",
+      "test_name": "test_source_credentials_cannot_be_forged[question_version_id]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T080",
+      "category": "后端",
+      "test_name": "test_source_credentials_cannot_be_forged[survey_id]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T081",
+      "category": "后端",
+      "test_name": "test_source_credentials_cannot_be_forged[instance_id]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T082",
+      "category": "后端",
+      "test_name": "test_source_credentials_cannot_be_forged[imported_by]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T083",
+      "category": "后端",
+      "test_name": "test_source_credentials_cannot_be_forged[imported_at]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T084",
+      "category": "后端",
+      "test_name": "test_source_credentials_cannot_be_forged[grant_id]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T085",
+      "category": "后端",
+      "test_name": "test_content_cannot_change_under_old_source[title-\\u4f2a\\u9020]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T086",
+      "category": "后端",
+      "test_name": "test_content_cannot_change_under_old_source[type-text]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T087",
+      "category": "后端",
+      "test_name": "test_content_cannot_change_under_old_source[options-value2]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T088",
+      "category": "后端",
+      "test_name": "test_content_cannot_change_under_old_source[validation-value3]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T089",
+      "category": "后端",
+      "test_name": "test_source_removal_copy_and_duplicate_id_rejected",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T090",
+      "category": "后端",
+      "test_name": "test_import_ownership_instance_id_and_owner_detach",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T091",
+      "category": "后端",
+      "test_name": "test_exact_version_share_no_future_leak_or_privilege",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T092",
+      "category": "后端",
+      "test_name": "test_revoke_keeps_existing_draft_but_blocks_new_import_and_laundering",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T093",
+      "category": "后端",
+      "test_name": "test_archive_preserves_existing_blocks_import_and_versions",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T094",
+      "category": "后端",
+      "test_name": "test_import_commits_before_concurrent_revoke_archive[revoke]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T095",
+      "category": "后端",
+      "test_name": "test_import_commits_before_concurrent_revoke_archive[archive]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T096",
+      "category": "后端",
+      "test_name": "test_revoke_archive_commits_before_inflight_import[revoke]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T097",
+      "category": "后端",
+      "test_name": "test_revoke_archive_commits_before_inflight_import[archive]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T098",
+      "category": "后端",
+      "test_name": "test_filler_does_not_receive_import_credentials",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T099",
+      "category": "后端",
+      "test_name": "test_upgrade_invalid_rules_saved_then_repaired_snapshot_untouched",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T100",
+      "category": "后端",
+      "test_name": "test_old_attempt_remains_pinned_after_question_upgrade",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T101",
+      "category": "后端",
+      "test_name": "test_library_multiple_versions_unique_revision_and_revoked_member",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T102",
+      "category": "后端",
+      "test_name": "test_statistics_duplicate_instances_and_version_isolation",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T103",
+      "category": "后端",
+      "test_name": "test_multiselect_denominator_is_answer_occurrences",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T104",
+      "category": "后端",
+      "test_name": "test_statistics_use_grant_is_not_data_grant_and_revoke_excludes",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T105",
+      "category": "后端",
+      "test_name": "test_usage_distinct_surveys_and_private_title_hidden",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T106",
+      "category": "后端",
+      "test_name": "test_old_local_save_reusable_does_not_link_historical_answers",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T107",
+      "category": "后端",
+      "test_name": "test_phase1_schema_upgrade_preserves_business_documents",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T108",
+      "category": "后端",
+      "test_name": "test_downgrade_after_new_business_data_is_rejected",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T109",
+      "category": "后端",
+      "test_name": "test_phase2_schema_rejects_bad_direct_writes[questions-document0]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T110",
+      "category": "后端",
+      "test_name": "test_phase2_schema_rejects_bad_direct_writes[question_versions-document1]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T111",
+      "category": "后端",
+      "test_name": "test_phase2_schema_rejects_bad_direct_writes[resource_grants-document2]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T112",
+      "category": "后端",
+      "test_name": "test_phase2_schema_rejects_bad_direct_writes[question_library_items-document3]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T113",
+      "category": "后端",
+      "test_name": "test_phase2_schema_rejects_bad_direct_writes[question_libraries-document4]",
+      "class_or_source": "tests.test_phase2",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T114",
+      "category": "后端",
+      "test_name": "test_library_old_revoked_target_authorization_controls_update[False]",
+      "class_or_source": "tests.test_phase2_202",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T115",
+      "category": "后端",
+      "test_name": "test_library_old_revoked_target_authorization_controls_update[True]",
+      "class_or_source": "tests.test_phase2_202",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T116",
+      "category": "后端",
+      "test_name": "test_statistics_zero_answer_coverage_and_submission_time",
+      "class_or_source": "tests.test_phase2_202",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T117",
+      "category": "后端",
+      "test_name": "test_unsafe_histogram_boundaries_rejected_before_aggregation[bounds0]",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T118",
+      "category": "后端",
+      "test_name": "test_unsafe_histogram_boundaries_rejected_before_aggregation[bounds1]",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T119",
+      "category": "后端",
+      "test_name": "test_unsafe_histogram_boundaries_rejected_before_aggregation[bounds2]",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T120",
+      "category": "后端",
+      "test_name": "test_unsafe_histogram_boundaries_rejected_before_aggregation[bounds3]",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T121",
+      "category": "后端",
+      "test_name": "test_unsafe_histogram_boundaries_rejected_before_aggregation[bounds4]",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T122",
+      "category": "后端",
+      "test_name": "test_unsafe_histogram_boundaries_rejected_before_aggregation[bounds5]",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T123",
+      "category": "后端",
+      "test_name": "test_unsafe_histogram_boundaries_rejected_before_aggregation[bounds6]",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T124",
+      "category": "后端",
+      "test_name": "test_safe_histogram_boundaries_including_limits[bounds0]",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T125",
+      "category": "后端",
+      "test_name": "test_safe_histogram_boundaries_including_limits[bounds1]",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T126",
+      "category": "后端",
+      "test_name": "test_explicit_empty_boundaries_are_not_replaced_with_defaults",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T127",
+      "category": "后端",
+      "test_name": "test_statistics_only_grantee_has_scoped_access_without_question_use",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T128",
+      "category": "后端",
+      "test_name": "test_shared_recipient_usage_is_available_without_owner_history",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T129",
+      "category": "后端",
+      "test_name": "test_twenty_first_library_available_on_second_page",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T130",
+      "category": "后端",
+      "test_name": "test_library_search_filters_fixed_versions_before_pagination",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T131",
+      "category": "后端",
+      "test_name": "test_library_search_does_not_leak_revoked_private_title",
+      "class_or_source": "tests.test_phase2_review",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T132",
+      "category": "后端",
+      "test_name": "test_unanswerable_required_questions_rejected[multiple]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T133",
+      "category": "后端",
+      "test_name": "test_unanswerable_required_questions_rejected[integer]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T134",
+      "category": "后端",
+      "test_name": "test_unanswerable_required_questions_rejected[text]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T135",
+      "category": "后端",
+      "test_name": "test_integer_interval_with_valid_point[0.1-1]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T136",
+      "category": "后端",
+      "test_name": "test_integer_interval_with_valid_point[-0.9-0]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T137",
+      "category": "后端",
+      "test_name": "test_integer_interval_with_valid_point[1-1]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T138",
+      "category": "后端",
+      "test_name": "test_extreme_domain_numbers_never_overflow[10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T139",
+      "category": "后端",
+      "test_name": "test_extreme_domain_numbers_never_overflow[-10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T140",
+      "category": "后端",
+      "test_name": "test_extreme_domain_numbers_never_overflow[inf]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T141",
+      "category": "后端",
+      "test_name": "test_extreme_domain_numbers_never_overflow[-inf]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T142",
+      "category": "后端",
+      "test_name": "test_extreme_domain_numbers_never_overflow[nan]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T143",
+      "category": "后端",
+      "test_name": "test_extreme_config_rejected_before_bson",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T144",
+      "category": "后端",
+      "test_name": "test_extreme_submission_rejected_without_write",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T145",
+      "category": "后端",
+      "test_name": "test_nested_extreme_condition_rejected",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T146",
+      "category": "后端",
+      "test_name": "test_counts_people_anonymous_and_repeat",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T147",
+      "category": "后端",
+      "test_name": "test_deep_database_constraints[responses-answers-value0]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T148",
+      "category": "后端",
+      "test_name": "test_deep_database_constraints[responses-answers-value1]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T149",
+      "category": "后端",
+      "test_name": "test_deep_database_constraints[responses-answers-value2]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T150",
+      "category": "后端",
+      "test_name": "test_deep_database_constraints[responses-version_id-42]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T151",
+      "category": "后端",
+      "test_name": "test_deep_database_constraints[responses-respondent_key-False]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T152",
+      "category": "后端",
+      "test_name": "test_deep_database_constraints[survey_versions-definition-value5]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T153",
+      "category": "后端",
+      "test_name": "test_deep_database_constraints[surveys-draft-value6]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T154",
+      "category": "后端",
+      "test_name": "test_deep_database_constraints[surveys-share_code-42]",
+      "class_or_source": "tests.test_review_fixes",
+      "code_root": "1_代码/backend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/backend.xml"
+    },
+    {
+      "id": "T155",
+      "category": "组件",
+      "test_name": "填写自动保存状态 > 暂停输入后保存原始内容",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T156",
+      "category": "组件",
+      "test_name": "填写自动保存状态 > 持续输入也在最长等待时间同步",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T157",
+      "category": "组件",
+      "test_name": "填写自动保存状态 > 旧响应不把新输入标记为已保存，并串行补存",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T158",
+      "category": "组件",
+      "test_name": "填写自动保存状态 > 重复触发保存复用正在执行的请求",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T159",
+      "category": "组件",
+      "test_name": "填写自动保存状态 > 保存失败保留输入，重试后才清除未保存标记",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T160",
+      "category": "组件",
+      "test_name": "填写自动保存状态 > 冲突暂停自动保存且取消重新加载不丢输入",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T161",
+      "category": "组件",
+      "test_name": "填写自动保存状态 > 登录过期后原页同账号登录，再保存未同步输入",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T162",
+      "category": "组件",
+      "test_name": "填写自动保存状态 > 保存响应不抢走用户返回的前题位置",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T163",
+      "category": "组件",
+      "test_name": "填写自动保存状态 > 只读恢复不触发保存",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T164",
+      "category": "组件",
+      "test_name": "恢复页面与输入 > 先选择继续，再恢复答案及固定匿名设置",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T165",
+      "category": "组件",
+      "test_name": "恢复页面与输入 > 数字中间状态原样发送，恢复后仍可编辑",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T166",
+      "category": "组件",
+      "test_name": "恢复页面与输入 > 提交前等待最新保存完成，提交只携带revision",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T167",
+      "category": "组件",
+      "test_name": "恢复页面与输入 > 主动退出前保存失败必须确认，取消则保留输入",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T168",
+      "category": "组件",
+      "test_name": "恢复页面与输入 > 截止后的草稿仍可进入只读页面查看全部已保存内容",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T169",
+      "category": "组件",
+      "test_name": "恢复页面与输入 > 路由离开先保存，失败且取消时仍停留原页面",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T170",
+      "category": "组件",
+      "test_name": "恢复页面与输入 > 未完成前题不使用无效数值跳转，也不误删后续暂存内容",
+      "class_or_source": "tests/components/attempt.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T171",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 继续编辑后清除过期的保存反馈，修改状态仍正确",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T172",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 保存响应不覆盖等待期间的新输入，下一次保存使用新revision",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T173",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 保存失败保留草稿并恢复操作按钮",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T174",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 取消关闭不保存、不关闭、不覆盖草稿",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T175",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 有修改时先保存再关闭，关闭不重新GET覆盖内容",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T176",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 关闭前保存失败，不发送关闭请求",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T177",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 关闭前保存期间又编辑时中止关闭，保留新增输入",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T178",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 关闭请求期间输入仍保留，关闭失败也不覆盖",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T179",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 截止时间单独标记待发布，保存草稿不能假装已保存该时间",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T180",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 发布失败保留截止时间的待发布状态",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T181",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 发布等待期间的新草稿和时间不被响应覆盖",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T182",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 发布前保存期间新增输入，中止发布",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T183",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 有进行中的保存时，禁止重复操作和路由离开",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T184",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 损坏JSON拒绝应用，原配置与编辑器保持可用",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T185",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 关闭请求成功也保留等待期间的新输入",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T186",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 草稿已保存但关闭失败时保留成功保存的信息",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T187",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 截止时间未发布时关闭有明确确认，成功后仍保留待发布状态",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T188",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 成功发布清除本次截止时间标记，无新修改即可离开",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T189",
+      "category": "组件",
+      "test_name": "编辑器保存、关闭、发布和离开 > 未修改截止时间时发布保留服务器秒级精度",
+      "class_or_source": "tests/components/editor.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T190",
+      "category": "组件",
+      "test_name": "文本组件与后端的码点长度口径 > 一个表情可实际输入，上限1时不使用UTF-16 maxlength",
+      "class_or_source": "tests/components/inputs.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T191",
+      "category": "组件",
+      "test_name": "文本组件与后端的码点长度口径 > 粘贴多个表情保留全文，显示超限且规则拒绝",
+      "class_or_source": "tests/components/inputs.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T192",
+      "category": "组件",
+      "test_name": "文本组件与后端的码点长度口径 > 中文组合输入结束前不提交中间内容，不提前提示超限",
+      "class_or_source": "tests/components/inputs.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T193",
+      "category": "组件",
+      "test_name": "文本组件与后端的码点长度口径 > 组合结束后的重复input不重复发出更新，计数去除首尾空白",
+      "class_or_source": "tests/components/inputs.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T194",
+      "category": "组件",
+      "test_name": "文本组件与后端的码点长度口径 > 外部模型更新可以清空实际输入",
+      "class_or_source": "tests/components/inputs.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T195",
+      "category": "组件",
+      "test_name": "规则组件防御性渲染 > 损坏配置显示错误且可明确清空：null",
+      "class_or_source": "tests/components/inputs.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T196",
+      "category": "组件",
+      "test_name": "规则组件防御性渲染 > 损坏配置显示错误且可明确清空：{\"rules\":[{}],\"default_target\":null}",
+      "class_or_source": "tests/components/inputs.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T197",
+      "category": "组件",
+      "test_name": "规则组件防御性渲染 > 损坏配置显示错误且可明确清空：{\"rules\":[{\"condition\":{\"question_id\":\"q1\",\"operator\":\"between\",\"value\":null},\"target\":\"END\"}],\"default_target\":null}",
+      "class_or_source": "tests/components/inputs.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T198",
+      "category": "组件",
+      "test_name": "upgrade confirmation must apply to the instance shown in its preview",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T199",
+      "category": "组件",
+      "test_name": "late old statistics must not overwrite the selected version",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T200",
+      "category": "组件",
+      "test_name": "a library member with revoked old version must allow choosing an authorized newer version",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T201",
+      "category": "组件",
+      "test_name": "normal confirmation sends the exact instance target and preview revision",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T202",
+      "category": "组件",
+      "test_name": "local editing with unchanged server revision invalidates preview",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T203",
+      "category": "组件",
+      "test_name": "late preview cannot appear on another instance",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T204",
+      "category": "组件",
+      "test_name": "closed preview ignores a late response",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T205",
+      "category": "组件",
+      "test_name": "changing target immediately invalidates old confirmation",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T206",
+      "category": "组件",
+      "test_name": "unmounted editor discards late preview",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T207",
+      "category": "组件",
+      "test_name": "dedicated confirmation refuses dirty draft without auto saving",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T208",
+      "category": "组件",
+      "test_name": "dedicated confirmation rejects stale revision and changed source",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T209",
+      "category": "组件",
+      "test_name": "unapplied dates do not change detail query or version label",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T210",
+      "category": "组件",
+      "test_name": "closing loading details prevents late response reopening",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T211",
+      "category": "组件",
+      "test_name": "switching summary version invalidates old detail response",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T212",
+      "category": "组件",
+      "test_name": "late old error and finally cannot clear latest result or busy state",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T213",
+      "category": "组件",
+      "test_name": "latest statistics failure clears prior result",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T214",
+      "category": "组件",
+      "test_name": "question picker reloads series and ignores late old candidates",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T215",
+      "category": "组件",
+      "test_name": "switching libraries closes pending update and rejects late candidates",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T216",
+      "category": "组件",
+      "test_name": "update from unavailable member binds original library member and revision",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T217",
+      "category": "组件",
+      "test_name": "update rejection retains unavailable member and shows error",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T218",
+      "category": "组件",
+      "test_name": "restore cancel sends no request and confirm sends one request",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T219",
+      "category": "组件",
+      "test_name": "selection changed during draft save cancels preview even when switching back",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T220",
+      "category": "组件",
+      "test_name": "older detail page cannot overwrite latest page context",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T221",
+      "category": "组件",
+      "test_name": "failed upgrade confirmation invalidates preview and requires fresh preview",
+      "class_or_source": "tests/components/phase2-202.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T222",
+      "category": "组件",
+      "test_name": "第二阶段五项审阅修复 > 仅统计授权从共享页直接打开指定问卷统计",
+      "class_or_source": "tests/components/phase2-review.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T223",
+      "category": "组件",
+      "test_name": "第二阶段五项审阅修复 > 撤销记录、使用授权和非接收者不提供统计直达入口",
+      "class_or_source": "tests/components/phase2-review.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T224",
+      "category": "组件",
+      "test_name": "第二阶段五项审阅修复 > 共享接收者从列表进入独立使用页而不调用所有者历史",
+      "class_or_source": "tests/components/phase2-review.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T225",
+      "category": "组件",
+      "test_name": "第二阶段五项审阅修复 > 使用追踪后续请求失败时清除旧详情",
+      "class_or_source": "tests/components/phase2-review.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T226",
+      "category": "组件",
+      "test_name": "第二阶段五项审阅修复 > 加载第二页题库后可以选择第21个并查询其成员",
+      "class_or_source": "tests/components/phase2-review.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T227",
+      "category": "组件",
+      "test_name": "第二阶段五项审阅修复 > 题库第二页失败可重试，保留已加载列表且不跳页",
+      "class_or_source": "tests/components/phase2-review.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T228",
+      "category": "组件",
+      "test_name": "第二阶段五项审阅修复 > 题库内查询携带关键词并显示服务端筛选后的总页数",
+      "class_or_source": "tests/components/phase2-review.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T229",
+      "category": "组件",
+      "test_name": "第二阶段五项审阅修复 > 题库升级选择器将系列过滤传给后端",
+      "class_or_source": "tests/components/phase2-review.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T230",
+      "category": "组件",
+      "test_name": "第二阶段五项审阅修复 > 搜索失败清除旧可选项，避免误选上一份结果",
+      "class_or_source": "tests/components/phase2-review.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T231",
+      "category": "组件",
+      "test_name": "第二阶段五项审阅修复 > 迟到的旧搜索结果不能覆盖新关键词的结果",
+      "class_or_source": "tests/components/phase2-review.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T232",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 题型变化生成独立选项并重置旧校验",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T233",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 选题器只发出用户明确选择的版本ID",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T234",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 归档选项不能被选用",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T235",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 选题失败给出错误而不伪造空成功",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T236",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 题目共享只请求指定版本使用权",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T237",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 汇总授权显式绑定问卷且不请求明细权",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T238",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 新版本提交携带原父版本与revision",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T239",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 版本保存冲突保留用户输入并提示",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T240",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 恢复请求分别记录当前父版本和历史内容来源",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T241",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 来源题内容被锁定而必答可独立编辑",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T242",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 共享实例不提供解除关联与另存入口",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T243",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 来源操作期间锁定编辑区域并更新服务端来源",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T244",
+      "category": "组件",
+      "test_name": "第二阶段题目与权限交互 > 统计授权撤销后的失败不会残留旧统计结果",
+      "class_or_source": "tests/components/phase2.spec.ts",
+      "code_root": "1_代码/frontend/tests/components",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/components.xml"
+    },
+    {
+      "id": "T245",
+      "category": "前端逻辑",
+      "test_name": "规则缺少 condition 不允许应用",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T246",
+      "category": "前端逻辑",
+      "test_name": "结构、类型、引用、顺序与数值边界均检查",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T247",
+      "category": "前端逻辑",
+      "test_name": "有效组合条件保留不改变",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T248",
+      "category": "前端逻辑",
+      "test_name": "区间与多选值结构损坏不会进入渲染",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T249",
+      "category": "前端逻辑",
+      "test_name": "组合条件层数、空数组与超大数值不通过",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T250",
+      "category": "前端逻辑",
+      "test_name": "学生路径包含工具题，工作路径跳过工具题",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T251",
+      "category": "前端逻辑",
+      "test_name": "先前路径失效的答案不能参与后续条件",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T252",
+      "category": "前端逻辑",
+      "test_name": "数字范围包含边界并拒绝非整数",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T253",
+      "category": "前端逻辑",
+      "test_name": "必答与可选空值保持区分",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T254",
+      "category": "前端逻辑",
+      "test_name": "多选数量约束",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T255",
+      "category": "前端逻辑",
+      "test_name": "组合条件和区间边界",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T256",
+      "category": "前端逻辑",
+      "test_name": "未回答的非等于条件也不满足",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T257",
+      "category": "前端逻辑",
+      "test_name": "Unicode 长度按码点计数",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T258",
+      "category": "前端逻辑",
+      "test_name": "重复作答的次数与去重人数分别选择分子和分母",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T259",
+      "category": "前端逻辑",
+      "test_name": "空数据百分比为零",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    },
+    {
+      "id": "T260",
+      "category": "前端逻辑",
+      "test_name": "允许单选多次改变答案形成重叠人数",
+      "code_root": "1_代码/frontend/tests",
+      "status": "通过",
+      "execution_date": "2026-10-25",
+      "evidence": "3_测试用例/测试证据/自动测试结果/2.0.2/unit.txt"
+    }
+  ],
+  "last_repeat_verification": "2026-10-26",
+  "repeat_evidence_directory": "3_测试用例/测试证据/自动测试结果/20261026独立解压复测"
+}

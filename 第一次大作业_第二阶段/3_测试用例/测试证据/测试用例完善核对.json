@@ -1,0 +1,219 @@
+{
+  "date": "2026-10-29",
+  "scenario_count": 18,
+  "actual_outputs_completed": 18,
+  "source_links_fixed": 19,
+  "backend_source_links_fixed": 18,
+  "frontend_source_links_fixed": 1,
+  "source_links_inside_package": true,
+  "evidence": "自动测试结果/2.0.2/backend.xml",
+  "passed_cases_matched": 37,
+  "business_tests_reexecuted": false,
+  "existing_unique_tests": 260,
+  "business_code_and_report_unchanged": true,
+  "scenarios": [
+    {
+      "scenario": "T01",
+      "functions": [
+        "test_versions_branch_restore_and_immutable_snapshot"
+      ],
+      "passed_junit_cases": [
+        "test_versions_branch_restore_and_immutable_snapshot"
+      ],
+      "actual_output": "创建与恢复请求返回 HTTP 201；恢复得到 `version=4`，`parent_version_id` 等于 v3 的 ID，`restored_from_version_id` 等于 v1 的 ID。v4 内容等于 v1，数据库中的 v1 内容保持不变；v1 与 v2 的差异列表长度为 1。"
+    },
+    {
+      "scenario": "T02",
+      "functions": [
+        "test_concurrent_version_allocation_one_revision",
+        "test_version_failure_rolls_back_sequence"
+      ],
+      "passed_junit_cases": [
+        "test_concurrent_version_allocation_one_revision",
+        "test_version_failure_rolls_back_sequence"
+      ],
+      "actual_output": "两个同修订号并发请求的状态码排序为 `[201,409]`，数据库内该系列版本号为 `[1,2]`。版本插入被注入 `RuntimeError` 后，异常按测试预期抛出；题目主文档与操作前完整相等，序号和最近版本指针没有留下部分更新。"
+    },
+    {
+      "scenario": "T03",
+      "functions": [
+        "test_source_credentials_cannot_be_forged",
+        "test_content_cannot_change_under_old_source"
+      ],
+      "passed_junit_cases": [
+        "test_source_credentials_cannot_be_forged[version]",
+        "test_source_credentials_cannot_be_forged[question_version_id]",
+        "test_source_credentials_cannot_be_forged[survey_id]",
+        "test_source_credentials_cannot_be_forged[instance_id]",
+        "test_source_credentials_cannot_be_forged[imported_by]",
+        "test_source_credentials_cannot_be_forged[imported_at]",
+        "test_source_credentials_cannot_be_forged[grant_id]",
+        "test_content_cannot_change_under_old_source[title-\\u4f2a\\u9020]",
+        "test_content_cannot_change_under_old_source[type-text]",
+        "test_content_cannot_change_under_old_source[options-value2]",
+        "test_content_cannot_change_under_old_source[validation-value3]"
+      ],
+      "actual_output": "七类来源字段篡改请求均返回 HTTP 403，重新读取问卷时 `revision` 与原值相同。分别修改题干、题型、选项和校验配置的四类请求也均返回 HTTP 403，不能保留旧来源而改写内容。"
+    },
+    {
+      "scenario": "T04",
+      "functions": [
+        "test_source_removal_copy_and_duplicate_id_rejected"
+      ],
+      "passed_junit_cases": [
+        "test_source_removal_copy_and_duplicate_id_rejected"
+      ],
+      "actual_output": "删除 `source` 返回 HTTP 403；复制来源到新实例 ID 返回 HTTP 403；跨问卷复制同一来源返回 HTTP 403；重复实例 ID 返回 HTTP 422。"
+    },
+    {
+      "scenario": "T05",
+      "functions": [
+        "test_import_ownership_instance_id_and_owner_detach"
+      ],
+      "passed_junit_cases": [
+        "test_import_ownership_instance_id_and_owner_detach"
+      ],
+      "actual_output": "同一版本导入两次后，不同实例 ID 的数量为 2。将首题 `required` 改为 `false` 的保存返回 HTTP 200；专用解除操作返回 HTTP 200，返回实例中不再含 `source`；将题干改为“独立内容”后普通保存返回 HTTP 200。"
+    },
+    {
+      "scenario": "T06",
+      "functions": [
+        "test_exact_version_share_no_future_leak_or_privilege"
+      ],
+      "passed_junit_cases": [
+        "test_exact_version_share_no_future_leak_or_privilege"
+      ],
+      "actual_output": "接收者题目列表只有 1 项，标题为“年龄”，可见版本数为 1；搜索“私密新版本标题”时 `total=0`。读取未授权 v2、转授共享版本和给他人题目创建新版本，均返回 HTTP 404。"
+    },
+    {
+      "scenario": "T07",
+      "functions": [
+        "test_revoke_keeps_existing_draft_but_blocks_new_import_and_laundering"
+      ],
+      "passed_junit_cases": [
+        "test_revoke_keeps_existing_draft_but_blocks_new_import_and_laundering"
+      ],
+      "actual_output": "撤销成功后，新增导入返回 HTTP 403；解除和另存共享题均返回 HTTP 404；普通保存时删除来源返回 HTTP 403。原合法实例仍能发布并提交答案 `30`，整卷统计返回 `total=1`。"
+    },
+    {
+      "scenario": "T08",
+      "functions": [
+        "test_import_commits_before_concurrent_revoke_archive",
+        "test_revoke_archive_commits_before_inflight_import"
+      ],
+      "passed_junit_cases": [
+        "test_import_commits_before_concurrent_revoke_archive[revoke]",
+        "test_import_commits_before_concurrent_revoke_archive[archive]",
+        "test_revoke_archive_commits_before_inflight_import[revoke]",
+        "test_revoke_archive_commits_before_inflight_import[archive]"
+      ],
+      "actual_output": "撤销、归档两种模式下：导入先提交时，导入请求与所有者变更请求均返回 HTTP 200，已有草稿可以发布，后续导入返回 HTTP 403 或 409；所有者变更先提交时，在途导入返回 HTTP 403 或 409，数据库中的问卷仍为 `revision=1`，题目数组为空。"
+    },
+    {
+      "scenario": "T09",
+      "functions": [
+        "test_upgrade_invalid_rules_saved_then_repaired_snapshot_untouched"
+      ],
+      "passed_junit_cases": [
+        "test_upgrade_invalid_rules_saved_then_repaired_snapshot_untouched"
+      ],
+      "actual_output": "删除选项 c 后，升级预览的 `issues` 非空，确认升级后的 `draft_issues` 非空；直接发布返回 HTTP 422，普通保存仍返回 HTTP 200。清空失效规则再保存后，`draft_issues` 为空，发布成功；旧发布快照与操作前逐字段相等。"
+    },
+    {
+      "scenario": "T10",
+      "functions": [
+        "test_old_attempt_remains_pinned_after_question_upgrade"
+      ],
+      "passed_junit_cases": [
+        "test_old_attempt_remains_pinned_after_question_upgrade"
+      ],
+      "actual_output": "恢复旧填写过程时，题干仍为“年龄”。保存原答案字符串 `25` 并提交均返回 HTTP 200；数据库正式答卷的 `version=1`，答卷顶层没有 `source`，答案项字段集合严格为 `{question_id,value}`。"
+    },
+    {
+      "scenario": "T11",
+      "functions": [
+        "test_library_multiple_versions_unique_revision_and_revoked_member"
+      ],
+      "passed_junit_cases": [
+        "test_library_multiple_versions_unique_revision_and_revoked_member"
+      ],
+      "actual_output": "同库加入 v1、v2 均返回 HTTP 201；重复加入、使用旧 revision，以及将成员更新为库中已存在版本，均返回 HTTP 409。查询得到 `total=2`、题库 `revision=3`；撤销 v2 授权后只有 1 项 `available=true`。合法移除返回 HTTP 200，其他账号访问该题库返回 HTTP 404。"
+    },
+    {
+      "scenario": "T12",
+      "functions": [
+        "test_statistics_duplicate_instances_and_version_isolation"
+      ],
+      "passed_junit_cases": [
+        "test_statistics_duplicate_instances_and_version_isolation"
+      ],
+      "actual_output": "v1 查询返回 `coverage_surveys=2`、`valid_responses=2`、`valid_answers=3`，`average=40`、`min=20`、`max=60`，分布中计数合计为 3。新建但未使用的 v2 返回 `valid_answers=0`；递减边界 `[3,2]` 返回 HTTP 422。"
+    },
+    {
+      "scenario": "T13",
+      "functions": [
+        "test_multiselect_denominator_is_answer_occurrences"
+      ],
+      "passed_junit_cases": [
+        "test_multiselect_denominator_is_answer_occurrences"
+      ],
+      "actual_output": "两次回答 `[a,b]` 和 `[b,c]` 后，`valid_answers=2`，选项计数按 a、b、c 顺序为 `[1,2,1]`；选项比例合计为 `2`，即 200%，符合按有效作答条数计算分母的规则。"
+    },
+    {
+      "scenario": "T14",
+      "functions": [
+        "test_statistics_use_grant_is_not_data_grant_and_revoke_excludes"
+      ],
+      "passed_junit_cases": [
+        "test_statistics_use_grant_is_not_data_grant_and_revoke_excludes"
+      ],
+      "actual_output": "仅有题目使用授权时，题目作者查询得到 `valid_answers=0`，且不能给自己不拥有的问卷发放统计授权，该请求返回 HTTP 404。问卷所有者另行授权后，查询得到 `average=33`；撤销后再次查询得到 `valid_answers=0`，显式指定该问卷查询返回 HTTP 403。"
+    },
+    {
+      "scenario": "T15",
+      "functions": [
+        "test_usage_distinct_surveys_and_private_title_hidden"
+      ],
+      "passed_junit_cases": [
+        "test_usage_distinct_surveys_and_private_title_hidden"
+      ],
+      "actual_output": "同一问卷发布两次后，题目作者看到 `used_surveys=1`、`current_published_surveys=1`、`historical_published_surveys=1`，`items` 为空，整个返回结果不含“绝密”标题。问卷所有者自己的明细中，`published_versions=[2,1]`。"
+    },
+    {
+      "scenario": "T16",
+      "functions": [
+        "test_phase1_schema_upgrade_preserves_business_documents",
+        "test_downgrade_after_new_business_data_is_rejected"
+      ],
+      "passed_junit_cases": [
+        "test_phase1_schema_upgrade_preserves_business_documents",
+        "test_downgrade_after_new_business_data_is_rejected"
+      ],
+      "actual_output": "纯第一阶段样本完成约束升级和初始化后，集合数为 11，原六集合中的文档逐项与升级前相等；读取旧问卷返回 HTTP 200。执行回退后原业务文档仍相等。另一临时库写入第二阶段题目后，回退按预期抛出包含“第二阶段业务数据”的 `BusinessError`，拒绝只恢复旧约束。"
+    },
+    {
+      "scenario": "T17",
+      "functions": [
+        "test_phase2_schema_rejects_bad_direct_writes"
+      ],
+      "passed_junit_cases": [
+        "test_phase2_schema_rejects_bad_direct_writes[questions-document0]",
+        "test_phase2_schema_rejects_bad_direct_writes[question_versions-document1]",
+        "test_phase2_schema_rejects_bad_direct_writes[resource_grants-document2]",
+        "test_phase2_schema_rejects_bad_direct_writes[question_library_items-document3]",
+        "test_phase2_schema_rejects_bad_direct_writes[question_libraries-document4]"
+      ],
+      "actual_output": "向 `questions`、`question_versions`、`resource_grants`、`question_library_items`、`question_libraries` 直接插入对应错误文档，五组参数化测试均捕获预期的 MongoDB `WriteError`。这组测试确认错误结构被拒绝，未将完整错误正文或错误码作为本组断言。"
+    },
+    {
+      "scenario": "T18",
+      "functions": [
+        "test_filler_does_not_receive_import_credentials"
+      ],
+      "passed_junit_cases": [
+        "test_filler_does_not_receive_import_credentials"
+      ],
+      "actual_output": "开始填写接口返回 HTTP 200，`definition.questions[0]` 中没有 `source`；所有者读取问卷返回 HTTP 200，其 `draft.questions[0].source` 仍存在，服务端可信来源没有因对外脱敏而被删除。"
+    }
+  ]
+}

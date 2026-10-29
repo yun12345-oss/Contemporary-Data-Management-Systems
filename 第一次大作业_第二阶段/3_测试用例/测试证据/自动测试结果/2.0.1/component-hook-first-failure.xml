@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="10" failures="6" errors="0" time="0.2071581">
+    <testsuite name="tests/components/phase2-review.spec.ts" timestamp="2026-10-24T15:27:58.945Z" hostname="LAPTOP-Q5N7R5J2" tests="10" failures="6" errors="0" skipped="0" time="0.2071581">
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 仅统计授权从共享页直接打开指定问卷统计" time="0.0833656">
+            <failure message="Cannot read properties of undefined (reading &apos;startsWith&apos;)" type="TypeError">
+TypeError: Cannot read properties of undefined (reading &apos;startsWith&apos;)
+ ❯ tests/components/phase2-review.spec.ts:35:47
+            </failure>
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 撤销记录、使用授权和非接收者不提供统计直达入口" time="0.0177748">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 共享接收者从列表进入独立使用页而不调用所有者历史" time="0.0182036">
+            <failure message="Cannot read properties of undefined (reading &apos;startsWith&apos;)" type="TypeError">
+TypeError: Cannot read properties of undefined (reading &apos;startsWith&apos;)
+ ❯ tests/components/phase2-review.spec.ts:49:47
+            </failure>
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 使用追踪后续请求失败时清除旧详情" time="0.0124525">
+            <failure message="无权访问" type="Error">
+Error: 无权访问
+ ❯ tests/components/phase2-review.spec.ts:60:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 加载第二页题库后可以选择第21个并查询其成员" time="0.0261049">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 题库第二页失败可重试，保留已加载列表且不跳页" time="0.0178194">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 题库内查询携带关键词并显示服务端筛选后的总页数" time="0.0083427">
+            <failure message="Cannot read properties of undefined (reading &apos;includes&apos;)" type="TypeError">
+TypeError: Cannot read properties of undefined (reading &apos;includes&apos;)
+ ❯ tests/components/phase2-review.spec.ts:78:107
+            </failure>
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 题库升级选择器将系列过滤传给后端" time="0.0055993">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 搜索失败清除旧可选项，避免误选上一份结果" time="0.0062519">
+            <failure message="检索失败" type="Error">
+Error: 检索失败
+ ❯ tests/components/phase2-review.spec.ts:91:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 迟到的旧搜索结果不能覆盖新关键词的结果" time="0.0093028">
+            <failure message="Cannot read properties of undefined (reading &apos;includes&apos;)" type="TypeError">
+TypeError: Cannot read properties of undefined (reading &apos;includes&apos;)
+ ❯ tests/components/phase2-review.spec.ts:94:107
+            </failure>
+        </testcase>
+    </testsuite>
+</testsuites>

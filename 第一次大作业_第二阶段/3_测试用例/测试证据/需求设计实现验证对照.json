@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-26",
+  "document_revision": "逻辑修订",
+  "app_version": "2.0.2",
+  "requirements": [
+    {
+      "requirement_id": "R01",
+      "name": "保存常用题",
+      "problem": "问卷局部题目缺少独立身份",
+      "design": "questions/question_versions",
+      "implementation": "services/questions.py、question_instances.py",
+      "test_index_ids": [
+        "T106"
+      ],
+      "report_section": "2.8.1",
+      "evidence_index": "3_测试用例/测试证据/逐项测试索引.json",
+      "boundary": "仅记录已有验证；权限范围及人工验收限制保持不变"
+    },
+    {
+      "requirement_id": "R02",
+      "name": "共享题目",
+      "problem": "题目使用权与答案读取权必须分开",
+      "design": "resource_grants",
+      "implementation": "services/sharing.py、questions.py",
+      "test_index_ids": [
+        "T092",
+        "T094",
+        "T096"
+      ],
+      "report_section": "2.8.2",
+      "evidence_index": "3_测试用例/测试证据/逐项测试索引.json",
+      "boundary": "仅记录已有验证；权限范围及人工验收限制保持不变"
+    },
+    {
+      "requirement_id": "R03",
+      "name": "修改不影响已有问卷",
+      "problem": "可变最新版引用会改变历史解释",
+      "design": "实例内容和survey_versions",
+      "implementation": "question_instances.py、attempts.py",
+      "test_index_ids": [
+        "T075"
+      ],
+      "report_section": "2.8.3",
+      "evidence_index": "3_测试用例/测试证据/逐项测试索引.json",
+      "boundary": "仅记录已有验证；权限范围及人工验收限制保持不变"
+    },
+    {
+      "requirement_id": "R04",
+      "name": "历史、比较与恢复",
+      "problem": "问卷发布历史不能表达题目演进",
+      "design": "parent/restored_from关系",
+      "implementation": "questions.new_version、QuestionHistory.vue",
+      "test_index_ids": [
+        "T075"
+      ],
+      "report_section": "2.8.4",
+      "evidence_index": "3_测试用例/测试证据/逐项测试索引.json",
+      "boundary": "仅记录已有验证；权限范围及人工验收限制保持不变"
+    },
+    {
+      "requirement_id": "R05",
+      "name": "不同版本并存",
+      "problem": "局部ID不足以区分跨卷同系列版本",
+      "design": "系列/版本/实例分离",
+      "implementation": "libraries.py、question_statistics.py",
+      "test_index_ids": [
+        "T101",
+        "T102"
+      ],
+      "report_section": "2.8.5",
+      "evidence_index": "3_测试用例/测试证据/逐项测试索引.json",
+      "boundary": "仅记录已有验证；权限范围及人工验收限制保持不变"
+    },
+    {
+      "requirement_id": "R06",
+      "name": "使用追踪",
+      "problem": "缺来源无法可靠追踪，不能暴露私有标题",
+      "design": "source与草稿/快照查询",
+      "implementation": "question_usage.py、QuestionUsage.vue",
+      "test_index_ids": [
+        "T105",
+        "T128"
+      ],
+      "report_section": "2.8.6",
+      "evidence_index": "3_测试用例/测试证据/逐项测试索引.json",
+      "boundary": "仅记录已有验证；权限范围及人工验收限制保持不变"
+    },
+    {
+      "requirement_id": "R07",
+      "name": "题库管理",
+      "problem": "组织、排序和版本替换需要独立载体",
+      "design": "question_libraries/items",
+      "implementation": "libraries.py、Libraries.vue",
+      "test_index_ids": [
+        "T101",
+        "T114",
+        "T115"
+      ],
+      "report_section": "2.8.7",
+      "evidence_index": "3_测试用例/测试证据/逐项测试索引.json",
+      "boundary": "仅记录已有验证；权限范围及人工验收限制保持不变"
+    },
+    {
+      "requirement_id": "R08",
+      "name": "跨问卷统计",
+      "problem": "关联身份、限权及分母必须明确",
+      "design": "response→快照→source",
+      "implementation": "question_statistics.py",
+      "test_index_ids": [
+        "T102",
+        "T104"
+      ],
+      "report_section": "2.8.8",
+      "evidence_index": "3_测试用例/测试证据/逐项测试索引.json",
+      "boundary": "仅记录已有验证；权限范围及人工验收限制保持不变"
+    }
+  ]
+}

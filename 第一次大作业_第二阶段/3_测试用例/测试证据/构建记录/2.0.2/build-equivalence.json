@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "sha256": {
+    "index.html": "db7e8e4987461856ef5c9d461e11c7bc01b63d1a07ed3962984177cf3da298b3",
+    "assets/index-BxjA2rBT.css": "913617b8f52805f145bbcc040cf670a54fe07fc7a0fd7dd64494ecffedd4e754",
+    "assets/index-C8A_VDL7.js": "d4da45042b43f5d5d4daa40c89b1b060d4e652800dfb03a3d0b56750aea600da"
+  }
+}

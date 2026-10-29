@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "health": {
+    "status": "ok",
+    "version": "2.0.2"
+  },
+  "openapi_version": "2.0.2",
+  "source": "independently extracted code",
+  "temporary_database_removed": true,
+  "port": 18022,
+  "browser_ui": "not tested",
+  "note": "HTTPConnection used for local API smoke test; initial urllib startup probe timed out"
+}

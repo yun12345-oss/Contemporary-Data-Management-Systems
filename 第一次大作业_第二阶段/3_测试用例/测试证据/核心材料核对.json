@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-29",
+  "files_before": 361,
+  "files_moved_out": 90,
+  "bytes_moved_out": 1453652,
+  "all_original_files_individually_classified": true,
+  "business_code_unchanged": true,
+  "four_technical_documents_preserved": true,
+  "report_and_ai_log_unchanged": true,
+  "png_figures": 36,
+  "svg_figures": 36,
+  "editable_figure_sources": "汇总JSON与生成器保留；36份重复逐图JSON归档",
+  "links_inside_package": "passed",
+  "python_json_xml_svg_structure": "passed",
+  "test_index_unique_count": 260,
+  "test_index_evidence_exists": true,
+  "business_tests_reexecuted": false,
+  "original_archive_and_removed_files_backup": "C:\\Users\\Lenovo\\Desktop\\当代数据管理系统\\大作业\\artifacts\\core-cleanup-20261029",
+  "later_document_extension": "第四五章补11图；保留原36张素材，当前47张PNG及47张SVG",
+  "current_png_figures": 47,
+  "current_svg_figures": 47
+}

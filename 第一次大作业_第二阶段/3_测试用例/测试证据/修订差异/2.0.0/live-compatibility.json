@@ -1,0 +1,15 @@
+{
+  "database": "survey_lab",
+  "old_documents_unchanged": true,
+  "old_counts": {
+    "users": 1,
+    "sessions": 3,
+    "surveys": 4,
+    "survey_versions": 3,
+    "responses": 6,
+    "attempts": 1
+  },
+  "collections_after": 11,
+  "schema_upgraded_explicitly": true,
+  "response_schema_unchanged": true
+}

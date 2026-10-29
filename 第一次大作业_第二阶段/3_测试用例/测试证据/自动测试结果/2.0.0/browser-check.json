@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-24",
+  "scope": "独立标注的浏览器验收数据；未修改原问卷",
+  "question_id": "d0a3087225c63bfdfaa1a9c6",
+  "survey_id": "a2eaa3b89407b9d5fd38d544",
+  "v1_and_v2_coexist": true,
+  "library_pinned_v1": true,
+  "published_snapshot_pinned_v1": true,
+  "browser_anonymous_submit_25": true,
+  "formal_response_structure_unchanged": true,
+  "terminal_attempt_answers_cleared": true,
+  "statistics_visible": {
+    "coverage_surveys": 1,
+    "valid_responses": 1,
+    "valid_answers": 1,
+    "average": 25
+  },
+  "original_documents_unchanged_after_browser": true,
+  "narrow_navigation_sharing_fixed": true,
+  "browser_console_errors_observed": 0,
+  "screenshots": [
+    "browser-statistics.png",
+    "browser-statistics-view.png"
+  ]
+}

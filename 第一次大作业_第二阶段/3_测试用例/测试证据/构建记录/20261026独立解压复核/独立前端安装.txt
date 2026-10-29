@@ -1,0 +1,32 @@
+✓ Lockfile passes supply-chain policies (verified 7d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +171
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 171, reused 56, downloaded 0, added 0
+Progress: resolved 171, reused 57, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: C:\Users\Lenovo\AppData\Local\pnpm\store\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 171, reused 170, downloaded 0, added 14
+Progress: resolved 171, reused 171, downloaded 0, added 102
+Progress: resolved 171, reused 171, downloaded 0, added 168
+Progress: resolved 171, reused 171, downloaded 0, added 170
+Progress: resolved 171, reused 171, downloaded 0, added 171, done
+
+dependencies:
++ vue 3.5.44
++ vue-router 4.6.4
+
+devDependencies:
++ @types/node 22.20.5
++ @vitejs/plugin-vue 5.2.4
++ @vue/test-utils 2.4.11
++ jsdom 26.1.0
++ prettier 3.6.2
++ typescript 5.8.3
++ vite 6.4.4
++ vitest 3.2.7
++ vue-tsc 2.2.12
+
+Done in 10s using pnpm v11.25.0

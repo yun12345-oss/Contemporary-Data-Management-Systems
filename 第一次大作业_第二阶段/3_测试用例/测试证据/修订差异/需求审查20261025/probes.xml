@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="4" failures="3" errors="0" time="0.1990308">
+    <testsuite name="artifacts/requirements-audit-20261025/requirements.spec.ts" timestamp="2026-10-25T07:02:03.074Z" hostname="LAPTOP-Q5N7R5J2" tests="4" failures="3" errors="0" skipped="0" time="0.1990308">
+        <testcase classname="artifacts/requirements-audit-20261025/requirements.spec.ts" name="upgrade confirmation must apply to the instance shown in its preview" time="0.1130113">
+            <failure message="expected &apos;second&apos; to be &apos;first&apos; // Object.is equality" type="AssertionError">
+AssertionError: expected &apos;second&apos; to be &apos;first&apos; // Object.is equality
+
+Expected: &quot;first&quot;
+Received: &quot;second&quot;
+
+ ❯ artifacts/requirements-audit-20261025/requirements.spec.ts:44:44
+            </failure>
+        </testcase>
+        <testcase classname="artifacts/requirements-audit-20261025/requirements.spec.ts" name="late old statistics must not overwrite the selected version" time="0.047564">
+            <failure message="expected &apos;v2&apos; to be &apos;v1&apos; // Object.is equality" type="AssertionError">
+AssertionError: expected &apos;v2&apos; to be &apos;v1&apos; // Object.is equality
+
+Expected: &quot;v1&quot;
+Received: &quot;v2&quot;
+
+ ❯ artifacts/requirements-audit-20261025/requirements.spec.ts:60:61
+            </failure>
+        </testcase>
+        <testcase classname="artifacts/requirements-audit-20261025/requirements.spec.ts" name="a library member with revoked old version must allow choosing an authorized newer version" time="0.0129695">
+            <failure message="expected true to be false // Object.is equality" type="AssertionError">
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ artifacts/requirements-audit-20261025/requirements.spec.ts:73:42
+            </failure>
+        </testcase>
+        <testcase classname="artifacts/requirements-audit-20261025/requirements.spec.ts" name="number question editor must allow decimal range when integer_only is off" time="0.0242964">
+        </testcase>
+    </testsuite>
+</testsuites>

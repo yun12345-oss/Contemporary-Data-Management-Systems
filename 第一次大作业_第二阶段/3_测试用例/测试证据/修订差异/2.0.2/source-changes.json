@@ -1,0 +1,107 @@
+[
+  {
+    "path": "backend/app/main.py",
+    "before": "6fc9d5022e355273f401b33ed35da93ef50888fd65f207d2d21a1af160581583",
+    "after": "1db2e2755a68f3768f16546b731cef65d7e106a08ba884940a45346c3f9dffba"
+  },
+  {
+    "path": "backend/pyproject.toml",
+    "before": "6e65c6d7a5ca4f68dd350582b34f727233739d474375a423fc2284a856b85e19",
+    "after": "2988d6b3a15acbb8ee90057dc5454211ff1c129ff7ee381f09e084d4bf7a358c"
+  },
+  {
+    "path": "backend/tests/test_phase2_202.py",
+    "before": null,
+    "after": "7d45c061c6f59f07b1ab6ee63ad7379872d112179e11c4c1b977ce05cfc40bb8"
+  },
+  {
+    "path": "frontend/package.json",
+    "before": "9af5c63161a4de46e9f5cf29d1cc41d096eeade3d6d5f9c804b9cee49158ea09",
+    "after": "c6bb00b3f3173d31d951c0a1fc2ed26b07f3dcf43d17b4581bd3c3a5b30c5fa0"
+  },
+  {
+    "path": "frontend/src/components/QuestionPicker.vue",
+    "before": "8e1f2099b4bd398d40ffe034b1500198943f07001677e6541b38ea639f61e73c",
+    "after": "5d6c1577a12c7cc195fd4624d8359529004b05b888cb78034e1884bd9ad8cb9d"
+  },
+  {
+    "path": "frontend/src/components/QuestionUsage.vue",
+    "before": "7bf6f0d343cde24cd3c35f2ea1139137ee5baf24edf7f3ebcaa85f4656f5cedb",
+    "after": "41bd70936de5f2778eeaf931a68e35401b179c7290e2993cd6ea2c228571113a"
+  },
+  {
+    "path": "frontend/src/composables/useSurveyEditor.ts",
+    "before": "709be8566b28f2aefec8945cce7c526664fb2f9508d7aca71ddcf55631d32791",
+    "after": "3b5b4e2267c1ad1430bdd767975334204bdbbe5847dc1ba2b090cc01d9395b4b"
+  },
+  {
+    "path": "frontend/src/views/Editor.vue",
+    "before": "975dc14de1f044f583b2d3c6ae946ef4b5642c7d97027addf63e867aa4dcd643",
+    "after": "1d1db1060d3f90a68b8d7d8cd04590ba9316d8636885ba0c9e78c1ae23a9b35a"
+  },
+  {
+    "path": "frontend/src/views/Libraries.vue",
+    "before": "fa4ccb6fb687483b0e434634bb11b0c8c6b8d80d1a177fcd9a7694566303316a",
+    "after": "a0ee4c94f65715adfc75068a80a3616a8c62f993378f4c1f02e869bb53922b9a"
+  },
+  {
+    "path": "frontend/src/views/QuestionHistory.vue",
+    "before": "9d44bcb6f89f01e16da1f0ce7184d97dcc528b8c5121990d28b259d02c7d9de0",
+    "after": "f38c09ec3e02a3b073a2252966cccc0065e882b12593250d26aa6c1da8b73ed2"
+  },
+  {
+    "path": "frontend/src/views/QuestionStatistics.vue",
+    "before": "9cd71b2b19dd1050e6f68b128f767b595a2e04f3fde012102fa68bcb672c412f",
+    "after": "0ecaa7305fa5dfb3fcdf36ab315a9c97cdfd2cccfcd3a0ab1ca8c3586899e3a0"
+  },
+  {
+    "path": "frontend/src/views/QuestionUsage.vue",
+    "before": "ae224454ec600030a0d5f550c78961b03ba8754b2e9ca63703dfdc031a883d64",
+    "after": "c99c59c06b9e5f1fe0046c9bf267c6d40a5c125ab13fd835ea08b809ba2c3e6f"
+  },
+  {
+    "path": "frontend/src/views/Statistics.vue",
+    "before": "999b0462f60646fa8e8c8a41ffa666246fd9d2b7702afd7fd2c35cb82f2944d0",
+    "after": "72ae25ec7095410861c16326db8a56eab610d22b15411e837fe5bad8aa4ecfd7"
+  },
+  {
+    "path": "frontend/tests/components/phase2-202.spec.ts",
+    "before": null,
+    "after": "2121c10c2582088d000258c5addd33fc66b67e82e0fdd5ef79037749211b55c2"
+  },
+  {
+    "path": "README.md",
+    "before": "9efccf8f79abfe2f48ac27a1c7dcab6a036db804bec49d11b899ec79e49da83e",
+    "after": "a5e61e3dc028b48fa7bfa45fdc4a2d9efe0ade7a9bb860672419ead3fa9e1b37"
+  },
+  {
+    "path": "scripts/export-editor-evidence.py",
+    "before": null,
+    "after": "e45420c6b0e6400baf9e8bc31f71fe97c22ea12763932b9a185b81b58e249068"
+  },
+  {
+    "path": "scripts/export-fix-evidence.py",
+    "before": null,
+    "after": "2950bcfcac17d82b0f6dd60d0c652107425ef8ee1f89d5de9062ba17b39bb605"
+  },
+  {
+    "path": "scripts/export-resume-evidence.py",
+    "before": null,
+    "after": "17e6d4716f2de0afab8e59179c81d508c5fb68fe153b0db60aa768b871bc32e6"
+  },
+  {
+    "path": "scripts/package.py",
+    "before": null,
+    "after": "735324d191f76e39f9b5f6a7b4c047cde3640fab99531cf0d4032849ac46383f"
+  },
+  {
+    "path": "scripts/prepare-phase2-202.py",
+    "before": null,
+    "after": "ad9694d0d469597ee32615f09a8a27790612233f0580783ecf3a10147b66b17a"
+  },
+  {
+    "path": "scripts/rehearse-upgrade.py",
+    "before": null,
+    "after": "372befeb7e0647ac15004ef0257d7a4b85c86f8c72ffb4358c9e269ffbf24863"
+  }
+]

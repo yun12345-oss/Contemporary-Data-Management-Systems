@@ -1,0 +1,31 @@
+{
+  "version": "2.0.2",
+  "status": "automated_checks_passed_browser_manual_pending",
+  "workspace_tests": {
+    "backend": 154,
+    "frontend_logic": 16,
+    "components": 90,
+    "total_unique": 260
+  },
+  "original_audit_probes": {
+    "passed": 4,
+    "counted_in_total": false
+  },
+  "typecheck": "passed",
+  "production_build": "passed",
+  "independent_extraction": {
+    "hash_check": "passed",
+    "python_dependencies": "reused installed runtime; import path confirmed within extracted backend",
+    "frontend_dependencies": "pnpm offline frozen lockfile install succeeded using local cache",
+    "backend": 154,
+    "frontend_logic": 16,
+    "components": 90,
+    "production_build": "passed; generated assets byte-identical to workspace",
+    "startup": "real uvicorn on isolated localhost port 18022; health and OpenAPI 2.0.2 passed",
+    "temporary_database": "removed"
+  },
+  "browser_manual": "blocked by URL security policy; upgrade/statistics/libraries/restore dialog remain pending",
+  "database_schema_changes": false,
+  "production_database_modified": false,
+  "historical_materials": "2.0.1 release and original audit retained"
+}

@@ -1,0 +1,374 @@
+{
+  "说明": "临时数据库真实API生成；密码哈希和会话哈希替换为不可用示例，替换后再次经真实MongoDB校验；Extended JSON的$date表示BSON Date。",
+  "collections": {
+    "users": [
+      {
+        "_id": "f206c53c29078104e466f8c5",
+        "username": "material_owner_22e23b92",
+        "username_key": "material_owner_22e23b92",
+        "password_hash": "example_hash_not_a_real_password",
+        "created_at": {
+          "$date": "2026-10-26T08:45:57.479Z"
+        },
+        "schema_version": 1
+      },
+      {
+        "_id": "68257a376872510ee5fac7b4",
+        "username": "material_peer_22e23b92",
+        "username_key": "material_peer_22e23b92",
+        "password_hash": "example_hash_not_a_real_password",
+        "created_at": {
+          "$date": "2026-10-26T08:45:57.593Z"
+        },
+        "schema_version": 1
+      }
+    ],
+    "sessions": [
+      {
+        "_id": "78007252f0ade5af7d1e213c",
+        "token_hash": "7bb556e14026998e5bf755daa59d99f05537e2c7a1566f06957f53477046fe9a",
+        "user_id": "f206c53c29078104e466f8c5",
+        "expires_at": {
+          "$date": "2026-11-02T08:45:57.485Z"
+        }
+      },
+      {
+        "_id": "ae1a32de0aee24e016585d71",
+        "token_hash": "af54b19bf55f37890fa390beb293c15095fbbc4df4c37ad753ec0fab7b08ccb0",
+        "user_id": "68257a376872510ee5fac7b4",
+        "expires_at": {
+          "$date": "2026-11-02T08:45:57.611Z"
+        }
+      }
+    ],
+    "surveys": [
+      {
+        "_id": "a1f20fe700b975f86e7a80c4",
+        "owner_id": "f206c53c29078104e466f8c5",
+        "share_code": "e15165d56e4d5400beda1395",
+        "status": "published",
+        "draft": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（填写时的周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "9b59a1bcfae9b44926b9961d",
+                "version": 2,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": {
+                  "$date": "2026-10-26T08:45:57.900Z"
+                },
+                "grant_id": null
+              }
+            }
+          ]
+        },
+        "deadline": null,
+        "revision": 6,
+        "current_version": 2,
+        "created_at": {
+          "$date": "2026-10-26T08:45:57.746Z"
+        },
+        "updated_at": {
+          "$date": "2026-10-26T08:45:57.929Z"
+        },
+        "schema_version": 1,
+        "activity_seq": 6,
+        "draft_issues": []
+      }
+    ],
+    "survey_versions": [
+      {
+        "_id": "3efd5a7a8e797988a2ee4ed5",
+        "survey_id": "a1f20fe700b975f86e7a80c4",
+        "version": 1,
+        "definition": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "d3dafe1edfe773ac098baf1b",
+                "version": 1,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": {
+                  "$date": "2026-10-26T08:45:57.767Z"
+                },
+                "grant_id": null
+              }
+            }
+          ]
+        },
+        "published_at": {
+          "$date": "2026-10-26T08:45:57.815Z"
+        },
+        "schema_version": 1,
+        "rule_engine_version": 1
+      },
+      {
+        "_id": "dddb1643308a94878d9463d6",
+        "survey_id": "a1f20fe700b975f86e7a80c4",
+        "version": 2,
+        "definition": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（填写时的周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "9b59a1bcfae9b44926b9961d",
+                "version": 2,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": {
+                  "$date": "2026-10-26T08:45:57.900Z"
+                },
+                "grant_id": null
+              }
+            }
+          ]
+        },
+        "published_at": {
+          "$date": "2026-10-26T08:45:57.927Z"
+        },
+        "schema_version": 1,
+        "rule_engine_version": 1
+      }
+    ],
+    "responses": [
+      {
+        "_id": "1d86c72862a3716d65da550b",
+        "survey_id": "a1f20fe700b975f86e7a80c4",
+        "version_id": "3efd5a7a8e797988a2ee4ed5",
+        "version": 1,
+        "attempt_id": "aa159e5043cb42df98815706",
+        "respondent_key": "294c14b7c7679ac73ac445a1858e95632ab532509905641cadc9e601be396f06",
+        "anonymous": true,
+        "answers": [
+          {
+            "question_id": "9d0d7f72a1c672d260f5b05c",
+            "value": 25
+          }
+        ],
+        "path": [
+          "9d0d7f72a1c672d260f5b05c"
+        ],
+        "submitted_at": {
+          "$date": "2026-10-26T08:45:57.996Z"
+        },
+        "schema_version": 1
+      }
+    ],
+    "attempts": [
+      {
+        "_id": "aa159e5043cb42df98815706",
+        "survey_id": "a1f20fe700b975f86e7a80c4",
+        "version_id": "3efd5a7a8e797988a2ee4ed5",
+        "respondent_key": "294c14b7c7679ac73ac445a1858e95632ab532509905641cadc9e601be396f06",
+        "anonymous": true,
+        "status": "submitted",
+        "raw_answers": {},
+        "current_question_id": "9d0d7f72a1c672d260f5b05c",
+        "revision": 3,
+        "created_at": {
+          "$date": "2026-10-26T08:45:57.841Z"
+        },
+        "updated_at": {
+          "$date": "2026-10-26T08:45:57.996Z"
+        },
+        "schema_version": 1,
+        "response_id": "1d86c72862a3716d65da550b"
+      },
+      {
+        "_id": "a5699422d82b36b43e801d73",
+        "survey_id": "a1f20fe700b975f86e7a80c4",
+        "version_id": "dddb1643308a94878d9463d6",
+        "respondent_key": "294c14b7c7679ac73ac445a1858e95632ab532509905641cadc9e601be396f06",
+        "anonymous": false,
+        "status": "in_progress",
+        "raw_answers": {},
+        "current_question_id": "9d0d7f72a1c672d260f5b05c",
+        "revision": 1,
+        "created_at": {
+          "$date": "2026-10-26T08:45:58.075Z"
+        },
+        "updated_at": {
+          "$date": "2026-10-26T08:45:58.075Z"
+        },
+        "schema_version": 1
+      }
+    ],
+    "questions": [
+      {
+        "_id": "48bf223b0fd964f73d49e579",
+        "owner_id": "f206c53c29078104e466f8c5",
+        "title": "年龄（填写时的周岁）",
+        "latest_version_id": "9b59a1bcfae9b44926b9961d",
+        "version_seq": 2,
+        "revision": 2,
+        "archived": false,
+        "activity_seq": 5,
+        "created_at": {
+          "$date": "2026-10-26T08:45:57.639Z"
+        },
+        "updated_at": {
+          "$date": "2026-10-26T08:45:57.666Z"
+        },
+        "schema_version": 1
+      }
+    ],
+    "question_versions": [
+      {
+        "_id": "d3dafe1edfe773ac098baf1b",
+        "question_id": "48bf223b0fd964f73d49e579",
+        "version": 1,
+        "parent_version_id": null,
+        "restored_from_version_id": null,
+        "content": {
+          "type": "number",
+          "title": "年龄（周岁）",
+          "options": [],
+          "validation": {
+            "min": 0,
+            "max": 120,
+            "integer_only": true
+          }
+        },
+        "change_note": "材料示例初版",
+        "created_by": "f206c53c29078104e466f8c5",
+        "created_at": {
+          "$date": "2026-10-26T08:45:57.639Z"
+        },
+        "schema_version": 1
+      },
+      {
+        "_id": "9b59a1bcfae9b44926b9961d",
+        "question_id": "48bf223b0fd964f73d49e579",
+        "version": 2,
+        "parent_version_id": "d3dafe1edfe773ac098baf1b",
+        "restored_from_version_id": null,
+        "content": {
+          "type": "number",
+          "title": "年龄（填写时的周岁）",
+          "options": [],
+          "validation": {
+            "min": 0,
+            "max": 120,
+            "integer_only": true
+          }
+        },
+        "change_note": "明确填写时点",
+        "created_by": "f206c53c29078104e466f8c5",
+        "created_at": {
+          "$date": "2026-10-26T08:45:57.666Z"
+        },
+        "schema_version": 1
+      }
+    ],
+    "question_libraries": [
+      {
+        "_id": "be3bf3242dbf825507d8b9eb",
+        "owner_id": "f206c53c29078104e466f8c5",
+        "name": "基础信息题库",
+        "description": "固定版本示例",
+        "revision": 2,
+        "created_at": {
+          "$date": "2026-10-26T08:45:57.681Z"
+        },
+        "updated_at": {
+          "$date": "2026-10-26T08:45:57.703Z"
+        },
+        "schema_version": 1
+      }
+    ],
+    "question_library_items": [
+      {
+        "_id": "601ca2d788defc642ff60adb",
+        "library_id": "be3bf3242dbf825507d8b9eb",
+        "question_id": "48bf223b0fd964f73d49e579",
+        "question_version_id": "d3dafe1edfe773ac098baf1b",
+        "position": 0,
+        "created_at": {
+          "$date": "2026-10-26T08:45:57.701Z"
+        },
+        "schema_version": 1
+      }
+    ],
+    "resource_grants": [
+      {
+        "_id": "e486dcfabf4c50c1b85bca5a",
+        "kind": "use",
+        "question_version_id": "d3dafe1edfe773ac098baf1b",
+        "survey_id": null,
+        "grantee_id": "68257a376872510ee5fac7b4",
+        "grantor_id": "f206c53c29078104e466f8c5",
+        "active": true,
+        "revision": 1,
+        "activity_seq": 0,
+        "created_at": {
+          "$date": "2026-10-26T08:45:57.721Z"
+        },
+        "updated_at": {
+          "$date": "2026-10-26T08:45:57.721Z"
+        },
+        "schema_version": 1
+      }
+    ]
+  }
+}

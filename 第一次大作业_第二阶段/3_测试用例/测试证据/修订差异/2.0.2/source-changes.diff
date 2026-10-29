@@ -1,0 +1,1945 @@
+--- 2.0.1/backend\app\main.py
++++ 2.0.2/backend\app\main.py
+@@ -49,7 +49,7 @@
+ 
+     app = FastAPI(
+         title="问序 Survey Lab",
+-        version="2.0.1",
++        version="2.0.2",
+         description="MongoDB 问卷系统：第一阶段核心与第二阶段题库版本扩展",
+         lifespan=lifespan,
+     )
+@@ -139,7 +139,7 @@
+     @app.get("/api/health")
+     def health(database=Depends(db)):
+         database.command("ping")
+-        return {"status": "ok", "version": "2.0.1"}
++        return {"status": "ok", "version": "2.0.2"}
+ 
+     @app.post("/api/auth/register", status_code=201)
+     def register(body: Credentials, response: Response, database=Depends(db)):
+--- 2.0.1/backend\pyproject.toml
++++ 2.0.2/backend\pyproject.toml
+@@ -4,7 +4,7 @@
+ 
+ [project]
+ name = "survey-lab"
+-version = "2.0.1"
++version = "2.0.2"
+ requires-python = ">=3.11"
+ dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "pymongo>=4.10,<5", "pwdlib[argon2]>=0.2,<1", "itsdangerous>=2.2,<3", "python-dotenv>=1,<2"]
+ 
+--- 2.0.1/backend\tests\test_phase2_202.py
++++ 2.0.2/backend\tests\test_phase2_202.py
+@@ -0,0 +1,46 @@
++"""2.0.2 real MongoDB regressions; temporary fixture database only."""
++from copy import deepcopy
++import pytest
++from test_phase2 import new, newer, grant, ok, other, survey, imp, publish, submit, allow_repeat
++
++@pytest.mark.parametrize("revoke_target", [False, True])
++def test_library_old_revoked_target_authorization_controls_update(client, other, revoke_target):
++    old = new(client)
++    latest = newer(client, old)
++    g1 = grant(client, other, old["version"])
++    g2 = grant(client, other, latest["version"])
++    library = ok(other.post("/api/libraries", json={"name": "202 update"}), 201)
++    lid = library["_id"]
++    ok(other.post(f"/api/libraries/{lid}/items", json={"revision": 1, "question_version_id": old["version"]["_id"]}), 201)
++    ok(client.post(f"/api/grants/{g1['_id']}/revoke", json={"revision": 1}))
++    before = ok(other.get(f"/api/libraries/{lid}/items"))
++    item = before["items"][0]
++    assert item["available"] is False and item["version"] is None
++    assert item["question_id"] == old["question"]["_id"]
++    if revoke_target:
++        ok(client.post(f"/api/grants/{g2['_id']}/revoke", json={"revision": 1}))
++    response = other.put(f"/api/libraries/{lid}/items/{item['_id']}", json={"revision": before["library"]["revision"], "question_version_id": latest["version"]["_id"]})
++    after = ok(other.get(f"/api/libraries/{lid}/items"))
++    if revoke_target:
++        assert response.status_code == 403
++        assert after["items"][0]["question_version_id"] == old["version"]["_id"]
++        assert after["library"]["revision"] == before["library"]["revision"]
++    else:
++        ok(response)
++        assert after["items"][0]["question_version_id"] == latest["version"]["_id"]
++        assert after["items"][0]["available"] is True
++
++def test_statistics_zero_answer_coverage_and_submission_time(client):
++    q = new(client)
++    s = publish(client, allow_repeat(client, imp(client, survey(client), q["version"])))
++    path = f"/api/question-versions/{q['version']['_id']}/statistics"
++    empty = ok(client.get(path, params={"start": "2099-01-01T00:00:00Z"}))
++    assert empty["coverage_surveys"] == 1 and empty["valid_answers"] == 0
++    submit(client, s, {s["draft"]["questions"][0]["id"]: "25"})
++    assert ok(client.get(path))["valid_answers"] == 1
++    excluded = ok(client.get(path, params={"start": "2099-01-01T00:00:00Z"}))
++    assert excluded["coverage_surveys"] == 1 and excluded["answered_surveys"] == 0
++    usage = ok(client.get(f"/api/questions/{q['question']['_id']}/usage"))
++    assert usage["current_published_surveys"] == 1
++    assert usage["historical_published_surveys"] == 1
++    assert usage["used_surveys"] == 1
+--- 2.0.1/frontend\package.json
++++ 2.0.2/frontend\package.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "survey-lab-web",
+   "private": true,
+-  "version": "2.0.1",
++  "version": "2.0.2",
+   "type": "module",
+   "scripts": {
+     "dev": "vite --host 127.0.0.1",
+--- 2.0.1/frontend\src\components\QuestionPicker.vue
++++ 2.0.2/frontend\src\components\QuestionPicker.vue
+@@ -1,5 +1,5 @@
+ <script setup lang="ts">
+-import { ref, onMounted } from "vue";
++import { ref, watch, onMounted, onBeforeUnmount } from "vue";
+ import { api } from "../api";
+ const props = defineProps<{ questionId?: string }>();
+ const emit = defineEmits<{ pick: [id: string] }>();
+@@ -16,8 +16,11 @@
+   libraryPage = ref(0),
+   libraryTotal = ref(0);
+ let sequence = 0;
++let disposed = false;
+ async function load() {
+   const seq = ++sequence;
++  items.value = [];
++  total.value = 0;
+   busy.value = true;
+   error.value = "";
+   try {
+@@ -60,16 +63,30 @@
+     const data = await api(
+       next === 1 ? "/libraries" : `/libraries?page=${next}`,
+     );
++    if (disposed) return;
+     const known = new Set(libs.value.map((l) => l._id));
+     libs.value.push(...data.items.filter((l: any) => !known.has(l._id)));
+     libraryTotal.value = data.total ?? libs.value.length;
+     libraryPage.value = next;
+   } catch (e: any) {
+-    libraryError.value = e.message;
++    if (!disposed) libraryError.value = e.message;
+   } finally {
+-    libraryBusy.value = false;
++    if (!disposed) libraryBusy.value = false;
+   }
+ }
++watch(
++  () => props.questionId,
++  () => {
++    page.value = 1;
++    search.value = "";
++    load();
++  },
++  { flush: "sync" },
++);
++onBeforeUnmount(() => {
++  disposed = true;
++  sequence++;
++});
+ onMounted(async () => {
+   await Promise.all([load(), loadLibraries()]);
+ });
+@@ -144,7 +161,11 @@
+       </button>
+     </div>
+     <p v-if="!busy && !items.length" class="muted">
+-      没有可选题目。先创建题目，或请所有者共享指定版本。
++      {{
++        questionId
++          ? "该题目系列暂无可用的授权版本。可联系所有者授权，或移除此成员。"
++          : "没有可选题目。先创建题目，或请所有者共享指定版本。"
++      }}
+     </p>
+     <div class="actions">
+       <button
+--- 2.0.1/frontend\src\components\QuestionUsage.vue
++++ 2.0.2/frontend\src\components\QuestionUsage.vue
+@@ -30,7 +30,7 @@
+         {{ data.historical_published_surveys }}
+       </p>
+       <p class="input-hint">
+-        各分类可能重叠；他人私有问卷仅计入题目所有者的脱敏汇总。
++        各分类按问卷去重，可能重叠；历史发布包含当前发布。仅展示自己的问卷明细；他人问卷仅计入题目所有者的脱敏汇总。
+       </p>
+       <div class="phase2-picker-row" v-for="s in data.items">
+         <router-link :to="`/surveys/${s.survey_id}/edit`">{{
+--- 2.0.1/frontend\src\composables\useSurveyEditor.ts
++++ 2.0.2/frontend\src\composables\useSurveyEditor.ts
+@@ -6,6 +6,15 @@
+   Survey,
+   "revision" | "status" | "current_version" | "deadline" | "updated_at"
+ >;
++export type UpgradeContext = {
++  surveyId: string;
++  instanceId: string;
++  sourceVersionId: string;
++  targetVersionId: string;
++  revision: number;
++  draftFingerprint: string;
++  requestId: number;
++};
+ export function localDeadline(value: string | null): string {
+   if (!value) return "";
+   const date = new Date(value);
+@@ -199,18 +208,38 @@
+       )
+     );
+   }
+-  async function sourceOperation(path: string, body: Record<string, any>) {
++  async function sourceOperation(
++    path: string,
++    body: Record<string, any>,
++    preview?: UpgradeContext,
++  ) {
+     if (busy.value || !survey.value) return false;
+     operation.value = "source";
+     error.value = "";
+     message.value = "";
+     try {
+-      if (dirty.value) await persist(snapshot());
++      if (path === "upgrade") {
++        const instance = survey.value.draft.questions.find(
++          (q) => q.id === preview?.instanceId,
++        );
++        if (
++          !preview ||
++          preview.surveyId !== sid ||
++          dirty.value ||
++          survey.value.revision !== preview.revision ||
++          JSON.stringify(survey.value.draft) !== preview.draftFingerprint ||
++          instance?.source?.question_version_id !== preview.sourceVersionId ||
++          body.instance_id !== preview.instanceId ||
++          body.question_version_id !== preview.targetVersionId
++        ) {
++          throw new Error("升级预览已失效，请保存后重新预览");
++        }
++      } else if (dirty.value) await persist(snapshot());
+       if (dirty.value) throw new Error("仍有新的本地修改，请先保存后重试");
+       const result = await api<any>(
+         `/surveys/${sid}/questions/${path}`,
+         "POST",
+-        { ...body, revision: survey.value.revision },
++        { ...body, revision: preview?.revision ?? survey.value.revision },
+       );
+       const incoming: Survey = result.survey || result;
+       metadata(incoming);
+@@ -227,6 +256,16 @@
+     } finally {
+       operation.value = "";
+     }
++  }
++  function confirmQuestionUpgrade(context: UpgradeContext) {
++    return sourceOperation(
++      "upgrade",
++      {
++        instance_id: context.instanceId,
++        question_version_id: context.targetVersionId,
++      },
++      context,
++    );
+   }
+   function unload(e: BeforeUnloadEvent) {
+     if (pendingChanges.value || busy.value) {
+@@ -252,5 +291,6 @@
+     canLeave,
+     unload,
+     sourceOperation,
++    confirmQuestionUpgrade,
+   };
+ }
+--- 2.0.1/frontend\src\views\Editor.vue
++++ 2.0.2/frontend\src\views\Editor.vue
+@@ -1,7 +1,10 @@
+ <script setup lang="ts">
+-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
++import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+ import { useRoute, onBeforeRouteLeave } from "vue-router";
+-import { useSurveyEditor } from "../composables/useSurveyEditor";
++import {
++  useSurveyEditor,
++  type UpgradeContext,
++} from "../composables/useSurveyEditor";
+ import { parseRouting } from "../routing-validation";
+ import { type Question, typeNames, makeQuestion, makeId } from "../types";
+ import RoutingEditor from "../components/RoutingEditor.vue";
+@@ -29,6 +32,7 @@
+   canLeave,
+   unload,
+   sourceOperation,
++  confirmQuestionUpgrade,
+ } = useSurveyEditor(sid);
+ const selected = ref(0),
+   preview = ref(false),
+@@ -40,29 +44,90 @@
+ const question = computed(() => survey.value?.draft.questions[selected.value]);
+ const pickerOpen = ref(false),
+   upgrading = ref(false),
+-  upgradeTarget = ref(""),
+   upgradePreview = ref<any>(null);
++const upgradeContext = ref<UpgradeContext | null>(null);
++let previewSequence = 0;
++let interactionSequence = 0;
++let disposed = false;
++function invalidateUpgrade() {
++  previewSequence++;
++  upgradePreview.value = null;
++  upgradeContext.value = null;
++}
++watch(
++  [
++    () => question.value?.id,
++    () => question.value?.source?.question_version_id,
++    () => survey.value?.revision,
++    () => JSON.stringify(survey.value?.draft),
++    pickerOpen,
++  ],
++  invalidateUpgrade,
++  { flush: "sync" },
++);
++watch(
++  [() => question.value?.id, pickerOpen, upgrading],
++  () => interactionSequence++,
++  { flush: "sync" },
++);
++function matchesUpgrade(c: UpgradeContext) {
++  return (
++    !disposed &&
++    pickerOpen.value &&
++    upgrading.value &&
++    c.requestId === previewSequence &&
++    question.value?.id === c.instanceId &&
++    question.value?.source?.question_version_id === c.sourceVersionId &&
++    survey.value?.revision === c.revision &&
++    JSON.stringify(survey.value?.draft) === c.draftFingerprint
++  );
++}
+ async function picked(vid: string) {
+   if (upgrading.value) {
+     if (!question.value || !survey.value || busy.value) return;
++    const instanceId = question.value.id;
++    const sourceVersionId = question.value.source?.question_version_id;
++    invalidateUpgrade();
++    const beforeSave = interactionSequence;
+     if (dirty.value && !(await save())) return;
++    if (
++      disposed ||
++      !pickerOpen.value ||
++      question.value?.id !== instanceId ||
++      question.value?.source?.question_version_id !== sourceVersionId
++    )
++      return;
++    // A save changes revision; selection/closure during that save must still cancel.
++    if (!sourceVersionId || beforeSave !== interactionSequence) return;
+     if (dirty.value) {
+       error.value = "仍有未保存修改，请先保存";
+       return;
+     }
++    const context: UpgradeContext = {
++      surveyId: sid,
++      instanceId,
++      sourceVersionId,
++      targetVersionId: vid,
++      revision: survey.value.revision,
++      draftFingerprint: JSON.stringify(survey.value.draft),
++      requestId: ++previewSequence,
++    };
++    error.value = "";
+     try {
+-      upgradeTarget.value = vid;
+-      upgradePreview.value = await api(
++      const result = await api(
+         `/surveys/${sid}/questions/upgrade-preview`,
+         "POST",
+         {
+-          revision: survey.value.revision,
+-          instance_id: question.value.id,
++          revision: context.revision,
++          instance_id: context.instanceId,
+           question_version_id: vid,
+         },
+       );
++      if (!matchesUpgrade(context)) return;
++      upgradeContext.value = context;
++      upgradePreview.value = result;
+     } catch (e: any) {
+-      error.value = e.message;
++      if (matchesUpgrade(context)) error.value = e.message;
+     }
+     return;
+   }
+@@ -72,15 +137,18 @@
+   }
+ }
+ async function confirmUpgrade() {
+-  if (!question.value) return;
+-  if (
+-    await sourceOperation("upgrade", {
+-      instance_id: question.value.id,
+-      question_version_id: upgradeTarget.value,
+-    })
+-  ) {
++  const context = upgradeContext.value;
++  if (!context || !matchesUpgrade(context)) {
++    invalidateUpgrade();
++    error.value = "升级预览已失效，请重新预览";
++    return;
++  }
++  if (await confirmQuestionUpgrade(context)) {
+     pickerOpen.value = false;
+     upgradePreview.value = null;
++  } else {
++    invalidateUpgrade();
++    error.value += "；请重新加载或保存后重新预览";
+   }
+ }
+ async function saveReusable() {
+@@ -160,7 +228,11 @@
+   load();
+   window.addEventListener("beforeunload", unload);
+ });
+-onBeforeUnmount(() => window.removeEventListener("beforeunload", unload));
++onBeforeUnmount(() => {
++  disposed = true;
++  invalidateUpgrade();
++  window.removeEventListener("beforeunload", unload);
++});
+ onBeforeRouteLeave(canLeave);
+ </script>
+ <template>
+--- 2.0.1/frontend\src\views\Libraries.vue
++++ 2.0.2/frontend\src\views\Libraries.vue
+@@ -1,5 +1,5 @@
+ <script setup lang="ts">
+-import { ref, onMounted } from "vue";
++import { ref, onMounted, onBeforeUnmount } from "vue";
+ import { api } from "../api";
+ import QuestionPicker from "../components/QuestionPicker.vue";
+ const libs = ref<any[]>([]),
+@@ -22,13 +22,28 @@
+     error.value = e.message;
+   }
+ }
++let selectionSequence = 0;
++let disposed = false;
++function closePicker() {
++  picker.value = false;
++  editItem.value = null;
++}
+ async function select(id: string) {
++  closePicker();
++  const seq = ++selectionSequence;
+   error.value = "";
+   try {
+-    data.value = await api(`/libraries/${id}/items?page=${page.value}`);
+-  } catch (e: any) {
+-    error.value = e.message;
+-  }
++    const result = await api(`/libraries/${id}/items?page=${page.value}`);
++    if (!disposed && seq === selectionSequence) data.value = result;
++  } catch (e: any) {
++    if (!disposed && seq === selectionSequence) error.value = e.message;
++  }
++}
++function chooseLibrary(id: string) {
++  if (busy.value) return;
++  page.value = 1;
++  data.value = null;
++  return select(id);
+ }
+ async function create() {
+   busy.value = true;
+@@ -67,16 +82,23 @@
+   }
+ }
+ async function pick(vid: string) {
+-  busy.value = true;
+-  try {
+-    const lid = data.value.library._id;
++  if (busy.value || !picker.value || !data.value) return;
++  const target = {
++    libraryId: data.value.library._id,
++    revision: data.value.library.revision,
++    memberId: editItem.value?._id,
++    position: editItem.value?.position ?? data.value.total,
++  };
++  busy.value = true;
++  try {
++    const lid = target.libraryId;
+     await api(
+-      `/libraries/${lid}/items${editItem.value ? "/" + editItem.value._id : ""}`,
+-      editItem.value ? "PUT" : "POST",
++      `/libraries/${lid}/items${target.memberId ? "/" + target.memberId : ""}`,
++      target.memberId ? "PUT" : "POST",
+       {
+-        revision: data.value.library.revision,
++        revision: target.revision,
+         question_version_id: vid,
+-        position: editItem.value?.position ?? data.value.total,
++        position: target.position,
+       },
+     );
+     picker.value = false;
+@@ -127,6 +149,11 @@
+   }
+ }
+ onMounted(load);
++onBeforeUnmount(() => {
++  disposed = true;
++  selectionSequence++;
++  closePicker();
++});
+ </script>
+ <template>
+   <main class="page">
+@@ -153,10 +180,8 @@
+       <button
+         class="button"
+         v-for="l in libs"
+-        @click="
+-          page = 1;
+-          select(l._id);
+-        "
++        :disabled="busy"
++        @click="chooseLibrary(l._id)"
+       >
+         {{ l.name }}
+       </button>
+@@ -205,6 +230,7 @@
+       </div>
+       <QuestionPicker
+         v-if="picker && !busy"
++        :key="`${data.library._id}:${editItem?._id || 'new'}`"
+         :question-id="editItem?.question_id"
+         @pick="pick"
+       />
+@@ -217,7 +243,7 @@
+           }}{{ item.available ? "" : " · 不能新增使用" }}</span
+         ><button
+           class="button"
+-          :disabled="busy || !item.available"
++          :disabled="busy"
+           @click="
+             editItem = item;
+             picker = true;
+@@ -237,7 +263,7 @@
+       <div class="actions">
+         <button
+           class="button"
+-          :disabled="page <= 1"
++          :disabled="busy || page <= 1"
+           @click="
+             page--;
+             select(data.library._id);
+@@ -247,7 +273,7 @@
+         ><span>{{ page }} / {{ Math.max(1, Math.ceil(data.total / 20)) }}</span
+         ><button
+           class="button"
+-          :disabled="page * 20 >= data.total"
++          :disabled="busy || page * 20 >= data.total"
+           @click="
+             page++;
+             select(data.library._id);
+--- 2.0.1/frontend\src\views\QuestionHistory.vue
++++ 2.0.2/frontend\src\views\QuestionHistory.vue
+@@ -29,6 +29,7 @@
+   }
+ }
+ async function restore(v: any) {
++  if (busy.value || !data.value || data.value.question.archived) return;
+   if (
+     !confirm(
+       `基于当前最近版本创建新版本，内容恢复自v${v.version}？旧版本全部保留。`,
+--- 2.0.1/frontend\src\views\QuestionStatistics.vue
++++ 2.0.2/frontend\src\views\QuestionStatistics.vue
+@@ -37,7 +37,7 @@
+     <router-link to="/questions">← 题目管理</router-link>
+     <h1>单题跨问卷统计</h1>
+     <p class="muted">
+-      仅汇总同一确定版本；先检查授权，再聚合。不同版本不自动合并。
++      仅汇总同一确定版本、自有或获得有效汇总统计授权的问卷；时间按正式提交时间筛选。不同版本不自动合并。
+     </p>
+     <form class="panel phase2-card" @submit.prevent="load">
+       <div class="stats-filters">
+@@ -56,7 +56,7 @@
+       <div class="stats-summary panel">
+         <div>
+           <strong>{{ data.coverage_surveys }}</strong
+-          ><span>统计覆盖问卷</span>
++          ><span>统计覆盖问卷（含零作答）</span>
+         </div>
+         <div>
+           <strong>{{ data.answered_surveys }}</strong
+@@ -73,7 +73,7 @@
+       </div>
+       <p class="input-hint">
+         {{ data.notice }}
+-        使用总量请在“历史与使用”查看；这里不展示跨问卷去重人数。
++        覆盖数按有权范围内曾发布该版本的问卷去重，包含当前时间范围零作答的问卷；使用总量请在使用追踪查看，这里不展示跨问卷去重人数。
+       </p>
+       <section class="panel phase2-card" v-if="data.options">
+         <h2>选项分布</h2>
+--- 2.0.1/frontend\src\views\QuestionUsage.vue
++++ 2.0.2/frontend\src\views\QuestionUsage.vue
+@@ -7,7 +7,9 @@
+   <main class="page">
+     <router-link to="/questions">← 题目管理</router-link>
+     <h1>题目使用追踪</h1>
+-    <p class="muted">只展示后端允许访问的范围；使用授权不包含他人问卷详情。</p>
++    <p class="muted">
++      展示自己的问卷使用明细；题目所有者可查看按权限提供的外部脱敏使用数量。
++    </p>
+     <section class="panel phase2-card">
+       <QuestionUsage
+         :key="String(route.params.id)"
+--- 2.0.1/frontend\src\views\Statistics.vue
++++ 2.0.2/frontend\src\views\Statistics.vue
+@@ -1,5 +1,5 @@
+ <script setup lang="ts">
+-import { ref, computed, onMounted } from "vue";
++import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+ import { useRoute } from "vue-router";
+ import { api } from "../api";
+ import { typeNames, dateLabel } from "../types";
+@@ -8,59 +8,123 @@
+   sid = String(route.params.id),
+   versions = ref<any[]>([]),
+   version = ref(0),
+-  stats = ref<any>(null),
++  summaryResult = ref<{ context: QueryContext; data: any } | null>(null),
+   error = ref(""),
+   busy = ref(false),
+   selected = ref("all"),
+   start = ref(""),
+   end = ref(""),
+-  values = ref<any>(null),
+-  valueQ = ref<any>(null),
+-  page = ref(1),
++  detailResult = ref<{
++    context: QueryContext;
++    question: any;
++    page: number;
++    data: any;
++  } | null>(null),
++  detailOpen = ref(false),
++  detailBusy = ref(false),
+   basis = ref<CountBasis>("responses");
++type QueryContext = { version: number; start: string; end: string };
++const stats = computed(() => summaryResult.value?.data);
++const values = computed(() => detailResult.value?.data);
++const valueQ = computed(() => detailResult.value?.question);
++const page = computed(() => detailResult.value?.page ?? 1);
++const appliedContext = computed(() => summaryResult.value?.context);
++const unapplied = computed(
++  () =>
++    !!appliedContext.value &&
++    (version.value !== appliedContext.value.version ||
++      start.value !== appliedContext.value.start ||
++      end.value !== appliedContext.value.end),
++);
+ const shown = computed(
+   () =>
+     stats.value?.questions.filter(
+       (q: any) => selected.value === "all" || q.id === selected.value,
+     ) || [],
+ );
+-function query() {
+-  const p = new URLSearchParams({ version: String(version.value) });
+-  if (start.value) p.set("start", new Date(start.value).toISOString());
+-  if (end.value) p.set("end", new Date(end.value).toISOString());
++let summarySequence = 0,
++  detailSequence = 0,
++  disposed = false;
++function query(c: QueryContext) {
++  const p = new URLSearchParams({ version: String(c.version) });
++  if (c.start) p.set("start", new Date(c.start).toISOString());
++  if (c.end) p.set("end", new Date(c.end).toISOString());
+   return p.toString();
+ }
++function closeValues() {
++  detailSequence++;
++  detailOpen.value = false;
++  detailBusy.value = false;
++  detailResult.value = null;
++}
+ async function load() {
++  const seq = ++summarySequence;
++  const context = {
++    version: version.value,
++    start: start.value,
++    end: end.value,
++  };
++  closeValues();
++  summaryResult.value = null;
+   busy.value = true;
+   error.value = "";
+   try {
+-    stats.value = await api(`/surveys/${sid}/statistics?${query()}`);
++    const data = await api(`/surveys/${sid}/statistics?${query(context)}`);
++    if (!disposed && seq === summarySequence)
++      summaryResult.value = { context, data };
+   } catch (e: any) {
+-    error.value = e.message;
+-    stats.value = null;
++    if (!disposed && seq === summarySequence) {
++      error.value = e.message;
++      summaryResult.value = null;
++    }
+   } finally {
+-    busy.value = false;
++    if (!disposed && seq === summarySequence) busy.value = false;
+   }
+ }
+ async function showValues(q: any, p = 1) {
++  if (!appliedContext.value) return;
++  const context = { ...appliedContext.value };
++  const seq = ++detailSequence;
++  const summary = summarySequence;
++  detailOpen.value = true;
++  detailBusy.value = true;
++  detailResult.value = null;
++  error.value = "";
+   try {
+-    page.value = p;
+-    valueQ.value = q;
+-    values.value = await api(
+-      `/surveys/${sid}/questions/${q.id}/values?${query()}&page=${p}`,
++    const data = await api(
++      `/surveys/${sid}/questions/${q.id}/values?${query(context)}&page=${p}`,
+     );
++    if (
++      !disposed &&
++      detailOpen.value &&
++      seq === detailSequence &&
++      summary === summarySequence
++    )
++      detailResult.value = { context, question: q, page: p, data };
+   } catch (e: any) {
+-    error.value = e.message;
++    if (!disposed && seq === detailSequence && summary === summarySequence) {
++      error.value = e.message;
++      closeValues();
++    }
++  } finally {
++    if (!disposed && seq === detailSequence) detailBusy.value = false;
+   }
+ }
++onBeforeUnmount(() => {
++  disposed = true;
++  summarySequence++;
++  closeValues();
++});
+ onMounted(async () => {
+   try {
+-    versions.value = await api(`/surveys/${sid}/versions`);
++    const result = await api(`/surveys/${sid}/versions`);
++    if (disposed) return;
++    versions.value = result;
+     version.value = versions.value[0]?.version || 0;
+     if (version.value) await load();
+     else error.value = "发布问卷后即可查看统计";
+   } catch (e: any) {
+-    error.value = e.message;
++    if (!disposed) error.value = e.message;
+   }
+ });
+ </script>
+@@ -105,6 +169,15 @@
+         </select></label
+       >
+     </section>
++    <p v-if="unapplied" role="status">
++      筛选条件尚未应用，当前结果及明细仍采用已应用范围。
++    </p>
++    <p v-if="appliedContext" class="input-hint">
++      统计范围：v{{ appliedContext.version }}；正式提交时间：{{
++        appliedContext.start || "不限"
++      }}
++      至 {{ appliedContext.end || "不限" }}。
++    </p>
+     <label class="stats-basis"
+       >选项统计口径
+       <select v-model="basis" aria-label="选项统计口径">
+@@ -205,7 +278,7 @@
+         还没有提交记录。分享问卷链接，邀请第一位填写者。
+       </div></template
+     >
+-    <div class="modal-backdrop" v-if="values" @click.self="values = null">
++    <div class="modal-backdrop" v-if="detailOpen" @click.self="closeValues">
+       <section
+         class="modal"
+         role="dialog"
+@@ -214,38 +287,45 @@
+       >
+         <button
+           class="modal-close icon-button"
+-          @click="values = null"
++          @click="closeValues"
+           aria-label="关闭"
+         >
+-          ×</button
+-        ><span class="eyebrow">RESPONSES / v{{ version }}</span>
+-        <h2>{{ valueQ.title }}</h2>
+-        <p class="muted">共 {{ values.total }} 条回答，每页 20 条</p>
+-        <div class="value-row" v-for="row in values.items">
+-          <p>{{ row.value }}</p>
+-          <small
+-            >{{ row.anonymous ? "匿名回答" : "实名回答" }} ·
+-            {{ dateLabel(row.submitted_at) }}</small
++          ×
++        </button>
++        <p v-if="detailBusy">正在加载回答…</p>
++        <template v-if="detailResult"
++          ><span class="eyebrow"
++            >RESPONSES / v{{ detailResult.context.version }}</span
+           >
+-        </div>
+-        <p v-if="!values.items.length" class="muted">暂无回答。</p>
+-        <div class="pagination">
+-          <button
+-            class="button"
+-            :disabled="page === 1"
+-            @click="showValues(valueQ, page - 1)"
+-          >
+-            上一页</button
+-          ><span
+-            >{{ page }} / {{ Math.max(1, Math.ceil(values.total / 20)) }}</span
+-          ><button
+-            class="button"
+-            :disabled="page * 20 >= values.total"
+-            @click="showValues(valueQ, page + 1)"
+-          >
+-            下一页
+-          </button>
+-        </div>
++          <h2>{{ valueQ.title }}</h2>
++          <p class="muted">共 {{ values.total }} 条回答，每页 20 条</p>
++          <div class="value-row" v-for="row in values.items">
++            <p>{{ row.value }}</p>
++            <small
++              >{{ row.anonymous ? "匿名回答" : "实名回答" }} ·
++              {{ dateLabel(row.submitted_at) }}</small
++            >
++          </div>
++          <p v-if="!values.items.length" class="muted">暂无回答。</p>
++          <div class="pagination">
++            <button
++              class="button"
++              :disabled="page === 1"
++              @click="showValues(valueQ, page - 1)"
++            >
++              上一页</button
++            ><span
++              >{{ page }} /
++              {{ Math.max(1, Math.ceil(values.total / 20)) }}</span
++            ><button
++              class="button"
++              :disabled="page * 20 >= values.total"
++              @click="showValues(valueQ, page + 1)"
++            >
++              下一页
++            </button>
++          </div>
++        </template>
+       </section>
+     </div>
+   </main>
+--- 2.0.1/frontend\tests\components\phase2-202.spec.ts
++++ 2.0.2/frontend\tests\components\phase2-202.spec.ts
+@@ -0,0 +1,686 @@
++import { afterEach, beforeEach, it, expect, vi } from "vitest";
++import { mount, flushPromises } from "@vue/test-utils";
++import { createRouter, createMemoryHistory, RouterView } from "vue-router";
++import { defineComponent, h } from "vue";
++import { api } from "../../src/api";
++import Editor from "../../src/views/Editor.vue";
++import Statistics from "../../src/views/Statistics.vue";
++import Libraries from "../../src/views/Libraries.vue";
++import QuestionEditor from "../../src/views/QuestionEditor.vue";
++import QuestionPicker from "../../src/components/QuestionPicker.vue";
++import QuestionHistory from "../../src/views/QuestionHistory.vue";
++import { useSurveyEditor } from "../../src/composables/useSurveyEditor";
++vi.mock("../../src/api", () => ({
++  api: vi.fn(),
++  auth: { user: { id: "owner" } },
++}));
++const request = vi.mocked(api);
++let wrapper: any;
++beforeEach(() => {
++  request.mockReset();
++});
++afterEach(() => {
++  wrapper?.unmount();
++  wrapper = undefined;
++  document.body.innerHTML = "";
++});
++async function open(component: any, path: string, pattern: string) {
++  const router = createRouter({
++    history: createMemoryHistory(),
++    routes: [
++      { path: pattern, component },
++      { path: "/:pathMatch(.*)*", component: { template: "<p>Other</p>" } },
++    ],
++  });
++  await router.push(path);
++  await router.isReady();
++  wrapper = mount(
++    defineComponent(() => () => h(RouterView)),
++    { global: { plugins: [router] }, attachTo: document.body },
++  );
++  await flushPromises();
++}
++function button(text: string) {
++  const b = wrapper.findAll("button").find((x: any) => x.text() === text);
++  if (!b) throw Error("Missing button " + text);
++  return b;
++}
++function pending() {
++  let resolve!: (value: any) => void;
++  const promise = new Promise<any>((r) => (resolve = r));
++  return { promise, resolve };
++}
++const number = {
++  type: "number",
++  title: "Age",
++  options: [],
++  validation: { min: 0, max: 120 },
++};
++function q(id: string) {
++  return {
++    id,
++    ...structuredClone(number),
++    required: true,
++    routing: { rules: [], default_target: null },
++    source: {
++      question_id: "bank",
++      question_version_id: "v1",
++      version: 1,
++      survey_id: "survey",
++      instance_id: id,
++      imported_by: "owner",
++      imported_at: "2026-10-25T00:00:00Z",
++      grant_id: null,
++    },
++  };
++}
++function survey() {
++  return {
++    _id: "survey",
++    revision: 1,
++    status: "draft",
++    current_version: 0,
++    deadline: null,
++    share_code: "share",
++    created_at: "2026-10-25T00:00:00Z",
++    updated_at: "2026-10-25T00:00:00Z",
++    draft: {
++      title: "Survey",
++      description: "",
++      allow_repeat: true,
++      allow_anonymous: true,
++      questions: [q("first"), q("second")],
++    },
++  };
++}
++
++it("upgrade confirmation must apply to the instance shown in its preview", async () => {
++  const s = survey();
++  request.mockImplementation(async (path, method, body: any) => {
++    if (path === "/surveys/survey") return structuredClone(s);
++    if (path.startsWith("/questions?"))
++      return {
++        items: [
++          {
++            _id: "bank",
++            title: "Age",
++            versions: [
++              {
++                _id: "v2",
++                version: 2,
++                content: { ...number, title: "New age" },
++              },
++            ],
++          },
++        ],
++        total: 1,
++      };
++    if (path === "/libraries") return { items: [], total: 0 };
++    if (path.endsWith("/upgrade-preview"))
++      return {
++        diff: [{ field: "title", before: "Age", after: "New age" }],
++        issues: [],
++        definition: s.draft,
++      };
++    if (path.endsWith("/upgrade"))
++      return { ...structuredClone(s), revision: 2 };
++    throw Error("Unexpected " + path);
++  });
++  await open(Editor, "/surveys/survey/edit", "/surveys/:id/edit");
++  await button("选择版本并预览升级").trigger("click");
++  await flushPromises();
++  await button("选择 v2").trigger("click");
++  await flushPromises();
++  const previewCall = request.mock.calls.find((c) =>
++    c[0].endsWith("/upgrade-preview"),
++  )!;
++  await wrapper.findAll(".question-nav")[1].trigger("click");
++  await flushPromises();
++  if (!wrapper.text().includes("确认升级草稿")) return;
++  await button("确认升级草稿").trigger("click");
++  await flushPromises();
++  const applyCall = request.mock.calls.find((c) => c[0].endsWith("/upgrade"))!;
++  expect((applyCall[2] as any).instance_id).toBe(
++    (previewCall[2] as any).instance_id,
++  );
++});
++
++it("late old statistics must not overwrite the selected version", async () => {
++  const old = pending();
++  const stats = (version: number) => ({
++    version,
++    title: "Survey",
++    total: version,
++    respondent_count: 1,
++    questions: [
++      {
++        id: "q",
++        title: "Age",
++        type: "number",
++        answered: version,
++        respondent_count: 1,
++        average: version,
++        min: version,
++        max: version,
++      },
++    ],
++  });
++  request.mockImplementation(async (path) => {
++    if (path.endsWith("/versions"))
++      return [
++        { version: 2, published_at: "2026-10-25T00:00:00Z" },
++        { version: 1, published_at: "2026-10-24T00:00:00Z" },
++      ];
++    if (path.includes("/statistics?version=2")) return old.promise;
++    if (path.includes("/statistics?version=1")) return stats(1);
++    throw Error("Unexpected " + path);
++  });
++  await open(
++    Statistics,
++    "/surveys/survey/statistics",
++    "/surveys/:id/statistics",
++  );
++  await wrapper.get("select").setValue("1");
++  await flushPromises();
++  expect(wrapper.text()).toContain("v1");
++  old.resolve(stats(2));
++  await flushPromises();
++  expect(wrapper.findAll(".stats-summary strong")[3].text()).toBe("v1");
++});
++
++it("a library member with revoked old version must allow choosing an authorized newer version", async () => {
++  request.mockImplementation(async (path) => {
++    if (path.startsWith("/libraries?"))
++      return { items: [{ _id: "library", name: "My Library" }], total: 1 };
++    if (path.startsWith("/libraries/library/items"))
++      return {
++        library: { _id: "library", name: "My Library", revision: 2 },
++        items: [
++          {
++            _id: "member",
++            question_id: "bank",
++            question_version_id: "v1",
++            position: 0,
++            available: false,
++            version: null,
++          },
++        ],
++        total: 1,
++      };
++    if (path.startsWith("/questions?"))
++      return {
++        items: [
++          {
++            _id: "bank",
++            title: "New age",
++            versions: [
++              {
++                _id: "v2",
++                version: 2,
++                content: { ...number, title: "New age" },
++              },
++            ],
++          },
++        ],
++        total: 1,
++      };
++    if (path === "/libraries") return { items: [], total: 0 };
++    throw Error("Unexpected " + path);
++  });
++  await open(Libraries, "/libraries", "/libraries");
++  await button("My Library").trigger("click");
++  await flushPromises();
++  expect(button("更新版本").element.disabled).toBe(false);
++});
++
++async function editor(preview?: Promise<any>) {
++  const s = survey();
++  request.mockImplementation(async (path, method, body: any) => {
++    if (path === "/surveys/survey") return structuredClone(s);
++    if (path.endsWith("/draft"))
++      return { ...structuredClone(s), revision: 2, draft: body.draft };
++    if (path.startsWith("/questions?"))
++      return {
++        items: [
++          {
++            _id: "bank",
++            title: "Age",
++            versions: [
++              { _id: "v2", version: 2, content: number },
++              { _id: "v3", version: 3, content: number },
++            ],
++          },
++        ],
++        total: 1,
++      };
++    if (path === "/libraries") return { items: [], total: 0 };
++    if (path.endsWith("/upgrade-preview"))
++      return preview ?? { diff: [], issues: [], definition: s.draft };
++    if (path.endsWith("/upgrade"))
++      return { ...structuredClone(s), revision: 2 };
++    throw Error("Unexpected " + path);
++  });
++  await open(Editor, "/surveys/survey/edit", "/surveys/:id/edit");
++  await button("选择版本并预览升级").trigger("click");
++  await flushPromises();
++  await button("选择 v2").trigger("click");
++  await flushPromises();
++}
++it("normal confirmation sends the exact instance target and preview revision", async () => {
++  await editor();
++  await button("确认升级草稿").trigger("click");
++  await flushPromises();
++  expect(
++    request.mock.calls.find((c) => c[0].endsWith("/upgrade"))?.[2],
++  ).toEqual({ instance_id: "first", question_version_id: "v2", revision: 1 });
++});
++it("local editing with unchanged server revision invalidates preview", async () => {
++  await editor();
++  await wrapper.get('input[placeholder="填写问卷标题"]').setValue("Changed");
++  await flushPromises();
++  expect(wrapper.text()).not.toContain("确认升级草稿");
++  expect(request.mock.calls.some((c) => c[0].endsWith("/upgrade"))).toBe(false);
++});
++it("late preview cannot appear on another instance", async () => {
++  const wait = pending();
++  await editor(wait.promise);
++  await wrapper.findAll(".question-nav")[1].trigger("click");
++  wait.resolve({ diff: [], issues: [] });
++  await flushPromises();
++  expect(wrapper.text()).not.toContain("确认升级草稿");
++});
++it("closed preview ignores a late response", async () => {
++  const wait = pending();
++  await editor(wait.promise);
++  await button("收起").trigger("click");
++  wait.resolve({ diff: [], issues: [] });
++  await flushPromises();
++  expect(wrapper.text()).not.toContain("确认升级草稿");
++});
++it("changing target immediately invalidates old confirmation", async () => {
++  await editor();
++  const wait = pending();
++  request.mockImplementation(async (path) =>
++    path.endsWith("/upgrade-preview")
++      ? wait.promise
++      : { ...survey(), revision: 2 },
++  );
++  await button("选择 v3").trigger("click");
++  expect(wrapper.text()).not.toContain("确认升级草稿");
++  wait.resolve({ diff: [], issues: [] });
++  await flushPromises();
++  await button("确认升级草稿").trigger("click");
++  expect(
++    request.mock.calls.find((c) => c[0].endsWith("/upgrade"))?.[2],
++  ).toMatchObject({ question_version_id: "v3", revision: 1 });
++});
++it("unmounted editor discards late preview", async () => {
++  const wait = pending();
++  await editor(wait.promise);
++  const vm = wrapper;
++  vm.unmount();
++  wrapper = undefined;
++  wait.resolve({ diff: [], issues: [] });
++  await flushPromises();
++  expect(request.mock.calls.some((c) => c[0].endsWith("/upgrade"))).toBe(false);
++});
++it("dedicated confirmation refuses dirty draft without auto saving", async () => {
++  const state = useSurveyEditor("survey");
++  state.survey.value = survey() as any;
++  const c = {
++    surveyId: "survey",
++    instanceId: "first",
++    sourceVersionId: "v1",
++    targetVersionId: "v2",
++    revision: 1,
++    draftFingerprint: JSON.stringify(state.survey.value.draft),
++    requestId: 1,
++  };
++  expect(await state.confirmQuestionUpgrade(c)).toBe(false);
++  expect(request).not.toHaveBeenCalled();
++});
++it("dedicated confirmation rejects stale revision and changed source", async () => {
++  let state: any;
++  request.mockResolvedValue(survey());
++  state = useSurveyEditor("survey");
++  await state.load();
++  request.mockClear();
++  const c = {
++    surveyId: "survey",
++    instanceId: "first",
++    sourceVersionId: "wrong",
++    targetVersionId: "v2",
++    revision: 1,
++    draftFingerprint: JSON.stringify(state.survey.value.draft),
++    requestId: 1,
++  };
++  expect(await state.confirmQuestionUpgrade(c)).toBe(false);
++  expect(
++    await state.confirmQuestionUpgrade({
++      ...c,
++      sourceVersionId: "v1",
++      revision: 0,
++    }),
++  ).toBe(false);
++  expect(request).not.toHaveBeenCalled();
++});
++const result = (v: number) => ({
++  version: v,
++  title: "Survey",
++  total: 1,
++  respondent_count: 1,
++  questions: [
++    {
++      id: "q",
++      title: "Text " + v,
++      type: "text",
++      answered: 1,
++      respondent_count: 1,
++    },
++  ],
++});
++async function statistics() {
++  request.mockImplementation(async (path) => {
++    if (path.endsWith("/versions")) return [{ version: 2 }, { version: 1 }];
++    if (path.includes("/statistics?"))
++      return result(
++        Number(new URLSearchParams(path.split("?")[1]).get("version")),
++      );
++    if (path.includes("/values?"))
++      return {
++        items: [{ value: "hello", submitted_at: "2026-10-25T00:00:00Z" }],
++        total: 1,
++      };
++    throw Error(path);
++  });
++  await open(
++    Statistics,
++    "/surveys/survey/statistics",
++    "/surveys/:id/statistics",
++  );
++}
++it("unapplied dates do not change detail query or version label", async () => {
++  await statistics();
++  await wrapper
++    .findAll('input[type="datetime-local"]')[0]
++    .setValue("2026-10-01T00:00");
++  await button("查看填写内容 ↗").trigger("click");
++  await flushPromises();
++  expect(
++    request.mock.calls.find((c) => c[0].includes("/values?"))?.[0],
++  ).toContain("version=2&page=1");
++  expect(
++    request.mock.calls.find((c) => c[0].includes("/values?"))?.[0],
++  ).not.toContain("start=");
++  expect(wrapper.text()).toContain("筛选条件尚未应用");
++  expect(wrapper.text()).toContain("RESPONSES / v2");
++});
++it("closing loading details prevents late response reopening", async () => {
++  await statistics();
++  const wait = pending();
++  request.mockImplementation(async () => wait.promise);
++  await button("查看填写内容 ↗").trigger("click");
++  await wrapper.get('button[aria-label="关闭"]').trigger("click");
++  wait.resolve({ items: [{ value: "late" }], total: 1 });
++  await flushPromises();
++  expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
++});
++it("switching summary version invalidates old detail response", async () => {
++  await statistics();
++  const wait = pending();
++  request.mockImplementation(async (path) =>
++    path.includes("/values?") ? wait.promise : result(1),
++  );
++  await button("查看填写内容 ↗").trigger("click");
++  await wrapper.get("select").setValue("1");
++  await flushPromises();
++  wait.resolve({ items: [{ value: "late" }], total: 1 });
++  await flushPromises();
++  expect(wrapper.text()).not.toContain("late");
++  expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
++});
++it("late old error and finally cannot clear latest result or busy state", async () => {
++  const old = pending();
++  request.mockImplementation(async (path) =>
++    path.endsWith("/versions")
++      ? [{ version: 2 }, { version: 1 }]
++      : path.includes("version=2")
++        ? old.promise.then(() => {
++            throw Error("old error");
++          })
++        : result(1),
++  );
++  await open(
++    Statistics,
++    "/surveys/survey/statistics",
++    "/surveys/:id/statistics",
++  );
++  await wrapper.get("select").setValue("1");
++  await flushPromises();
++  old.resolve(null);
++  await flushPromises();
++  expect(wrapper.text()).not.toContain("old error");
++  expect(wrapper.findAll(".stats-summary strong")[3].text()).toBe("v1");
++});
++it("latest statistics failure clears prior result", async () => {
++  await statistics();
++  request.mockRejectedValue(new Error("Latest failure"));
++  await button("应用筛选").trigger("click");
++  await flushPromises();
++  expect(wrapper.text()).toContain("Latest failure");
++  expect(wrapper.find(".stats-summary").exists()).toBe(false);
++});
++it("question picker reloads series and ignores late old candidates", async () => {
++  const old = pending();
++  request.mockImplementation(async (path) =>
++    path === "/libraries"
++      ? { items: [], total: 0 }
++      : path.includes("question_id=A")
++        ? old.promise
++        : { items: [{ _id: "B", title: "B choice", versions: [] }], total: 1 },
++  );
++  wrapper = mount(QuestionPicker, { props: { questionId: "A" } });
++  await flushPromises();
++  await wrapper.setProps({ questionId: "B" });
++  await flushPromises();
++  old.resolve({
++    items: [{ _id: "A", title: "A stale", versions: [] }],
++    total: 1,
++  });
++  await flushPromises();
++  expect(wrapper.text()).toContain("B choice");
++  expect(wrapper.text()).not.toContain("A stale");
++});
++async function libraries() {
++  request.mockImplementation(async (path, method) => {
++    if (path.startsWith("/libraries?"))
++      return {
++        items: [
++          { _id: "L1", name: "Library 1" },
++          { _id: "L2", name: "Library 2" },
++        ],
++        total: 2,
++      };
++    if (path.includes("/items") && method === "PUT") return {};
++    if (path.includes("/items")) {
++      const id = path.includes("L1") ? "L1" : "L2";
++      return {
++        library: { _id: id, name: id, revision: 2 },
++        items: [
++          {
++            _id: "member",
++            question_id: "bank",
++            position: 0,
++            available: false,
++            version: null,
++          },
++        ],
++        total: 1,
++      };
++    }
++    if (path.startsWith("/questions?"))
++      return {
++        items: [
++          {
++            _id: "bank",
++            title: "Age",
++            versions: [{ _id: "v2", version: 2, content: number }],
++          },
++        ],
++        total: 1,
++      };
++    if (path === "/libraries") return { items: [], total: 0 };
++    throw Error(path);
++  });
++  await open(Libraries, "/libraries", "/libraries");
++  await button("Library 1").trigger("click");
++  await flushPromises();
++}
++it("switching libraries closes pending update and rejects late candidates", async () => {
++  await libraries();
++  const wait = pending();
++  const impl = request.getMockImplementation()!;
++  request.mockImplementation((...args) =>
++    args[0].startsWith("/questions?") ? wait.promise : impl(...args),
++  );
++  await button("更新版本").trigger("click");
++  await flushPromises();
++  await button("Library 2").trigger("click");
++  await flushPromises();
++  wait.resolve({
++    items: [
++      { _id: "bank", title: "stale", versions: [{ _id: "v2", version: 2 }] },
++    ],
++    total: 1,
++  });
++  await flushPromises();
++  expect(wrapper.text()).not.toContain("选择 v2");
++  expect(request.mock.calls.some((c) => c[1] === "PUT")).toBe(false);
++});
++it("update from unavailable member binds original library member and revision", async () => {
++  await libraries();
++  await button("更新版本").trigger("click");
++  await flushPromises();
++  const wait = pending();
++  const impl = request.getMockImplementation()!;
++  request.mockImplementation((...args) =>
++    args[1] === "PUT" ? wait.promise : impl(...args),
++  );
++  await button("选择 v2").trigger("click");
++  expect(button("Library 2").element.disabled).toBe(true);
++  expect(request).toHaveBeenCalledWith("/libraries/L1/items/member", "PUT", {
++    revision: 2,
++    question_version_id: "v2",
++    position: 0,
++  });
++  wait.resolve({});
++  await flushPromises();
++  expect(wrapper.text()).not.toContain("选择 v2");
++});
++it("update rejection retains unavailable member and shows error", async () => {
++  await libraries();
++  await button("更新版本").trigger("click");
++  await flushPromises();
++  request.mockRejectedValue(new Error("Target revoked"));
++  await button("选择 v2").trigger("click");
++  await flushPromises();
++  expect(wrapper.text()).toContain("Target revoked");
++  expect(wrapper.text()).toContain("当前无权读取此版本");
++});
++it("restore cancel sends no request and confirm sends one request", async () => {
++  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
++  request.mockImplementation(async (path, method) =>
++    method === "POST"
++      ? {}
++      : path.includes("/usage")
++        ? { items: [], detail_total: 0 }
++        : {
++            question: { revision: 2, latest_version_id: "v2" },
++            versions: [
++              { _id: "v2", version: 2, content: number },
++              { _id: "v1", version: 1, content: number },
++            ],
++          },
++  );
++  await open(
++    QuestionHistory,
++    "/questions/bank/history",
++    "/questions/:id/history",
++  );
++  const bs = wrapper
++    .findAll("button")
++    .filter((b: any) => b.text() === "恢复此版内容");
++  await bs[1].trigger("click");
++  expect(request.mock.calls.some((c) => c[1] === "POST")).toBe(false);
++  confirm.mockReturnValue(true);
++  await bs[1].trigger("click");
++  await bs[1].trigger("click");
++  await flushPromises();
++  expect(request.mock.calls.filter((c) => c[1] === "POST")).toHaveLength(1);
++  expect(request).toHaveBeenCalledWith("/questions/bank/restore", "POST", {
++    revision: 2,
++    parent_version_id: "v2",
++    restored_from_version_id: "v1",
++    change_note: "恢复v1",
++  });
++  confirm.mockRestore();
++});
++
++it("selection changed during draft save cancels preview even when switching back", async () => {
++  await editor();
++  await wrapper.get('input[placeholder="填写问卷标题"]').setValue("Changed");
++  const wait = pending();
++  const impl = request.getMockImplementation()!;
++  request.mockImplementation((...args) =>
++    args[0].endsWith("/draft") ? wait.promise : impl(...args),
++  );
++  const count = request.mock.calls.filter((c) =>
++    c[0].endsWith("/upgrade-preview"),
++  ).length;
++  await button("选择 v2").trigger("click");
++  await wrapper.findAll(".question-nav")[1].trigger("click");
++  await wrapper.findAll(".question-nav")[0].trigger("click");
++  const saved = survey();
++  saved.draft.title = "Changed";
++  saved.revision = 2;
++  wait.resolve(saved);
++  await flushPromises();
++  expect(
++    request.mock.calls.filter((c) => c[0].endsWith("/upgrade-preview")),
++  ).toHaveLength(count);
++});
++it("older detail page cannot overwrite latest page context", async () => {
++  await statistics();
++  request.mockResolvedValue({ items: [{ value: "page1" }], total: 60 });
++  await button("查看填写内容 ↗").trigger("click");
++  await flushPromises();
++  const old = pending();
++  const newer = pending();
++  let calls = 0;
++  request.mockImplementation(() =>
++    ++calls === 1 ? old.promise : newer.promise,
++  );
++  await button("下一页").trigger("click");
++  // Reopen from the still-visible summary to request the first page.
++  await button("查看填写内容 ↗").trigger("click");
++  newer.resolve({ items: [{ value: "new first page" }], total: 60 });
++  await flushPromises();
++  old.resolve({ items: [{ value: "stale second page" }], total: 60 });
++  await flushPromises();
++  expect(wrapper.text()).toContain("new first page");
++  expect(wrapper.text()).not.toContain("stale second page");
++  expect(wrapper.get(".pagination span").text()).toBe("1 / 3");
++});
++
++it("failed upgrade confirmation invalidates preview and requires fresh preview", async () => {
++  await editor();
++  request.mockRejectedValue(new Error("revision conflict"));
++  await button("确认升级草稿").trigger("click");
++  await flushPromises();
++  expect(wrapper.text()).not.toContain("确认升级草稿");
++  expect(wrapper.text()).toContain("请重新加载或保存后重新预览");
++  expect(
++    request.mock.calls.filter((c) => c[0].endsWith("/upgrade")),
++  ).toHaveLength(1);
++  expect(request.mock.calls.some((c) => c[0].endsWith("/draft"))).toBe(false);
++});
+--- 2.0.1/README.md
++++ 2.0.2/README.md
+@@ -1,4 +1,4 @@
+-# 第二阶段2.0.1配置与运行
++# 第二阶段2.0.2配置与运行
+ 
+ ## 一 环境
+ 
+@@ -19,7 +19,7 @@
+ 
+ ## 三 升级说明
+ 
+-从2.0.0更新到本次2.0.1，只更新程序和重建前端，不需要升级数据库或更换.env。先停止旧网页服务，保留配置，再启动新版本。
++从2.0.0或2.0.1更新到本次2.0.2，只更新程序和重建前端，不需要升级数据库或更换.env。先停止旧网页服务，保留配置，再启动新版本。
+ 
+ ### 从第一阶段数据库升级
+ 
+@@ -52,3 +52,7 @@
+ ## 五 排错
+ 
+ 找不到Python/pnpm：安装并配置PATH，或使用install.ps1的PythonExecutable、PackageManager参数。8000占用：核对已有服务，不重复启动。MongoDB初始化失败：检查mongod路径、27019及.local/mongo-live.log。约束不符：停止写入后走显式升级。409：核对revision，不通过重试覆盖他人修改。数据目录与.env不应随意删除。
++
++## 六 2.0.2复核范围
++
++源码修订需要重建前端，并重新启动网页服务；浏览器须刷新以获取新构建。未对现有8000服务强制终止，运行中进程的版本不能仅根据磁盘源码判断。独立解压复核记录见测试证据，实际浏览器人工验收需单独完成，不可用jsdom组件测试代替。
+--- 2.0.1/scripts\export-editor-evidence.py
++++ 2.0.2/scripts\export-editor-evidence.py
+@@ -0,0 +1,38 @@
++"""与上一轮修订包比较，保留可复核的编辑器修复证据。"""
++
++from zipfile import ZipFile
++from difflib import unified_diff
++from app.config import ROOT
++
++files = [
++    "frontend/src/views/Editor.vue",
++    "frontend/src/composables/useSurveyEditor.ts",
++    "frontend/src/routing-validation.ts",
++    "frontend/src/components/RoutingEditor.vue",
++    "frontend/src/question-types/TextInput.vue",
++    "frontend/src/text.ts",
++    "frontend/src/rules.ts",
++    "frontend/tests/components/editor.spec.ts",
++    "frontend/tests/components/inputs.spec.ts",
++    "frontend/tests/routing.test.mjs",
++    "backend/app/main.py",
++    "backend/app/schemas.py",
++    "backend/app/services/surveys.py",
++    "backend/tests/test_editor_metadata.py",
++]
++with ZipFile(ROOT / "artifacts/survey-lab-phase1-review1.zip") as old:
++    chunks = []
++    for name in files:
++        before = (
++            old.read(name).decode("utf-8").splitlines(keepends=True)
++            if name in old.namelist()
++            else []
++        )
++        after = (ROOT / name).read_text("utf-8").splitlines(keepends=True)
++        chunks.extend(
++            unified_diff(
++                before, after, fromfile="review1/" + name, tofile="editor-fixes/" + name
++            )
++        )
++    (ROOT / "artifacts/editor-fixes.diff").write_text("".join(chunks), encoding="utf-8")
++print("Editor revision evidence generated; previous packages unchanged.")
+--- 2.0.1/scripts\export-fix-evidence.py
++++ 2.0.2/scripts\export-fix-evidence.py
+@@ -0,0 +1,38 @@
++"""从不可变初版包生成本轮可复核差异，不包含 .env 或业务数据。"""
++
++from pathlib import Path
++from zipfile import ZipFile
++import difflib
++from app.config import ROOT
++
++files = [
++    "backend/app/domain/questions.py",
++    "backend/app/domain/numbers.py",
++    "backend/app/domain/rules.py",
++    "backend/app/schemas.py",
++    "backend/app/main.py",
++    "backend/app/database.py",
++    "backend/app/migration.py",
++    "backend/app/services/statistics.py",
++    "backend/app/aggregation.py",
++    "frontend/src/views/Statistics.vue",
++    "frontend/src/statistics.ts",
++    "backend/tests/test_review_fixes.py",
++    "backend/tests/test_migration.py",
++]
++with ZipFile(ROOT / "artifacts/survey-lab-phase1.zip") as baseline:
++    chunks = []
++    for name in files:
++        old = (
++            baseline.read(name).decode("utf-8").splitlines(keepends=True)
++            if name in baseline.namelist()
++            else []
++        )
++        new = (ROOT / name).read_text("utf-8").splitlines(keepends=True)
++        chunks.extend(
++            difflib.unified_diff(
++                old, new, fromfile="initial/" + name, tofile="review1/" + name
++            )
++        )
++    (ROOT / "artifacts/review-fixes.diff").write_text("".join(chunks), encoding="utf-8")
++print("Review evidence generated from original baseline.")
+--- 2.0.1/scripts\export-resume-evidence.py
++++ 2.0.2/scripts\export-resume-evidence.py
+@@ -0,0 +1,41 @@
++"""对照1.0.2不可变包导出本轮源码差异，不覆盖旧基线。"""
++
++from difflib import unified_diff
++from pathlib import Path
++from zipfile import ZipFile
++
++ROOT = Path(__file__).resolve().parents[1]
++skip = {"node_modules", "dist", "__pycache__", ".pytest_cache"}
++with ZipFile(ROOT / "artifacts/survey-lab-phase1-editor-fixes.zip") as baseline:
++    names = set(baseline.namelist())
++    files = [ROOT / "README.md"]
++    for folder in ("backend", "frontend", "database", "docs", "scripts"):
++        files.extend(
++            p
++            for p in (ROOT / folder).rglob("*")
++            if p.is_file()
++            and not skip.intersection(p.relative_to(ROOT).parts)
++            and ".egg-info" not in str(p)
++            and p.suffix != ".pyc"
++        )
++    chunks = []
++    for path in sorted(files):
++        name = path.relative_to(ROOT).as_posix()
++        try:
++            before = baseline.read(name).decode("utf-8") if name in names else ""
++            after = path.read_text("utf-8")
++        except UnicodeError:
++            continue
++        if before != after:
++            chunks.extend(
++                unified_diff(
++                    before.splitlines(True),
++                    after.splitlines(True),
++                    fromfile="1.0.2/" + name,
++                    tofile="1.1.0/" + name,
++                )
++            )
++(ROOT / "artifacts/resumable-filling.diff").write_text(
++    "".join(chunks), encoding="utf-8"
++)
++print("Resume revision diff generated; previous packages preserved.")
+--- 2.0.1/scripts\package.py
++++ 2.0.2/scripts\package.py
+@@ -0,0 +1,90 @@
++"""打包源码与文档，不包含密钥、本地数据库、依赖或原始任务文件。"""
++
++from pathlib import Path
++from zipfile import ZipFile, ZIP_DEFLATED
++import hashlib
++import json
++import argparse
++import re
++
++ROOT = Path(__file__).resolve().parents[1]
++parser = argparse.ArgumentParser()
++parser.add_argument("--label", default="phase1")
++label = parser.parse_args().label
++if not re.fullmatch(r"[A-Za-z0-9_-]+", label):
++    raise SystemExit("Invalid package label")
++SKIP = {
++    "node_modules",
++    "dist",
++    "__pycache__",
++    ".pytest_cache",
++    ".runtime",
++    ".venv",
++    ".local",
++    ".git",
++}
++files = []
++for folder in ("backend", "frontend", "database", "docs", "scripts"):
++    for p in (ROOT / folder).rglob("*"):
++        if (
++            p.is_file()
++            and not SKIP.intersection(p.relative_to(ROOT).parts)
++            and not p.name.endswith(".pyc")
++            and ".egg-info" not in str(p)
++        ):
++            files.append(p)
++for name in (
++    "README.md",
++    ".gitignore",
++    ".dockerignore",
++    ".env.example",
++    "compose.yaml",
++    "Dockerfile",
++):
++    p = ROOT / name
++    if p.exists():
++        files.append(p)
++manifest = {
++    str(p.relative_to(ROOT)).replace("\\", "/"): hashlib.sha256(
++        p.read_bytes()
++    ).hexdigest()
++    for p in sorted(files)
++}
++artifact = ROOT / "artifacts"
++artifact.mkdir(exist_ok=True)
++manifest_path = artifact / f"{label}-manifest.json"
++if manifest_path.exists() and json.loads(manifest_path.read_text("utf-8")) != manifest:
++    raise SystemExit(
++        "Existing baseline differs. Preserve it and use a new --label for subsequent work."
++    )
++manifest_path.write_text(
++    json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
++)
++with ZipFile(artifact / f"survey-lab-{label}.zip", "w", ZIP_DEFLATED) as z:
++    for p in sorted(files):
++        z.write(p, p.relative_to(ROOT))
++    z.write(manifest_path, f"{label}-manifest.json")
++    if (artifact / "test-results.xml").exists():
++        z.write(artifact / "test-results.xml", "artifacts/test-results.xml")
++    for name in (
++        "frontend-tests.txt",
++        "build-log.txt",
++        "migration-rehearsal.json",
++        "review-fixes.diff",
++        "review-fixes-tests.xml",
++        "component-tests.xml",
++        "component-tests.txt",
++        "editor-fixes.diff",
++        "editor-browser-check.json",
++        "resumable-filling.diff",
++        "resume-browser-check.json",
++        "resume-compatibility-check.json",
++        "delivery-tests.xml",
++        "delivery-check.json",
++    ):
++        if (artifact / name).exists():
++            z.write(artifact / name, "artifacts/" + name)
++    for p in (artifact / "screenshots").glob("*"):
++        if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg"}:
++            z.write(p, p.relative_to(ROOT))
++print(f"Packaged {len(files)} project files. Secrets and database excluded.")
+--- 2.0.1/scripts\prepare-phase2-202.py
++++ 2.0.2/scripts\prepare-phase2-202.py
+@@ -0,0 +1,81 @@
++"""Assemble 2.0.2 materials; preserve all earlier releases and evidence."""
++from pathlib import Path
++import argparse, difflib, hashlib, json, shutil, os
++from zipfile import ZipFile, ZIP_DEFLATED
++
++ROOT = Path(__file__).resolve().parents[1]
++OUT = ROOT / 'submission' / 'phase2-2.0.2'
++EVIDENCE = ROOT / 'artifacts' / 'phase2-2.0.2'
++SKIP = {'node_modules', 'dist', '__pycache__', '.pytest_cache', '.runtime', '.venv', '.local', '.git'}
++
++def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
++def write_json(p, value): p.write_text(json.dumps(value, ensure_ascii=False, indent=2), 'utf-8')
++def assemble():
++    OUT.mkdir(parents=True, exist_ok=True)
++    code = OUT / '1_代码'
++    code.mkdir(exist_ok=True)
++    for folder in ('backend', 'frontend', 'database', 'scripts'):
++        for parent, dirs, names in os.walk(ROOT / folder):
++            dirs[:] = [d for d in dirs if d not in SKIP and not d.endswith('.egg-info')]
++            for name in names:
++                source = Path(parent) / name
++                if source.suffix == '.pyc': continue
++                dest = code / source.relative_to(ROOT)
++                dest.parent.mkdir(parents=True, exist_ok=True)
++                shutil.copy2(source, dest)
++    for name in ('.env.example', '.gitignore', '.dockerignore', 'Dockerfile', 'compose.yaml'):
++        shutil.copy2(ROOT / name, code / name)
++    shutil.copy2(ROOT / 'docs/phase2/运行说明.md', code / 'README.md')
++    for folder, files in {
++        '2_文档': ['系统说明.md', '数据库设计.md', 'API说明.md', '关键逻辑说明.md'],
++        '3_测试用例': ['测试用例与结果.md'],
++        '4_项目完成报告': ['项目完成报告.md', 'AI使用日志.md'],
++    }.items():
++        target = OUT / folder
++        target.mkdir(exist_ok=True)
++        for name in files: shutil.copy2(ROOT / 'docs/phase2' / name, target / name)
++    old = ROOT / 'submission/phase2-2.0.1'
++    report = OUT / '4_项目完成报告/项目完成报告.md'
++    report.write_text(report.read_text('utf-8').replace('](数据库设计.md)', '](../2_文档/数据库设计.md)').replace('](测试用例与结果.md)', '](../3_测试用例/测试用例与结果.md)'), 'utf-8')
++    system = OUT / '2_文档/系统说明.md'
++    system.write_text(system.read_text('utf-8').replace('](运行说明.md)', '](../1_代码/README.md)'), 'utf-8')
++    design = OUT / '2_文档/数据库设计.md'
++    design.write_text(design.read_text('utf-8').replace('](../../database/', '](../1_代码/database/').replace('](../../artifacts/phase2/', '](../3_测试用例/测试证据/历史2.0.0/'), 'utf-8')
++    shutil.copy2(old / '3_测试用例/第一阶段原始测试步骤.md', OUT / '3_测试用例/第一阶段原始测试步骤.md')
++    (OUT / 'README.md').write_text((old / 'README.md').read_text('utf-8').replace('2.0.1', '2.0.2'), 'utf-8')
++    baseline = old / '1_代码'
++    changes = []
++    diff = []
++    for p in sorted(code.rglob('*')):
++        if not p.is_file() or p.name == '源码文件清单.sha256.json': continue
++        rel = p.relative_to(code)
++        before = baseline / rel
++        if before.exists() and before.read_bytes() == p.read_bytes(): continue
++        changes.append({'path': str(rel).replace('\\', '/'), 'before': digest(before) if before.exists() else None, 'after': digest(p)})
++        try:
++            diff.extend(difflib.unified_diff(before.read_text('utf-8').splitlines(True) if before.exists() else [], p.read_text('utf-8').splitlines(True), fromfile='2.0.1/'+str(rel), tofile='2.0.2/'+str(rel)))
++        except UnicodeDecodeError: pass
++    write_json(EVIDENCE / 'source-changes.json', changes)
++    (EVIDENCE / 'source-changes.diff').write_text(''.join(diff), 'utf-8')
++    write_json(code / '源码文件清单.sha256.json', {p.relative_to(code).as_posix():digest(p) for p in sorted(code.rglob('*')) if p.is_file() and p.name != '源码文件清单.sha256.json'})
++    target = OUT / '3_测试用例/测试证据'
++    target.mkdir(exist_ok=True)
++    shutil.copytree(old / '3_测试用例/测试证据', target, dirs_exist_ok=True)
++    for name in ('phase2-2.0.2', 'requirements-audit-20261025'):
++        shutil.copytree(ROOT / 'artifacts' / name, target / name, dirs_exist_ok=True)
++
++def archive():
++    manifest = {p.relative_to(OUT).as_posix():digest(p) for p in sorted(OUT.rglob('*')) if p.is_file() and p.name != '提交文件清单.sha256.json'}
++    write_json(OUT / '提交文件清单.sha256.json', manifest)
++    dest = ROOT / 'submission/问序问卷系统_第二阶段提交材料_v2.0.2.zip'
++    with ZipFile(dest, 'w', ZIP_DEFLATED) as z:
++        for p in sorted(OUT.rglob('*')):
++            if p.is_file(): z.write(p, 'phase2-2.0.2/'+p.relative_to(OUT).as_posix())
++    print(json.dumps({'archive':str(dest), 'files':len(manifest)+1, 'sha256':digest(dest)}, ensure_ascii=False))
++
++if __name__ == '__main__':
++    parser=argparse.ArgumentParser()
++    parser.add_argument('--archive-only', action='store_true')
++    args=parser.parse_args()
++    if not args.archive_only: assemble()
++    archive()
+--- 2.0.1/scripts\rehearse-upgrade.py
++++ 2.0.2/scripts\rehearse-upgrade.py
+@@ -0,0 +1,76 @@
++"""将真实本地旧数据复制到一次性测试库，验证升级和恢复，不输出身份内容。"""
++
++import json
++from uuid import uuid4
++from app.config import ROOT, settings
++from app.database import connect, initialize, validator_definitions
++from app.migration import canonical, fingerprint, upgrade, rollback
++from app.services.statistics import aggregate
++
++
++def digest_data(db):
++    return {
++        n: fingerprint(list(db[n].find({}).sort("_id", 1)))
++        for n in validator_definitions()
++    }
++
++
++def statistics(db):
++    results = {}
++    for v in db.survey_versions.find({}):
++        survey = db.surveys.find_one({"_id": v["survey_id"]})
++        if survey:
++            owner = db.users.find_one({"_id": survey["owner_id"]})
++            results[v["_id"]] = aggregate(db, survey["_id"], owner, v["version"])
++    return results
++
++
++if __name__ == "__main__":
++    client = connect()
++    source = client[settings.database]
++    name = "survey_lab_test_rehearsal_" + uuid4().hex
++    target = client[name]
++    journal = ROOT / ".local" / ("rehearsal-" + uuid4().hex + ".json")
++    try:
++        legacy = json.loads(
++            (ROOT / "database/legacy/collection_validators.v1.json").read_text("utf-8")
++        )
++        for c in source.list_collections():
++            n = c["name"]
++            if n not in validator_definitions():
++                continue
++            # 可重复演练：临时副本采用初版约束，真实业务文档原样复制。
++            target.create_collection(n, validator={"$jsonSchema": legacy[n]})
++            docs = list(source[n].find({}))
++            if docs:
++                target[n].insert_many(docs)
++        before = digest_data(target)
++        old_stats = statistics(target)
++        upgrade(target, journal)
++        initialize(target)
++        assert before == digest_data(target)
++        assert old_stats == statistics(target)
++        rollback(target, journal)
++        assert before == digest_data(target)
++        upgrade(target, journal.with_name(journal.stem + "-retry.json"))
++        initialize(target)
++        assert old_stats == statistics(target)
++        report = {
++            "source_database": settings.database,
++            "collections": {
++                n: source[n].count_documents({}) for n in validator_definitions()
++            },
++            "data_hashes_preserved": True,
++            "statistics_preserved": True,
++            "rollback_and_retry_passed": True,
++            "published_versions_verified": len(old_stats),
++            "scope": "真实旧业务数据的临时副本；不是业务版本2迁移验证",
++        }
++        (ROOT / "artifacts/migration-rehearsal.json").write_text(
++            json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
++        )
++        print(json.dumps(report, ensure_ascii=False))
++    finally:
++        assert name.startswith("survey_lab_test_rehearsal_")
++        client.drop_database(name)
++        client.close()

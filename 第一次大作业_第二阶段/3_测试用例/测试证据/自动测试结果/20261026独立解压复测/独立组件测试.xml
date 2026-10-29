@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="90" failures="0" errors="0" time="1.9856327">
+    <testsuite name="tests/components/attempt.spec.ts" timestamp="2026-10-26T09:12:51.716Z" hostname="LAPTOP-Q5N7R5J2" tests="16" failures="0" errors="0" skipped="0" time="0.258816">
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 暂停输入后保存原始内容" time="0.0338268">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 持续输入也在最长等待时间同步" time="0.0054054">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 旧响应不把新输入标记为已保存，并串行补存" time="0.00555">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 重复触发保存复用正在执行的请求" time="0.0038225">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 保存失败保留输入，重试后才清除未保存标记" time="0.0036849">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 冲突暂停自动保存且取消重新加载不丢输入" time="0.0043498">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 登录过期后原页同账号登录，再保存未同步输入" time="0.0043816">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 保存响应不抢走用户返回的前题位置" time="0.0031547">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="填写自动保存状态 &gt; 只读恢复不触发保存" time="0.0034268">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 先选择继续，再恢复答案及固定匿名设置" time="0.0858445">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 数字中间状态原样发送，恢复后仍可编辑" time="0.0072755">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 提交前等待最新保存完成，提交只携带revision" time="0.0407658">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 主动退出前保存失败必须确认，取消则保留输入" time="0.0168377">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 截止后的草稿仍可进入只读页面查看全部已保存内容" time="0.0146505">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 路由离开先保存，失败且取消时仍停留原页面" time="0.0223302">
+        </testcase>
+        <testcase classname="tests/components/attempt.spec.ts" name="恢复页面与输入 &gt; 未完成前题不使用无效数值跳转，也不误删后续暂存内容" time="0.0012294">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/components/editor.spec.ts" timestamp="2026-10-26T09:12:51.725Z" hostname="LAPTOP-Q5N7R5J2" tests="19" failures="0" errors="0" skipped="0" time="0.5521245">
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 继续编辑后清除过期的保存反馈，修改状态仍正确" time="0.138687">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 保存响应不覆盖等待期间的新输入，下一次保存使用新revision" time="0.0428154">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 保存失败保留草稿并恢复操作按钮" time="0.0303466">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 取消关闭不保存、不关闭、不覆盖草稿" time="0.0265869">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 有修改时先保存再关闭，关闭不重新GET覆盖内容" time="0.0285739">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 关闭前保存失败，不发送关闭请求" time="0.0217015">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 关闭前保存期间又编辑时中止关闭，保留新增输入" time="0.0191054">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 关闭请求期间输入仍保留，关闭失败也不覆盖" time="0.0187049">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 截止时间单独标记待发布，保存草稿不能假装已保存该时间" time="0.0211086">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 发布失败保留截止时间的待发布状态" time="0.0171195">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 发布等待期间的新草稿和时间不被响应覆盖" time="0.0280104">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 发布前保存期间新增输入，中止发布" time="0.0315598">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 有进行中的保存时，禁止重复操作和路由离开" time="0.0226153">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 损坏JSON拒绝应用，原配置与编辑器保持可用" time="0.0215009">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 关闭请求成功也保留等待期间的新输入" time="0.0145717">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 草稿已保存但关闭失败时保留成功保存的信息" time="0.0207812">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 截止时间未发布时关闭有明确确认，成功后仍保留待发布状态" time="0.0170589">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 成功发布清除本次截止时间标记，无新修改即可离开" time="0.0177808">
+        </testcase>
+        <testcase classname="tests/components/editor.spec.ts" name="编辑器保存、关闭、发布和离开 &gt; 未修改截止时间时发布保留服务器秒级精度" time="0.0114101">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/components/inputs.spec.ts" timestamp="2026-10-26T09:12:51.733Z" hostname="LAPTOP-Q5N7R5J2" tests="8" failures="0" errors="0" skipped="0" time="0.0978888">
+        <testcase classname="tests/components/inputs.spec.ts" name="文本组件与后端的码点长度口径 &gt; 一个表情可实际输入，上限1时不使用UTF-16 maxlength" time="0.0383821">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="文本组件与后端的码点长度口径 &gt; 粘贴多个表情保留全文，显示超限且规则拒绝" time="0.0094913">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="文本组件与后端的码点长度口径 &gt; 中文组合输入结束前不提交中间内容，不提前提示超限" time="0.0072007">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="文本组件与后端的码点长度口径 &gt; 组合结束后的重复input不重复发出更新，计数去除首尾空白" time="0.0041118">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="文本组件与后端的码点长度口径 &gt; 外部模型更新可以清空实际输入" time="0.0054569">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="规则组件防御性渲染 &gt; 损坏配置显示错误且可明确清空：null" time="0.0151691">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="规则组件防御性渲染 &gt; 损坏配置显示错误且可明确清空：{&quot;rules&quot;:[{}],&quot;default_target&quot;:null}" time="0.0059851">
+        </testcase>
+        <testcase classname="tests/components/inputs.spec.ts" name="规则组件防御性渲染 &gt; 损坏配置显示错误且可明确清空：{&quot;rules&quot;:[{&quot;condition&quot;:{&quot;question_id&quot;:&quot;q1&quot;,&quot;operator&quot;:&quot;between&quot;,&quot;value&quot;:null},&quot;target&quot;:&quot;END&quot;}],&quot;default_target&quot;:null}" time="0.0101263">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/components/phase2-202.spec.ts" timestamp="2026-10-26T09:12:51.737Z" hostname="LAPTOP-Q5N7R5J2" tests="24" failures="0" errors="0" skipped="0" time="0.5438086">
+        <testcase classname="tests/components/phase2-202.spec.ts" name="upgrade confirmation must apply to the instance shown in its preview" time="0.1164041">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="late old statistics must not overwrite the selected version" time="0.0514251">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="a library member with revoked old version must allow choosing an authorized newer version" time="0.0109165">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="normal confirmation sends the exact instance target and preview revision" time="0.0410025">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="local editing with unchanged server revision invalidates preview" time="0.0332524">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="late preview cannot appear on another instance" time="0.0343585">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="closed preview ignores a late response" time="0.0205693">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="changing target immediately invalidates old confirmation" time="0.0316912">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="unmounted editor discards late preview" time="0.0154728">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="dedicated confirmation refuses dirty draft without auto saving" time="0.0019895">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="dedicated confirmation rejects stale revision and changed source" time="0.0015984">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="unapplied dates do not change detail query or version label" time="0.0191674">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="closing loading details prevents late response reopening" time="0.0157672">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="switching summary version invalidates old detail response" time="0.0112637">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="late old error and finally cannot clear latest result or busy state" time="0.0092502">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="latest statistics failure clears prior result" time="0.0135688">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="question picker reloads series and ignores late old candidates" time="0.0063209">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="switching libraries closes pending update and rejects late candidates" time="0.0087217">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="update from unavailable member binds original library member and revision" time="0.0131069">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="update rejection retains unavailable member and shows error" time="0.0107732">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="restore cancel sends no request and confirm sends one request" time="0.01554">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="selection changed during draft save cancels preview even when switching back" time="0.0301489">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="older detail page cannot overwrite latest page context" time="0.0123111">
+        </testcase>
+        <testcase classname="tests/components/phase2-202.spec.ts" name="failed upgrade confirmation invalidates preview and requires fresh preview" time="0.0168394">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/components/phase2-review.spec.ts" timestamp="2026-10-26T09:12:51.746Z" hostname="LAPTOP-Q5N7R5J2" tests="10" failures="0" errors="0" skipped="0" time="0.2287407">
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 仅统计授权从共享页直接打开指定问卷统计" time="0.085416">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 撤销记录、使用授权和非接收者不提供统计直达入口" time="0.0117138">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 共享接收者从列表进入独立使用页而不调用所有者历史" time="0.0390572">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 使用追踪后续请求失败时清除旧详情" time="0.0116401">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 加载第二页题库后可以选择第21个并查询其成员" time="0.0273336">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 题库第二页失败可重试，保留已加载列表且不跳页" time="0.016492">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 题库内查询携带关键词并显示服务端筛选后的总页数" time="0.0082853">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 题库升级选择器将系列过滤传给后端" time="0.0061208">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 搜索失败清除旧可选项，避免误选上一份结果" time="0.0084335">
+        </testcase>
+        <testcase classname="tests/components/phase2-review.spec.ts" name="第二阶段五项审阅修复 &gt; 迟到的旧搜索结果不能覆盖新关键词的结果" time="0.0122122">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/components/phase2.spec.ts" timestamp="2026-10-26T09:12:51.749Z" hostname="LAPTOP-Q5N7R5J2" tests="13" failures="0" errors="0" skipped="0" time="0.3042541">
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 题型变化生成独立选项并重置旧校验" time="0.0651003">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 选题器只发出用户明确选择的版本ID" time="0.0199532">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 归档选项不能被选用" time="0.0080185">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 选题失败给出错误而不伪造空成功" time="0.008829">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 题目共享只请求指定版本使用权" time="0.0143202">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 汇总授权显式绑定问卷且不请求明细权" time="0.0072837">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 新版本提交携带原父版本与revision" time="0.0490442">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 版本保存冲突保留用户输入并提示" time="0.014206">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 恢复请求分别记录当前父版本和历史内容来源" time="0.0460299">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 来源题内容被锁定而必答可独立编辑" time="0.0237975">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 共享实例不提供解除关联与另存入口" time="0.0123608">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 来源操作期间锁定编辑区域并更新服务端来源" time="0.0221419">
+        </testcase>
+        <testcase classname="tests/components/phase2.spec.ts" name="第二阶段题目与权限交互 &gt; 统计授权撤销后的失败不会残留旧统计结果" time="0.010821">
+        </testcase>
+    </testsuite>
+</testsuites>

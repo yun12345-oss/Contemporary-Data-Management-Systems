@@ -1,0 +1,61 @@
+{
+  "old_collections": [
+    "attempts",
+    "responses",
+    "sessions",
+    "survey_versions",
+    "surveys",
+    "users"
+  ],
+  "current_collections": [
+    "attempts",
+    "question_libraries",
+    "question_library_items",
+    "question_versions",
+    "questions",
+    "resource_grants",
+    "responses",
+    "sessions",
+    "survey_versions",
+    "surveys",
+    "users"
+  ],
+  "old_collections_retained": true,
+  "core_file_comparison": {
+    "backend/app/main.py": {
+      "baseline_exists": true,
+      "current_exists": true,
+      "identical": false
+    },
+    "backend/app/schemas.py": {
+      "baseline_exists": true,
+      "current_exists": true,
+      "identical": false
+    },
+    "backend/app/services/participation.py": {
+      "baseline_exists": true,
+      "current_exists": true,
+      "identical": false
+    },
+    "backend/app/services/attempts.py": {
+      "baseline_exists": true,
+      "current_exists": true,
+      "identical": false
+    },
+    "backend/app/domain/rules.py": {
+      "baseline_exists": true,
+      "current_exists": true,
+      "identical": true
+    },
+    "frontend/src/views/Fill.vue": {
+      "baseline_exists": true,
+      "current_exists": true,
+      "identical": true
+    },
+    "frontend/src/views/Editor.vue": {
+      "baseline_exists": true,
+      "current_exists": true,
+      "identical": false
+    }
+  }
+}

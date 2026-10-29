@@ -1,0 +1,15 @@
+{
+  "comparison": "用户提供第一阶段目录与第二阶段；README、清单及缓存排除",
+  "counts": {
+    "unchanged": 65,
+    "modified": 19,
+    "added": 29,
+    "removed": 0
+  },
+  "core_byte_identical": [
+    "backend/app/domain/rules.py",
+    "frontend/src/views/Fill.vue",
+    "backend/app/database.py",
+    "backend/app/services/statistics.py"
+  ]
+}

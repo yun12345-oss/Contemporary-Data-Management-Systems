@@ -1,0 +1,1 @@
+{"status":"blocked","attempt":"cua.getTab existing http://127.0.0.1:8000/sharing iab","reason":"Browser URL security policy denied access; no alternate browser or protocol workaround attempted","manual_acceptance":"pending: upgrade, statistics, library update, historical restore confirm/cancel"}

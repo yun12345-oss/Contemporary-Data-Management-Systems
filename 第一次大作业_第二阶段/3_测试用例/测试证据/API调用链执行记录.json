@@ -1,0 +1,1001 @@
+{
+  "date": "2026-10-26",
+  "kind": "材料示例验证，不计入260项",
+  "events": [
+    {
+      "step": 1,
+      "method": "POST",
+      "path": "/api/auth/register",
+      "input": {
+        "username": "material_owner_22e23b92",
+        "password": "<测试密码省略>"
+      },
+      "status": 201,
+      "output": {
+        "id": "f206c53c29078104e466f8c5",
+        "username": "material_owner_22e23b92"
+      }
+    },
+    {
+      "step": 2,
+      "method": "POST",
+      "path": "/api/auth/register",
+      "input": {
+        "username": "material_peer_22e23b92",
+        "password": "<测试密码省略>"
+      },
+      "status": 201,
+      "output": {
+        "id": "68257a376872510ee5fac7b4",
+        "username": "material_peer_22e23b92"
+      }
+    },
+    {
+      "step": 3,
+      "method": "POST",
+      "path": "/api/questions",
+      "input": {
+        "content": {
+          "type": "number",
+          "title": "年龄（周岁）",
+          "options": [],
+          "validation": {
+            "min": 0,
+            "max": 120,
+            "integer_only": true
+          }
+        },
+        "change_note": "材料示例初版"
+      },
+      "status": 201,
+      "output": {
+        "question": {
+          "_id": "48bf223b0fd964f73d49e579",
+          "owner_id": "f206c53c29078104e466f8c5",
+          "title": "年龄（周岁）",
+          "latest_version_id": "d3dafe1edfe773ac098baf1b",
+          "version_seq": 1,
+          "revision": 1,
+          "archived": false,
+          "activity_seq": 0,
+          "created_at": "2026-10-26T08:45:57.639000+00:00",
+          "updated_at": "2026-10-26T08:45:57.639000+00:00",
+          "schema_version": 1
+        },
+        "version": {
+          "_id": "d3dafe1edfe773ac098baf1b",
+          "question_id": "48bf223b0fd964f73d49e579",
+          "version": 1,
+          "parent_version_id": null,
+          "restored_from_version_id": null,
+          "content": {
+            "type": "number",
+            "title": "年龄（周岁）",
+            "options": [],
+            "validation": {
+              "min": 0,
+              "max": 120,
+              "integer_only": true
+            }
+          },
+          "change_note": "材料示例初版",
+          "created_by": "f206c53c29078104e466f8c5",
+          "created_at": "2026-10-26T08:45:57.639000+00:00",
+          "schema_version": 1
+        }
+      }
+    },
+    {
+      "step": 4,
+      "method": "POST",
+      "path": "/api/questions/48bf223b0fd964f73d49e579/versions",
+      "input": {
+        "revision": 1,
+        "parent_version_id": "d3dafe1edfe773ac098baf1b",
+        "content": {
+          "type": "number",
+          "title": "年龄（填写时的周岁）",
+          "options": [],
+          "validation": {
+            "min": 0,
+            "max": 120,
+            "integer_only": true
+          }
+        },
+        "change_note": "明确填写时点"
+      },
+      "status": 201,
+      "output": {
+        "question": {
+          "_id": "48bf223b0fd964f73d49e579",
+          "owner_id": "f206c53c29078104e466f8c5",
+          "title": "年龄（填写时的周岁）",
+          "latest_version_id": "9b59a1bcfae9b44926b9961d",
+          "version_seq": 2,
+          "revision": 2,
+          "archived": false,
+          "activity_seq": 1,
+          "created_at": "2026-10-26T08:45:57.639000+00:00",
+          "updated_at": "2026-10-26T08:45:57.666000+00:00",
+          "schema_version": 1
+        },
+        "version": {
+          "_id": "9b59a1bcfae9b44926b9961d",
+          "question_id": "48bf223b0fd964f73d49e579",
+          "version": 2,
+          "parent_version_id": "d3dafe1edfe773ac098baf1b",
+          "restored_from_version_id": null,
+          "content": {
+            "type": "number",
+            "title": "年龄（填写时的周岁）",
+            "options": [],
+            "validation": {
+              "min": 0,
+              "max": 120,
+              "integer_only": true
+            }
+          },
+          "change_note": "明确填写时点",
+          "created_by": "f206c53c29078104e466f8c5",
+          "created_at": "2026-10-26T08:45:57.666000+00:00",
+          "schema_version": 1
+        },
+        "diff": [
+          {
+            "field": "title",
+            "before": "年龄（周岁）",
+            "after": "年龄（填写时的周岁）"
+          }
+        ]
+      }
+    },
+    {
+      "step": 5,
+      "method": "POST",
+      "path": "/api/libraries",
+      "input": {
+        "name": "基础信息题库",
+        "description": "固定版本示例"
+      },
+      "status": 201,
+      "output": {
+        "_id": "be3bf3242dbf825507d8b9eb",
+        "owner_id": "f206c53c29078104e466f8c5",
+        "name": "基础信息题库",
+        "description": "固定版本示例",
+        "revision": 1,
+        "created_at": "2026-10-26T08:45:57.681000+00:00",
+        "updated_at": "2026-10-26T08:45:57.681000+00:00",
+        "schema_version": 1
+      }
+    },
+    {
+      "step": 6,
+      "method": "POST",
+      "path": "/api/libraries/be3bf3242dbf825507d8b9eb/items",
+      "input": {
+        "revision": 1,
+        "question_version_id": "d3dafe1edfe773ac098baf1b",
+        "position": 0
+      },
+      "status": 201,
+      "output": {
+        "ok": true,
+        "revision": 2
+      }
+    },
+    {
+      "step": 7,
+      "method": "POST",
+      "path": "/api/grants",
+      "input": {
+        "kind": "use",
+        "question_version_id": "d3dafe1edfe773ac098baf1b",
+        "username": "material_peer_22e23b92",
+        "survey_id": null
+      },
+      "status": 201,
+      "output": {
+        "_id": "e486dcfabf4c50c1b85bca5a",
+        "kind": "use",
+        "question_version_id": "d3dafe1edfe773ac098baf1b",
+        "survey_id": null,
+        "grantee_id": "68257a376872510ee5fac7b4",
+        "grantor_id": "f206c53c29078104e466f8c5",
+        "active": true,
+        "revision": 1,
+        "activity_seq": 0,
+        "created_at": "2026-10-26T08:45:57.721000+00:00",
+        "updated_at": "2026-10-26T08:45:57.721000+00:00",
+        "schema_version": 1
+      }
+    },
+    {
+      "step": 8,
+      "method": "POST",
+      "path": "/api/surveys",
+      "input": {
+        "title": "材料演示问卷"
+      },
+      "status": 201,
+      "output": {
+        "_id": "a1f20fe700b975f86e7a80c4",
+        "owner_id": "f206c53c29078104e466f8c5",
+        "share_code": "e15165d56e4d5400beda1395",
+        "status": "draft",
+        "draft": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": false,
+          "allow_repeat": false,
+          "questions": []
+        },
+        "deadline": null,
+        "revision": 1,
+        "current_version": 0,
+        "created_at": "2026-10-26T08:45:57.746000+00:00",
+        "updated_at": "2026-10-26T08:45:57.746000+00:00",
+        "schema_version": 1,
+        "activity_seq": 0
+      }
+    },
+    {
+      "step": 9,
+      "method": "POST",
+      "path": "/api/surveys/a1f20fe700b975f86e7a80c4/questions/import",
+      "input": {
+        "revision": 1,
+        "question_version_id": "d3dafe1edfe773ac098baf1b"
+      },
+      "status": 200,
+      "output": {
+        "_id": "a1f20fe700b975f86e7a80c4",
+        "owner_id": "f206c53c29078104e466f8c5",
+        "share_code": "e15165d56e4d5400beda1395",
+        "status": "draft",
+        "draft": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": false,
+          "allow_repeat": false,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（周岁）",
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "required": true,
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "d3dafe1edfe773ac098baf1b",
+                "version": 1,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": "2026-10-26T08:45:57.767000+00:00",
+                "grant_id": null
+              }
+            }
+          ]
+        },
+        "deadline": null,
+        "revision": 2,
+        "current_version": 0,
+        "created_at": "2026-10-26T08:45:57.746000+00:00",
+        "updated_at": "2026-10-26T08:45:57.767000+00:00",
+        "schema_version": 1,
+        "activity_seq": 0,
+        "draft_issues": []
+      }
+    },
+    {
+      "step": 10,
+      "method": "PUT",
+      "path": "/api/surveys/a1f20fe700b975f86e7a80c4/draft",
+      "input": {
+        "revision": 2,
+        "draft": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（周岁）",
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "required": true,
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "d3dafe1edfe773ac098baf1b",
+                "version": 1,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": "2026-10-26T08:45:57.767000+00:00",
+                "grant_id": null
+              }
+            }
+          ]
+        }
+      },
+      "status": 200,
+      "output": {
+        "_id": "a1f20fe700b975f86e7a80c4",
+        "owner_id": "f206c53c29078104e466f8c5",
+        "share_code": "e15165d56e4d5400beda1395",
+        "status": "draft",
+        "draft": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "d3dafe1edfe773ac098baf1b",
+                "version": 1,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": "2026-10-26T08:45:57.767000+00:00",
+                "grant_id": null
+              }
+            }
+          ]
+        },
+        "deadline": null,
+        "revision": 3,
+        "current_version": 0,
+        "created_at": "2026-10-26T08:45:57.746000+00:00",
+        "updated_at": "2026-10-26T08:45:57.798000+00:00",
+        "schema_version": 1,
+        "activity_seq": 0,
+        "draft_issues": []
+      }
+    },
+    {
+      "step": 11,
+      "method": "POST",
+      "path": "/api/surveys/a1f20fe700b975f86e7a80c4/publish",
+      "input": {
+        "revision": 3
+      },
+      "status": 200,
+      "output": {
+        "_id": "3efd5a7a8e797988a2ee4ed5",
+        "survey_id": "a1f20fe700b975f86e7a80c4",
+        "version": 1,
+        "definition": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "d3dafe1edfe773ac098baf1b",
+                "version": 1,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": "2026-10-26T08:45:57.767000+00:00",
+                "grant_id": null
+              }
+            }
+          ]
+        },
+        "published_at": "2026-10-26T08:45:57.815000+00:00",
+        "schema_version": 1,
+        "rule_engine_version": 1,
+        "survey": {
+          "revision": 4,
+          "status": "published",
+          "current_version": 1,
+          "deadline": null,
+          "updated_at": "2026-10-26T08:45:57.817000+00:00"
+        }
+      }
+    },
+    {
+      "step": 12,
+      "method": "GET",
+      "path": "/api/surveys/a1f20fe700b975f86e7a80c4",
+      "input": null,
+      "status": 200,
+      "output": {
+        "_id": "a1f20fe700b975f86e7a80c4",
+        "owner_id": "f206c53c29078104e466f8c5",
+        "share_code": "e15165d56e4d5400beda1395",
+        "status": "published",
+        "draft": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "d3dafe1edfe773ac098baf1b",
+                "version": 1,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": "2026-10-26T08:45:57.767000+00:00",
+                "grant_id": null
+              }
+            }
+          ]
+        },
+        "deadline": null,
+        "revision": 4,
+        "current_version": 1,
+        "created_at": "2026-10-26T08:45:57.746000+00:00",
+        "updated_at": "2026-10-26T08:45:57.817000+00:00",
+        "schema_version": 1,
+        "activity_seq": 1,
+        "draft_issues": []
+      }
+    },
+    {
+      "step": 13,
+      "method": "POST",
+      "path": "/api/public/e15165d56e4d5400beda1395/attempt",
+      "input": {
+        "anonymous": true
+      },
+      "status": 200,
+      "output": {
+        "_id": "aa159e5043cb42df98815706",
+        "revision": 1,
+        "status": "in_progress",
+        "anonymous": true,
+        "updated_at": "2026-10-26T08:45:57.841000+00:00",
+        "definition": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              }
+            }
+          ]
+        },
+        "version": 1,
+        "answers": {},
+        "path": [
+          "9d0d7f72a1c672d260f5b05c"
+        ],
+        "issues": {
+          "9d0d7f72a1c672d260f5b05c": "此题必须回答"
+        },
+        "current_question_id": "9d0d7f72a1c672d260f5b05c",
+        "read_only": false,
+        "read_only_reason": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": 14,
+      "method": "POST",
+      "path": "/api/surveys/a1f20fe700b975f86e7a80c4/questions/upgrade-preview",
+      "input": {
+        "revision": 4,
+        "instance_id": "9d0d7f72a1c672d260f5b05c",
+        "question_version_id": "9b59a1bcfae9b44926b9961d"
+      },
+      "status": 200,
+      "output": {
+        "diff": [
+          {
+            "field": "title",
+            "before": "年龄（周岁）",
+            "after": "年龄（填写时的周岁）"
+          }
+        ],
+        "issues": [],
+        "definition": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（填写时的周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "9b59a1bcfae9b44926b9961d",
+                "version": 2,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": "2026-10-26T08:45:57.867000+00:00",
+                "grant_id": null
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "step": 15,
+      "method": "POST",
+      "path": "/api/surveys/a1f20fe700b975f86e7a80c4/questions/upgrade",
+      "input": {
+        "revision": 4,
+        "instance_id": "9d0d7f72a1c672d260f5b05c",
+        "question_version_id": "9b59a1bcfae9b44926b9961d"
+      },
+      "status": 200,
+      "output": {
+        "_id": "a1f20fe700b975f86e7a80c4",
+        "owner_id": "f206c53c29078104e466f8c5",
+        "share_code": "e15165d56e4d5400beda1395",
+        "status": "published",
+        "draft": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（填写时的周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "9b59a1bcfae9b44926b9961d",
+                "version": 2,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": "2026-10-26T08:45:57.900000+00:00",
+                "grant_id": null
+              }
+            }
+          ]
+        },
+        "deadline": null,
+        "revision": 5,
+        "current_version": 1,
+        "created_at": "2026-10-26T08:45:57.746000+00:00",
+        "updated_at": "2026-10-26T08:45:57.900000+00:00",
+        "schema_version": 1,
+        "activity_seq": 2,
+        "draft_issues": []
+      }
+    },
+    {
+      "step": 16,
+      "method": "POST",
+      "path": "/api/surveys/a1f20fe700b975f86e7a80c4/publish",
+      "input": {
+        "revision": 5
+      },
+      "status": 200,
+      "output": {
+        "_id": "dddb1643308a94878d9463d6",
+        "survey_id": "a1f20fe700b975f86e7a80c4",
+        "version": 2,
+        "definition": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（填写时的周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              },
+              "source": {
+                "question_id": "48bf223b0fd964f73d49e579",
+                "question_version_id": "9b59a1bcfae9b44926b9961d",
+                "version": 2,
+                "survey_id": "a1f20fe700b975f86e7a80c4",
+                "instance_id": "9d0d7f72a1c672d260f5b05c",
+                "imported_by": "f206c53c29078104e466f8c5",
+                "imported_at": "2026-10-26T08:45:57.900000+00:00",
+                "grant_id": null
+              }
+            }
+          ]
+        },
+        "published_at": "2026-10-26T08:45:57.927000+00:00",
+        "schema_version": 1,
+        "rule_engine_version": 1,
+        "survey": {
+          "revision": 6,
+          "status": "published",
+          "current_version": 2,
+          "deadline": null,
+          "updated_at": "2026-10-26T08:45:57.929000+00:00"
+        }
+      }
+    },
+    {
+      "step": 17,
+      "method": "PUT",
+      "path": "/api/attempts/aa159e5043cb42df98815706",
+      "input": {
+        "revision": 1,
+        "answers": {
+          "9d0d7f72a1c672d260f5b05c": "25"
+        }
+      },
+      "status": 200,
+      "output": {
+        "_id": "aa159e5043cb42df98815706",
+        "revision": 2,
+        "status": "in_progress",
+        "anonymous": true,
+        "updated_at": "2026-10-26T08:45:57.965000+00:00",
+        "definition": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              }
+            }
+          ]
+        },
+        "version": 1,
+        "answers": {
+          "9d0d7f72a1c672d260f5b05c": "25"
+        },
+        "path": [
+          "9d0d7f72a1c672d260f5b05c"
+        ],
+        "issues": {},
+        "current_question_id": "9d0d7f72a1c672d260f5b05c",
+        "read_only": false,
+        "read_only_reason": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": 18,
+      "method": "POST",
+      "path": "/api/attempts/aa159e5043cb42df98815706/submit",
+      "input": {
+        "revision": 2
+      },
+      "status": 200,
+      "output": {
+        "id": "1d86c72862a3716d65da550b",
+        "version": 1,
+        "submitted_at": "2026-10-26T08:45:57.996000+00:00"
+      }
+    },
+    {
+      "step": 19,
+      "method": "GET",
+      "path": "/api/question-versions/d3dafe1edfe773ac098baf1b/statistics",
+      "input": null,
+      "status": 200,
+      "output": {
+        "question_id": "48bf223b0fd964f73d49e579",
+        "question_version_id": "d3dafe1edfe773ac098baf1b",
+        "version": 1,
+        "content": {
+          "type": "number",
+          "title": "年龄（周岁）",
+          "options": [],
+          "validation": {
+            "min": 0,
+            "max": 120,
+            "integer_only": true
+          }
+        },
+        "coverage_surveys": 1,
+        "answered_surveys": 1,
+        "valid_responses": 1,
+        "valid_answers": 1,
+        "notice": "仅同一确定版本；授权范围内汇总；作答条数按实例计，答卷按记录去重；必答与路径可能影响样本。",
+        "average": 25.0,
+        "min": 25,
+        "max": 25,
+        "distribution": [
+          {
+            "lower": 0,
+            "upper": 18,
+            "count": 0
+          },
+          {
+            "lower": 18,
+            "upper": 30,
+            "count": 1
+          },
+          {
+            "lower": 30,
+            "upper": 45,
+            "count": 0
+          },
+          {
+            "lower": 45,
+            "upper": 60,
+            "count": 0
+          },
+          {
+            "lower": 60,
+            "upper": 121,
+            "count": 0
+          },
+          {
+            "label": "区间外",
+            "count": 0
+          }
+        ]
+      }
+    },
+    {
+      "step": 20,
+      "method": "GET",
+      "path": "/api/question-versions/9b59a1bcfae9b44926b9961d/statistics",
+      "input": null,
+      "status": 200,
+      "output": {
+        "question_id": "48bf223b0fd964f73d49e579",
+        "question_version_id": "9b59a1bcfae9b44926b9961d",
+        "version": 2,
+        "content": {
+          "type": "number",
+          "title": "年龄（填写时的周岁）",
+          "options": [],
+          "validation": {
+            "min": 0,
+            "max": 120,
+            "integer_only": true
+          }
+        },
+        "coverage_surveys": 1,
+        "answered_surveys": 0,
+        "valid_responses": 0,
+        "valid_answers": 0,
+        "notice": "仅同一确定版本；授权范围内汇总；作答条数按实例计，答卷按记录去重；必答与路径可能影响样本。",
+        "average": null,
+        "min": null,
+        "max": null,
+        "distribution": [
+          {
+            "lower": 0,
+            "upper": 18,
+            "count": 0
+          },
+          {
+            "lower": 18,
+            "upper": 30,
+            "count": 0
+          },
+          {
+            "lower": 30,
+            "upper": 45,
+            "count": 0
+          },
+          {
+            "lower": 45,
+            "upper": 60,
+            "count": 0
+          },
+          {
+            "lower": 60,
+            "upper": 121,
+            "count": 0
+          },
+          {
+            "label": "区间外",
+            "count": 0
+          }
+        ]
+      }
+    },
+    {
+      "step": 21,
+      "method": "POST",
+      "path": "/api/public/e15165d56e4d5400beda1395/attempt",
+      "input": {
+        "anonymous": false
+      },
+      "status": 200,
+      "output": {
+        "_id": "a5699422d82b36b43e801d73",
+        "revision": 1,
+        "status": "in_progress",
+        "anonymous": false,
+        "updated_at": "2026-10-26T08:45:58.075000+00:00",
+        "definition": {
+          "title": "材料演示问卷",
+          "description": "",
+          "allow_anonymous": true,
+          "allow_repeat": true,
+          "questions": [
+            {
+              "id": "9d0d7f72a1c672d260f5b05c",
+              "type": "number",
+              "title": "年龄（填写时的周岁）",
+              "required": true,
+              "options": [],
+              "validation": {
+                "min": 0,
+                "max": 120,
+                "integer_only": true
+              },
+              "routing": {
+                "rules": [],
+                "default_target": null
+              }
+            }
+          ]
+        },
+        "version": 2,
+        "answers": {},
+        "path": [
+          "9d0d7f72a1c672d260f5b05c"
+        ],
+        "issues": {
+          "9d0d7f72a1c672d260f5b05c": "此题必须回答"
+        },
+        "current_question_id": "9d0d7f72a1c672d260f5b05c",
+        "read_only": false,
+        "read_only_reason": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": 22,
+      "method": "GET",
+      "path": "/api/questions/48bf223b0fd964f73d49e579/usage",
+      "input": null,
+      "status": 200,
+      "output": {
+        "scope": "题目所有者脱敏汇总及自有详情",
+        "used_surveys": 1,
+        "draft_surveys": 1,
+        "current_published_surveys": 1,
+        "historical_published_surveys": 1,
+        "items": [
+          {
+            "survey_id": "a1f20fe700b975f86e7a80c4",
+            "title": "材料演示问卷",
+            "status": "published",
+            "draft": true,
+            "current_published": true,
+            "published_versions": [
+              2,
+              1
+            ]
+          }
+        ],
+        "page": 1,
+        "detail_total": 1
+      }
+    }
+  ]
+}

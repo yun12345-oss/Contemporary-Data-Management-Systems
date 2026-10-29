@@ -1,0 +1,21 @@
+{
+  "version": "2.0.1",
+  "baseline": "2.0.0",
+  "modified": [
+    "backend/pyproject.toml",
+    "backend/app/main.py",
+    "backend/app/services/libraries.py",
+    "frontend/package.json",
+    "frontend/src/components/QuestionPicker.vue",
+    "frontend/src/views/Questions.vue",
+    "frontend/src/views/QuestionStatistics.vue",
+    "frontend/src/views/QuestionUsage.vue",
+    "frontend/src/views/Sharing.vue"
+  ],
+  "added": [
+    "backend/tests/test_phase2_review.py",
+    "frontend/tests/components/phase2-review.spec.ts"
+  ],
+  "database_schema_unchanged": true,
+  "database_migration_required": false
+}

@@ -1,0 +1,11 @@
+.git
+.runtime
+.venv
+.local
+.env
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/*.egg-info
+artifacts
+*.docx

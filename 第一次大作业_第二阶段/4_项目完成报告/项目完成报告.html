@@ -1,0 +1,2353 @@
+<!DOCTYPE html><html><head>
+      <title>项目完成报告</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css">
+      
+      
+      
+      
+      
+      
+      
+      <style>
+      code[class*=language-],pre[class*=language-]{color:#333;background:0 0;font-family:Consolas,"Liberation Mono",Menlo,Courier,monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.4;-moz-tab-size:8;-o-tab-size:8;tab-size:8;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:.8em;overflow:auto;border-radius:3px;background:#f5f5f5}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal;background:#f5f5f5}.token.blockquote,.token.comment{color:#969896}.token.cdata{color:#183691}.token.doctype,.token.macro.property,.token.punctuation,.token.variable{color:#333}.token.builtin,.token.important,.token.keyword,.token.operator,.token.rule{color:#a71d5d}.token.attr-value,.token.regex,.token.string,.token.url{color:#183691}.token.atrule,.token.boolean,.token.code,.token.command,.token.constant,.token.entity,.token.number,.token.property,.token.symbol{color:#0086b3}.token.prolog,.token.selector,.token.tag{color:#63a35c}.token.attr-name,.token.class,.token.class-name,.token.function,.token.id,.token.namespace,.token.pseudo-class,.token.pseudo-element,.token.url-reference .token.variable{color:#795da3}.token.entity{cursor:help}.token.title,.token.title .token.punctuation{font-weight:700;color:#1d3e81}.token.list{color:#ed6a43}.token.inserted{background-color:#eaffea;color:#55a532}.token.deleted{background-color:#ffecec;color:#bd2c00}.token.bold{font-weight:700}.token.italic{font-style:italic}.language-json .token.property{color:#183691}.language-markup .token.tag .token.punctuation{color:#333}.language-css .token.function,code.language-css{color:#0086b3}.language-yaml .token.atrule{color:#63a35c}code.language-yaml{color:#183691}.language-ruby .token.function{color:#333}.language-markdown .token.url{color:#795da3}.language-makefile .token.symbol{color:#795da3}.language-makefile .token.variable{color:#183691}.language-makefile .token.builtin{color:#0086b3}.language-bash .token.keyword{color:#0086b3}pre[data-line]{position:relative;padding:1em 0 1em 3em}pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;display:block;width:100%}pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0));pointer-events:none;line-height:inherit;white-space:pre}pre[data-line] .line-highlight:before,pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none;box-shadow:0 1px #fff}pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}html body{font-family:'Helvetica Neue',Helvetica,'Segoe UI',Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ol,html body>ul{margin-bottom:16px}html body ol,html body ul{padding-left:2em}html body ol.no-list,html body ul.no-list{padding:0;list-style-type:none}html body ol ol,html body ol ul,html body ul ol,html body ul ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:700;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::after,html body code::before{letter-spacing:-.2em;content:'\00a0'}html body pre>code{padding:0;margin:0;word-break:normal;white-space:pre;background:0 0;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:after,html body pre code:before,html body pre tt:after,html body pre tt:before{content:normal}html body blockquote,html body dl,html body ol,html body p,html body pre,html body ul{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body code,html body pre{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview ul{list-style:disc}.markdown-preview ul ul{list-style:circle}.markdown-preview ul ul ul{list-style:square}.markdown-preview ol{list-style:decimal}.markdown-preview ol ol,.markdown-preview ul ol{list-style-type:lower-roman}.markdown-preview ol ol ol,.markdown-preview ol ul ol,.markdown-preview ul ol ol,.markdown-preview ul ul ol{list-style-type:lower-alpha}.markdown-preview .newpage,.markdown-preview .pagebreak{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview pre[data-line]{position:relative;padding:1em 0 1em 3em!important}.markdown-preview pre[data-line]>code{position:relative;z-index:1}.markdown-preview pre[data-line] .line-numbers-rows{z-index:1}.markdown-preview pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;pointer-events:none;display:block;width:100%}.markdown-preview pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:var(--line-highlight-background,linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0)));line-height:inherit;white-space:pre}.markdown-preview pre[data-line] .line-highlight:before,.markdown-preview pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none}.markdown-preview pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center!important}.markdown-preview:not([data-for=preview]) .code-chunk .code-chunk-btn-group{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .status{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .output-div{margin-bottom:16px}.markdown-preview .md-toc{padding:0}.markdown-preview .md-toc .md-toc-details{margin:0;padding:0;border:none}.markdown-preview .md-toc ol.md-toc-ol{margin:0;padding-left:1.6em}.markdown-preview .md-toc summary.md-toc-link-wrapper{cursor:pointer;list-style-position:outside}.markdown-preview .md-toc summary.md-toc-link-wrapper::marker{font-size:.85em}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link div,.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}.markdown-preview .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='0']{margin-left:12px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='1']{margin-left:28px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='2']{margin-left:44px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='3']{margin-left:60px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='4']{margin-left:76px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='5']{margin-left:80px}.markdown-preview a.tag,.markdown-preview a.tag:active,.markdown-preview a.tag:link,.markdown-preview a.tag:visited,.markdown-preview span.tag:not(.token){display:inline-block;background-color:var(--vscode-badge-background,rgba(127,127,127,.18));color:var(--vscode-badge-foreground,currentColor);border-radius:2em;font-size:.85em;font-weight:500;padding:.05em .55em;line-height:1.5;white-space:nowrap;text-decoration:none;text-shadow:none;box-shadow:none;transition:background-color .12s ease,opacity .12s ease}.markdown-preview a.tag{cursor:pointer}.markdown-preview a.tag:focus,.markdown-preview a.tag:hover{background-color:var(--vscode-badge-background,rgba(127,127,127,.32));color:var(--vscode-badge-foreground,currentColor);opacity:.85;text-decoration:none;outline:0}.markdown-preview .wikilink-embed-content{border-left:3px solid var(--vscode-textBlockQuote-border,rgba(128,128,128,.3));background:var(--vscode-textBlockQuote-background,rgba(128,128,128,.05));margin:.5em 0;padding:.5em .75em;border-radius:0 3px 3px 0}.markdown-preview .wikilink-embed-content.wikilink-embed-error{border-left-color:var(--vscode-errorForeground,#cf222e);color:var(--vscode-errorForeground,#cf222e);font-style:italic;opacity:.8}.markdown-preview .wikilink-embed-content h1:first-child,.markdown-preview .wikilink-embed-content h2:first-child,.markdown-preview .wikilink-embed-content h3:first-child,.markdown-preview .wikilink-embed-content h4:first-child,.markdown-preview .wikilink-embed-content h5:first-child,.markdown-preview .wikilink-embed-content h6:first-child{margin-top:.25em}.markdown-preview .wikilink-embed-content .wikilink-embed-content{margin:.25em 0;padding:.25em .5em}.markdown-preview .block-id{display:none}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));border:4px solid var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));background-clip:content-box}.scrollbar-style::-webkit-scrollbar-thumb:hover{background-color:var(--vscode-scrollbarSlider-hoverBackground,rgba(120,120,120,.66))}html body[for=html-export]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0;min-height:100vh}@media screen and (min-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{font-size:14px!important;padding:1em}}@media print{html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));border:4px solid var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));background-clip:content-box}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb:hover{background-color:var(--vscode-scrollbarSlider-hoverBackground,rgba(120,120,120,.66))}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc{padding:0 16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-details{margin:0;padding:0;border:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc ol.md-toc-ol{margin:0;padding-left:1.6em}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link div,html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='0']{padding-left:0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='1']{padding-left:16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='2']{padding-left:32px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='3']{padding-left:48px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='4']{padding-left:64px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='5']{padding-left:80px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% - 300px);padding:2em calc(50% - 457px - 300px / 2);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+      
+    </head>
+    <body for="html-export">
+      <div class="crossnote markdown-preview  ">
+      
+<h1 id="基于mongodb的问卷系统第二阶段项目完成报告">基于MongoDB的问卷系统第二阶段项目完成报告 </h1>
+<p>课程：当代数据管理系统（Contemporary Data Management Systems）<br>
+系统：问序问卷系统<br>
+应用版本：2.0.2<br>
+基线版本：第一阶段1.1.0<br>
+项目方式：在第一阶段代码上继续修改和扩展，保留原主要功能和材料。</p>
+<h2 id="一-项目目标">一、项目目标 </h2>
+<h3 id="11-需求来源与总体目标">1.1 需求来源与总体目标 </h3>
+<p>第一阶段已经实现问卷创建、编辑、发布、填写、提交和统计，并支持按回答跳转、自动保存与退出后恢复。</p>
+<p>第二阶段要求在原系统上继续扩展，使题目能够独立保存、共享、修改和复用，同时增加版本历史、题库整理、使用查询和跨问卷统计。扩展过程中，需要保留第一阶段的主要功能和核心结构，不能重新开发一套系统替代原系统。</p>
+<p>本阶段的总体目标包括：</p>
+<ol>
+<li>
+<p><strong>让题目能够重复使用。</strong><br>
+同一道年龄题、工具题等可以保存为常用题，再导入不同问卷，减少重复编辑。</p>
+</li>
+<li>
+<p><strong>让修改过程能够追溯。</strong><br>
+保存题目的不同版本，支持比较、分支和历史恢复，能够说明每次内容怎样变化。</p>
+</li>
+<li>
+<p><strong>保护已有问卷和历史答案。</strong><br>
+题目产生新版后，已经采用旧版的问卷不自动改变，原填写过程和正式答案继续按原内容解释。</p>
+</li>
+<li>
+<p><strong>明确共享和统计权限。</strong><br>
+区分“允许使用题目”和“允许查看问卷汇总”，避免题目共享导致答案数据被越权访问。</p>
+</li>
+<li>
+<p><strong>证明扩展后旧功能仍然可用。</strong><br>
+保留原有回归测试，并补充版本、权限、兼容、并发和页面交互测试。</p>
+</li>
+</ol>
+<p>系统同时服务问卷创建者和填写者，整体功能见图 1。</p>
+<p><img src="images/png/fig-01.png" alt="图 1 系统功能全景图"></p>
+<p><strong>图 1 系统功能全景图</strong></p>
+<p>灰色部分是第一阶段已有能力，蓝色部分是第二阶段新增能力。原来的账号、问卷、填写和统计继续使用，新功能主要围绕可复用题目的管理展开。</p>
+<h3 id="12-核心概念-功能范围与验收方式">1.2 核心概念、功能范围与验收方式 </h3>
+<h4 id="121-核心概念">1.2.1 核心概念 </h4>
+<p>为了避免混淆，先区分以下六个对象。</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>通俗解释</th>
+<th>主要标识</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>题目系列</td>
+<td>同一道常用题的整体记录，例如“年龄题”</td>
+<td><code>question_id</code></td>
+</tr>
+<tr>
+<td>题目版本</td>
+<td>这道题某一次保存下来的固定内容，例如年龄题 v1、v2</td>
+<td><code>question_version_id</code></td>
+</tr>
+<tr>
+<td>问卷实例</td>
+<td>题目放进某份问卷后的具体一次使用</td>
+<td>问卷内题目 <code>id</code></td>
+</tr>
+<tr>
+<td>问卷发布版本</td>
+<td>问卷发布时保存的完整内容，也叫发布快照</td>
+<td><code>version_id</code></td>
+</tr>
+<tr>
+<td>填写过程</td>
+<td>记录尚未正式提交的输入和进度，用于恢复</td>
+<td><code>attempt</code></td>
+</tr>
+<tr>
+<td>正式答卷</td>
+<td>完整校验通过后保存的一次正式提交</td>
+<td><code>response</code></td>
+</tr>
+</tbody>
+</table>
+<p>例如，同一个年龄题 v1 可以导入问卷 A 和问卷 B，形成两个不同实例。两份问卷可以分别设置必答和跳转；发布后，各自保存完整快照。填写者提交的答卷再关联相应的问卷发布版本。</p>
+<p>因此，“题目版本”和“问卷发布版本”是两种不同的版本，后文分别说明。</p>
+<h4 id="122-八项需求与验收方式">1.2.2 八项需求与验收方式 </h4>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求</th>
+<th>本阶段实现目标</th>
+<th>主要验收内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R01</td>
+<td>保存常用题</td>
+<td>支持独立创建，以及从自有问卷保存题目</td>
+<td>创建、另存、来源关联及历史答案不自动合并</td>
+</tr>
+<tr>
+<td>R02</td>
+<td>共享题目</td>
+<td>向指定账号授予确定版本的使用权</td>
+<td>双账号隔离、撤销、未来版本不可见及禁止越权转授</td>
+</tr>
+<tr>
+<td>R03</td>
+<td>修改不影响已有问卷</td>
+<td>使用固定题目版本和完整发布快照</td>
+<td>旧快照不变，旧填写过程仍按原版提交</td>
+</tr>
+<tr>
+<td>R04</td>
+<td>历史、比较与恢复</td>
+<td>查看修改历史、比较内容并恢复历史版本</td>
+<td>父版本、恢复来源、分支和旧内容保留</td>
+</tr>
+<tr>
+<td>R05</td>
+<td>不同版本并存</td>
+<td>不同问卷或题库成员可以保留不同版本</td>
+<td>不自动替换，不混合不同版本统计</td>
+</tr>
+<tr>
+<td>R06</td>
+<td>使用追踪</td>
+<td>查询草稿、当前发布和历史发布中的使用情况</td>
+<td>按问卷去重，保护他人私密标题和详情</td>
+</tr>
+<tr>
+<td>R07</td>
+<td>题库管理</td>
+<td>支持个人题库、成员、排序、更新和移除</td>
+<td>成员唯一性、修订冲突、分页、搜索及授权检查</td>
+</tr>
+<tr>
+<td>R08</td>
+<td>跨问卷统计</td>
+<td>汇总同一确定版本在有权限问卷中的回答</td>
+<td>答卷数、作答条数、分布、均值及统计授权</td>
+</tr>
+</tbody>
+</table>
+<p>这里的验收方式同时包括接口、数据库和前端组件检查。具体结果与尚未完成的人工验收在第七章说明，不能只凭功能存在就认定全部使用场景已经验证。</p>
+<h4 id="123-本阶段的范围边界">1.2.3 本阶段的范围边界 </h4>
+<p>本阶段采用以下约定：</p>
+<ul>
+<li><strong>不同题目版本分别统计。</strong> 不因题型或选项 ID 相同，就自动认定它们可以合并。</li>
+<li><strong>统计范围受权限限制。</strong> 题目作者不会因为他人使用了自己的题，就自动获得对方问卷的答案访问权。</li>
+<li><strong>旧题目继续可用。</strong> 没有独立来源的第一阶段题目可以继续运行，但不会自动加入新常用题的历史统计。</li>
+<li><strong>复杂扩展后置。</strong> 跨问卷去重人数、跨版本合并、旧答卷人工关联、共享题派生与转授、团队题库权限及公网部署不属于本轮范围。</li>
+</ul>
+<p>以上约定需要在报告和验收演示中说明，避免把“有权限范围内的汇总”写成能够无条件查看所有问卷的数据。</p>
+<h3 id="13-新需求带来了哪些问题">1.3 新需求带来了哪些问题 </h3>
+<p>第一阶段的题目保存在各自问卷中，适合设计和发布一份完整问卷。但当题目需要跨问卷使用时，原有结构还需要补充以下能力。</p>
+<p><strong>第一，复制内容不能代替来源管理。</strong><br>
+如果几份问卷分别复制同一道题，系统无法可靠判断它们是不是同一道常用题，也就难以查询使用情况或汇总答案。为此，需要独立的题目身份和明确的来源记录。</p>
+<p><strong>第二，新修改不能改变旧答案的含义。</strong><br>
+假设年龄题已经被两份问卷采用，其中一份已经有人开始填写。此时作者修改题干，系统必须知道哪些问卷继续使用旧版、哪些主动升级，以及过去的答案对应哪次内容。</p>
+<p><strong>第三，允许使用题目不等于允许读取数据。</strong><br>
+共享接收者可以把题目用于自己的问卷，但不应因此获得其他问卷的答案。题目使用权与统计访问权需要分别设计。</p>
+<p><strong>第四，旧功能必须与新结构同时工作。</strong><br>
+第一阶段没有题目来源字段，旧问卷、旧发布快照和旧填写过程仍应继续使用。新增结构不能强迫旧数据补齐未知来源，也不能直接改写历史答案。</p>
+<p><strong>第五，更新和撤销可能与其他操作同时发生。</strong><br>
+多人操作、多个页面以及请求先后返回，都可能造成状态冲突。例如预览后切换题目、导入时撤销授权、切换版本后收到旧统计结果，都需要明确处理。</p>
+<p>因此，第二阶段需要同时实现题目复用、历史保护、权限隔离和旧功能兼容。后续设计围绕这些问题展开。</p>
+<h3 id="14-修改过程与后续章节的对应关系">1.4 修改过程与后续章节的对应关系 </h3>
+<p>报告需要说明的八项“修改过程”，与前面的八项“功能需求”是两组不同内容。</p>
+<p>功能需求使用 R01～R08 编号；修改过程则按下面的顺序说明。</p>
+<table>
+<thead>
+<tr>
+<th>必须说明的内容</th>
+<th>报告中的主要位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第一阶段的设计是什么</td>
+<td>第二章 2.1</td>
+</tr>
+<tr>
+<td>新需求带来了哪些问题</td>
+<td>第一章 1.3、第二章 2.2</td>
+</tr>
+<tr>
+<td>为什么需要修改原设计</td>
+<td>第二章 2.3</td>
+</tr>
+<tr>
+<td>修改了哪些部分</td>
+<td>第二章 2.6</td>
+</tr>
+<tr>
+<td>数据结构如何变化</td>
+<td>第三章</td>
+</tr>
+<tr>
+<td>程序如何调整</td>
+<td>第二章 2.7～2.8及关键逻辑说明</td>
+</tr>
+<tr>
+<td>是否遇到兼容性问题</td>
+<td>第八章</td>
+</tr>
+<tr>
+<td>如何保证旧功能仍然可用</td>
+<td>第七章 7.4及第九章</td>
+</tr>
+</tbody>
+</table>
+<p>八项功能需求的具体修改链集中在第二章 2.8，顺序与 R01～R08 一致。图 2 展示需求、设计和验证之间的对应关系。</p>
+<p><img src="images/png/fig-02.png" alt="图 2 八项新需求对应关系图"></p>
+<p><strong>图 2 八项新需求对应关系图</strong></p>
+<p>一项设计可以支持多个需求。例如，固定版本既支持版本并存，也保护历史答案；来源记录既支持复用，也为使用查询和跨问卷统计提供依据。</p>
+<p>后文的 <code>T001～T260</code> 是自动测试索引编号；测试文档中的“场景 T01”等是业务场景编号，两者分别使用，不按编号或场景行数重复累计测试数量。</p>
+<p>完整对应关系见<a href="../3_%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B/%E6%B5%8B%E8%AF%95%E8%AF%81%E6%8D%AE/%E9%9C%80%E6%B1%82%E8%AE%BE%E8%AE%A1%E5%AE%9E%E7%8E%B0%E9%AA%8C%E8%AF%81%E5%AF%B9%E7%85%A7.json">需求设计实现验证对照</a>，具体测试名称和执行依据见<a href="../3_%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B/%E6%B5%8B%E8%AF%95%E8%AF%81%E6%8D%AE/%E9%80%90%E9%A1%B9%E6%B5%8B%E8%AF%95%E7%B4%A2%E5%BC%95.json">逐项测试索引</a>。</p>
+<h2 id="二-系统设计">二、系统设计 </h2>
+<h3 id="21-第一阶段的设计是什么">2.1 第一阶段的设计是什么 </h3>
+<p>第一阶段采用Vue前端、FastAPI后端和MongoDB副本集。界面负责编辑和输入反馈，后端负责规则、权限、校验及事务，数据库负责持久化结构和唯一性。填写者通过应用访问数据，不需要直接连接MongoDB。</p>
+<table>
+<thead>
+<tr>
+<th>原集合</th>
+<th>保存什么</th>
+<th>原有结构为何保留</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>users</td>
+<td>账号及密码哈希</td>
+<td>第二阶段仍使用同一账号归属体系</td>
+</tr>
+<tr>
+<td>sessions</td>
+<td>服务端会话摘要和过期时间</td>
+<td>新接口复用登录依赖，不另建认证</td>
+</tr>
+<tr>
+<td>surveys</td>
+<td>问卷归属、草稿、状态、revision、当前发布号</td>
+<td>仍是问卷编辑和发布的聚合根</td>
+</tr>
+<tr>
+<td>survey_versions</td>
+<td>完整definition、发布版本号和引擎版本</td>
+<td>历史作答必须按原定义解释</td>
+</tr>
+<tr>
+<td>attempts</td>
+<td>原始输入、绑定发布版本、恢复位置、状态、revision</td>
+<td>保留跨设备续填、冲突和原子提交</td>
+</tr>
+<tr>
+<td>responses</td>
+<td>正式答案、路径、提交时间、关联发布快照</td>
+<td>保持原统计及匿名去重的解释基础</td>
+</tr>
+</tbody>
+</table>
+<p>每道题记录题型、题干、选项和校验条件，问卷再单独设置必答和跳转。填写时，程序根据答案决定下一题；发布前检查配置是否能正常作答，提交时再检查实际走到的必答题。以前填过但后来被跳过的答案会被清理。</p>
+<p>自动保存允许不完整原始输入，正式提交才进行完整验证。attempt与response分离，避免把半份回答当成正式统计。发布快照与草稿分离，避免问卷编辑立即改变正在填写的内容。这些设计均继续使用。</p>
+<p>图 3 从相同的三层结构出发，说明第一阶段已经具备哪些能力。</p>
+<p><img src="images/png/fig-03.png" alt="图 3 第一阶段系统结构图"></p>
+<p><strong>图 3 第一阶段系统结构图</strong></p>
+<p>前端通过后端访问数据库。发布快照、恢复填写和事务提交是后续扩展的基础。</p>
+<p>核对依据：报告2.1、2.6；第一阶段至第二阶段文件变化.json。</p>
+<h3 id="22-新需求对原模型的压力">2.2 新需求对原模型的压力 </h3>
+<p>原系统已经保存了问卷发布时的完整内容，因此具备保护旧问卷的基础。现在缺少的是独立管理题目的办法：题目属于谁、有哪些版本、谁可以使用、被哪些问卷采用，都需要有明确记录。</p>
+<p>这些信息不能仅靠问卷里的题目ID表达，因为这个ID只用来区分当前问卷中的题目。第二阶段保留原问卷结构，在旁边增加题目和授权管理，再把两部分连接起来。</p>
+<p>对照图 3，图 4 标明第二阶段在各层增加和调整的内容。</p>
+<p><img src="images/png/fig-04.png" alt="图 4 第二阶段系统结构图"></p>
+<p><strong>图 4 第二阶段系统结构图</strong></p>
+<p>第二阶段保留 Vue、FastAPI 和 MongoDB 核心结构，新增工作集中在题目管理与授权。原填写、规则和整卷统计继续复用。</p>
+<p>核对依据：报告2.1、2.6；第一阶段至第二阶段文件变化.json。</p>
+<h3 id="23-为什么需要修改原设计方案比较与总体选择">2.3 为什么需要修改原设计：方案比较与总体选择 </h3>
+<p>最直接的办法是增加一个复制题目的按钮，但这样只能复制内容，不能管理来源和版本。另一个办法是让所有问卷都读取常用题的最新内容，但这会带来更严重的问题：题目一改，旧问卷也跟着变，已经提交的答案可能失去原来的含义。</p>
+<p>本项目选择保留发布时的完整内容。常用题修改后保存成新版本，已经采用旧版本的问卷不自动改变。问卷创建者需要主动选择新版本，检查是否影响跳转，再发布更新后的问卷。这样既能复用题目，也能沿用第一阶段保护历史内容的做法。</p>
+<p>具体实现分成四层：先保存独立题目，再保存它的各个版本；导入问卷时复制所选版本的内容，并记下来源；问卷发布时继续保存整份定义。正式答卷仍关联问卷的发布版本，不另外复制一套题目来源。可选方案和代价的详细比较放在数据库设计文档中。</p>
+<p>图 5 沿实际使用顺序串起一份问卷的完整过程。</p>
+<p><img src="images/png/fig-05.png" alt="图 5 问卷完整业务流程图"></p>
+<p><strong>图 5 问卷完整业务流程图</strong></p>
+<p>编辑草稿和发布是两件事。修改草稿不会立即改变正在填写的内容，提交后的统计只读取正式答卷。</p>
+<p>核对依据：services/surveys.py、<a href="http://attempts.py">attempts.py</a>；报告2.7。</p>
+<h3 id="24-对象关系与标识">2.4 对象关系与标识 </h3>
+<p>术语已在1.2定义。这里进一步说明对象之间如何关联。</p>
+<pre data-role="codeBlock" data-info="text" class="language-text text"><code>题目系列 → 题目版本 → 导入为问卷实例 → 发布为完整问卷快照
+填写过程 --version_id--&gt; 问卷发布版本 &lt;--version_id-- 正式答卷
+</code></pre><p>两个版本编号分别属于题目和问卷；填写与正式答案绑定问卷发布快照。共享授权作用于确定题目版本，汇总授权还限定问卷范围，不能从题目所有权推导答卷读取权。</p>
+<h3 id="25-版本与权限原则">2.5 版本与权限原则 </h3>
+<p>题目每次修改都新增一个版本，不覆盖旧内容。用户可以基于旧版继续修改，也可以把历史内容恢复成一个新版本。版本号表示创建顺序，编号最大不代表其他问卷必须采用它。</p>
+<p>共享也以某一个版本为单位。作者把v1共享给另一位用户，不会同时把以后创建的v2也共享出去。接收者可以使用获授权的版本，但不能通过另存、解除来源等操作把共享题变成自己的题目。</p>
+<p>此外，使用题目和查看答卷是两种权限。题目作者不能因为别人采用了自己的题目，就自动看到对方问卷的数据。需要跨问卷统计时，由相应问卷的所有者另外授权。</p>
+<h3 id="26-修改了哪些部分">2.6 修改了哪些部分 </h3>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>保留的职责</th>
+<th>新增或调整的程序</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>认证与数据库基础</td>
+<td>会话、连接、索引初始化、事务</td>
+<td>新路由复用原依赖；通过显式迁移扩展约束</td>
+</tr>
+<tr>
+<td>请求模型</td>
+<td>原问卷与答案模型</td>
+<td>增加题目内容、来源、版本、授权、题库操作模型</td>
+</tr>
+<tr>
+<td>问卷服务</td>
+<td>创建、保存、发布、关闭</td>
+<td>保存及发布核对来源，增加专用实例操作</td>
+</tr>
+<tr>
+<td>领域逻辑</td>
+<td>题型与有限跳转引擎</td>
+<td>question_versions处理内容/差异，question_sources核对来源</td>
+</tr>
+<tr>
+<td>新增服务</td>
+<td>原填写及问卷统计继续使用</td>
+<td>questions、sharing、libraries、question_instances、question_usage、question_statistics</td>
+</tr>
+<tr>
+<td>填写与提交</td>
+<td>原状态机和事务</td>
+<td>返回给填写者的定义移除内部来源字段</td>
+</tr>
+<tr>
+<td>前端问卷编辑</td>
+<td>原题型、规则、截止与保存保护</td>
+<td>选题、来源只读、升级预览和确认</td>
+</tr>
+<tr>
+<td>新增前端页面</td>
+<td>原工作台、填写和统计</td>
+<td>Questions、QuestionEditor、QuestionHistory、Libraries、Sharing、QuestionUsage、QuestionStatistics</td>
+</tr>
+<tr>
+<td>测试和材料</td>
+<td>原回归用例继续运行</td>
+<td>新增版本、授权、兼容、统计和交互回归</td>
+</tr>
+</tbody>
+</table>
+<p>关键文件入口为backend/app/phase2_routes.py、<a href="http://schemas.py">schemas.py</a>、services/surveys.py、domain/question_sources.py和services/question_instances.py；前端入口为views/Editor.vue及composables/useSurveyEditor.ts。本次比较排除README、清单与缓存：65个文件字节未变、19个修改、29个新增、0个删除。完整新增、修改和未变化清单见测试证据“修订差异/第一阶段至第二阶段文件变化.json”。</p>
+<p>后端新增phase2_routes、question_versions、question_sources、questions/libraries/sharing/question_instances/question_usage/question_statistics，沿用原数据库、认证、异常、规则和题型处理器。前端新增题目管理、题目编辑、历史、题库、共享与单题统计页面，以及选题、共享、使用情况、内容编辑组件。</p>
+<p>编辑器通过专门来源操作导入、预览升级、升级、允许的解除和保存常用题。来源操作锁定编辑区；普通保存与截止时间未发布提示沿用原保护机制。所有界面禁用只提供反馈，真正权限在后端检查。</p>
+<h3 id="27-程序如何调整">2.7 程序如何调整 </h3>
+<p>第一阶段的主要流程是：编辑题目，保存问卷草稿，发布，然后填写、提交和统计。第二阶段没有替换这条流程，而是在编辑前增加“创建或选择常用题”，在编辑时增加“导入和升级题目”。</p>
+<p>导入时，后端读取用户选择的固定版本，生成新的问卷内题目，并记录它来自哪个系列和版本。此后，用户仍可为这道题设置必答、位置和跳转，但不能保留旧来源的同时直接改写题干或选项。内容变化应通过题目版本更新处理。</p>
+<p>普通保存、发布和提交继续使用原服务。需要增加检查的地方主要是保存和发布：后端要确认来源没有被伪造，题目内容与所记录的版本一致。给填写者返回问卷时，则去掉内部的来源和授权信息。</p>
+<p>后续的2.0.2修订还处理了几种页面操作问题。例如，预览A题的升级后再切换到B题，原确认必须失效；统计请求先后返回时，只能显示当前查询的结果。这些修改发生在编辑和查询环节，没有重写原填写与提交流程。</p>
+<h3 id="28-按r01-r08记录具体修改链">2.8 按R01～R08记录具体修改链 </h3>
+<p>下面按八项需求说明具体做法。每项都从第一阶段的情况出发，再解释修改和验证；字段细节可查数据库文档。</p>
+<h4 id="281-r01-保存常用题">2.8.1 R01 保存常用题 </h4>
+<p>第一阶段的一道题属于某份问卷，无法直接作为常用资源管理。第二阶段增加了独立题目和题目版本：前者记录所有者和最近版本，后者保存每次固定的题干、选项及校验。</p>
+<p>新建常用题得到v1；从自己的问卷另存时，只提取题目内容，不带走问卷专属的必答和跳转。共享题不能借这个入口变成自己的题。旧题另存后，也只影响当前草稿，不会把过去的答案自动算到新常用题名下。相关测试检查了这些保存和拒绝情况。</p>
+<p>保存常用题需要把题目内容与问卷专属配置分开，过程见图 6。</p>
+<p><img src="images/png/fig-06.png" alt="图 6 从问卷保存为常用题流程图"></p>
+<p><strong>图 6 从问卷保存为常用题流程图</strong></p>
+<p>原问卷的必答与跳转不成为常用题内容；旧答卷也不自动归入新系列。来自他人的共享实例不能借此另存成自有题。</p>
+<p>核对依据：services/question_instances.py；T090、T106。</p>
+<h4 id="282-r02-共享给其他用户">2.8.2 R02 共享给其他用户 </h4>
+<p>共享的意思是允许另一个账号采用某个版本，而不是把题目和所有答案都交给对方。授权记录因此写明版本、接收者和用途，分别处理“使用题目”和“查看指定问卷的汇总统计”。</p>
+<p>接收者只看到获授权版本，不能搜索到尚未共享的新版本。撤销后不能再新增导入，但撤销前已经合法导入的原实例继续可用。并发测试还分别检查了先导入、后撤销和先撤销、后导入的结果。</p>
+<p>同一常用题版本可以有多次使用，图 7 以年龄题说明它们如何保持独立。</p>
+<p><img src="images/png/fig-07.png" alt="图 7 常用题导入多份问卷示例图"></p>
+<p><strong>图 7 常用题导入多份问卷示例图</strong></p>
+<p>每次导入都有新的实例 ID，并保存当时内容。必答和 routing 属于实例；相同来源不意味着实例配置必须相同。</p>
+<p>核对依据：services/question_instances.py；T090、T102。</p>
+<h4 id="283-r03-修改不影响已有问卷">2.8.3 R03 修改不影响已有问卷 </h4>
+<p>以年龄题为例，如果v1已经发布并有人开始填写，作者把题干修改成v2后，不应让这个人中途换题。因此，系统保存v1的固定内容，发布后的问卷也继续保留当时的完整定义。</p>
+<p>只有问卷创建者主动选择v2、确认升级并重新发布，之后新开始的填写才采用新发布内容。旧过程仍按原版本完成。测试比较了旧快照是否变化，也验证了发布新版后旧过程能否继续提交。</p>
+<h4 id="284-r04-修改历史-比较和恢复">2.8.4 R04 修改历史、比较和恢复 </h4>
+<p>题目历史需要记录“这次基于哪个版本修改”和“恢复时内容来自哪里”。这两个问题用不同字段保存，不能混为一谈。</p>
+<p>例如，当前是v3，用户希望恢复v1的内容，系统会新建v4。v4可以记录直接父版本为v3，内容恢复自v1；v1和v3本身都不修改。恢复取消不发请求，确认时防止重复点击。版本关系、回滚及组件测试已有记录，真实浏览器确认弹窗仍待人工复核。</p>
+<h4 id="285-r05-不同版本并存">2.8.5 R05 不同版本并存 </h4>
+<p>同一道题的v1、v2可能同时被不同问卷使用，所以“这是哪道题”和“采用哪次内容”要分别记录。问卷中每次导入还会有自己的实例ID，即使同一个版本被放进同一份问卷两次，也能区分。</p>
+<p>题库允许收录同系列多个版本，但不能重复加入同一个确定版本。创建新版本不会替换已有成员或问卷；统计时也分别查询不同版本。对应测试检查了重复成员、重复实例和版本隔离。</p>
+<h4 id="286-r06-查看题目使用情况">2.8.6 R06 查看题目使用情况 </h4>
+<p>有了来源记录，系统才能知道一道常用题被哪些问卷使用。查询会分别查看当前草稿、当前发布和全部发布历史，再按问卷ID合并，避免把一份问卷的多个历史版本误算成多份问卷。</p>
+<p>用户能看自己的问卷明细。题目作者可以看到外部使用的脱敏数量，但不能直接看到他人问卷标题和内容。历史发布包含当前发布，所以几个分类不能相加。已有测试验证了去重、隐私和共享接收者的页面入口。</p>
+<h4 id="287-r07-题库管理">2.8.7 R07 题库管理 </h4>
+<p>题库用于个人整理题目：记录名称、收录的固定版本和排序。它本身不是授权渠道，把共享题加入题库并不意味着可以再共享给第三人。更新题库成员也不会改变已经导入的问卷。</p>
+<p>成员更新时检查目标版本的使用权。如果旧版授权已撤销，但新版仍有授权，用户应当能够选择新版。页面切换题库时关闭旧窗口，提交时固定原目标，避免更新错库。排序、搜索、分页、撤销和切库场景都有相应回归记录。</p>
+<h4 id="288-r08-单题跨问卷统计">2.8.8 R08 单题跨问卷统计 </h4>
+<p>原来的整卷统计继续使用。新增统计则回答另一个问题：同一道题的某个版本，在多份有权查看的问卷中，总共收到了什么回答。</p>
+<p>程序先确定权限范围，再从正式答卷找到发布快照，按其中的来源识别目标题目。答卷数和作答条数分开计算：一份答卷里如果有两个该版本实例，就是一份答卷、两条作答。时间按正式提交时间筛选。</p>
+<p>选择题统计选项次数和比例，数字题统计均值与分布。没有收到答案的问卷仍可能计入覆盖数，但不计入有作答问卷数。测试包含两份答卷、三条作答、均值40的例子，并检查权限撤销、版本隔离和异常边界。</p>
+<h2 id="三-mongodb-设计">三、MongoDB 设计 </h2>
+<p>本阶段的数据库设计围绕三个问题展开：题目怎样独立复用，修改后怎样保留历史，以及新结构怎样与第一阶段的数据共存。</p>
+<p>整体方案保留第一阶段的六个集合，新增五个集合管理题目、版本、题库和授权。问卷继续保存完整定义，正式答卷继续关联发布快照，避免新功能改变旧答案的含义。</p>
+<h3 id="31-为什么这样设计">3.1 为什么这样设计 </h3>
+<h4 id="311-根据职责划分集合">3.1.1 根据职责划分集合 </h4>
+<p>第一阶段主要围绕“一份问卷从创建到提交”的流程组织数据，第二阶段则增加了可跨问卷使用的题目资源。</p>
+<p>这些对象的用途和变化方式不同，不适合全部放进同一个集合或文档。</p>
+<table>
+<thead>
+<tr>
+<th>集合</th>
+<th>保存内容</th>
+<th>单独保存的原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>users</code></td>
+<td>用户账号及密码哈希</td>
+<td>统一管理账号身份</td>
+</tr>
+<tr>
+<td><code>sessions</code></td>
+<td>服务端会话及过期信息</td>
+<td>会话有独立的产生、退出和过期过程</td>
+</tr>
+<tr>
+<td><code>surveys</code></td>
+<td>问卷归属、草稿、状态及修订信息</td>
+<td>集中处理问卷编辑和管理</td>
+</tr>
+<tr>
+<td><code>survey_versions</code></td>
+<td>发布时的完整问卷定义</td>
+<td>保留历史内容，供填写和答案解释使用</td>
+</tr>
+<tr>
+<td><code>attempts</code></td>
+<td>尚未正式提交的输入、进度和状态</td>
+<td>支持自动保存和恢复，不混入正式统计</td>
+</tr>
+<tr>
+<td><code>responses</code></td>
+<td>正式答案、路径和提交信息</td>
+<td>答卷持续增长，需要独立存储和查询</td>
+</tr>
+<tr>
+<td><code>questions</code></td>
+<td>常用题系列的所有者、状态和版本指针</td>
+<td>管理“这是哪一道题”</td>
+</tr>
+<tr>
+<td><code>question_versions</code></td>
+<td>每次固定的题目内容和版本关系</td>
+<td>管理“这道题某一次是什么内容”</td>
+</tr>
+<tr>
+<td><code>question_libraries</code></td>
+<td>个人题库的名称、归属和修订信息</td>
+<td>题库基本信息独立管理</td>
+</tr>
+<tr>
+<td><code>question_library_items</code></td>
+<td>题库收录的确定版本及排序</td>
+<td>方便成员分页、排序、更新和移除</td>
+</tr>
+<tr>
+<td><code>resource_grants</code></td>
+<td>使用或汇总授权的范围、接收者和状态</td>
+<td>授权能够单独授予、撤销和核对</td>
+</tr>
+</tbody>
+</table>
+<p><img src="images/png/fig-08.png" alt="图 8 十一集合总体关系图"></p>
+<p><strong>图 8 十一集合总体关系图</strong></p>
+<p>例如，撤销一次共享只应改变授权状态，不应删除题目，也不能破坏已经发布的问卷。因此，授权与题目内容分开保存。题库名称和成员也分开，避免成员增加时不断扩大同一个题库文档。</p>
+<p>图中的关联由应用程序维护，不代表 MongoDB 会自动执行关系数据库式的外键检查。版本是否属于对应题目、用户是否拥有资源等关系，仍需后端核对。</p>
+<h4 id="312-根据生命周期决定修改方式">3.1.2 根据生命周期决定修改方式 </h4>
+<p>不同数据不能采用同一种更新规则。</p>
+<p><img src="images/png/fig-09.png" alt="图 9 集合职责与生命周期图"></p>
+<p><strong>图 9 集合职责与生命周期图</strong></p>
+<p>问卷草稿需要反复修改；题目版本和发布快照需要保留当时内容；填写过程会从进行中进入已提交或已放弃状态；授权则可以生效和撤销。</p>
+<p>将这些数据分开，可以缩小一次操作的影响范围。例如，修改题目管理信息不会覆盖历史内容，保存半份回答也不会生成正式答卷。</p>
+<p>这里的“版本不可变”是指应用不提供覆盖旧版本内容的入口，不表示数据库管理员无法直接修改文档。</p>
+<h4 id="313-保留问卷内部的完整结构">3.1.3 保留问卷内部的完整结构 </h4>
+<p>一份问卷中的题目、选项、校验和跳转通常需要一起读取、检查和发布，因此继续嵌入问卷定义。</p>
+<p><img src="images/png/fig-10.png" alt="图 10 问卷文档内部结构图"></p>
+<p><strong>图 10 问卷文档内部结构图</strong></p>
+<p><code>draft.questions[]</code> 中的每个元素都是一个问卷实例，保存实例 ID、题目内容、必答和跳转。第二阶段增加可选的 <code>source</code>，记录采用哪个独立题目版本。</p>
+<p><code>source</code> 用于说明来源，并不替代实例中的题目内容。这样，问卷不会在填写时因为题库更新而自动换题。</p>
+<h3 id="32-为什么没有采用全关系式拆分">3.2 为什么没有采用全关系式拆分 </h3>
+<p>关系数据库同样能够实现问卷系统。用户、题库成员和授权都有明确关系，可以通过表、外键和关联查询表达；关系数据库配合 JSON 保存问卷定义，也是可行方案。</p>
+<p>本项目继续使用 MongoDB，主要基于以下考虑：</p>
+<ol>
+<li>
+<p><strong>符合课程要求，并延续第一阶段实现。</strong><br>
+第二阶段需要在原代码和数据库基础上扩展，更换数据库会扩大修改范围。</p>
+</li>
+<li>
+<p><strong>问卷经常需要整份读取。</strong><br>
+编辑、发布和填写都需要题目、选项、校验及跳转条件。完全拆表后，读取完整定义通常需要关联查询或程序组装。</p>
+</li>
+<li>
+<p><strong>历史版本需要完整重建。</strong><br>
+直接保存发布时的文档，能够明确保留当时的题目与规则，减少历史读取时重新拼装的工作。</p>
+</li>
+</ol>
+<p>这属于访问方式和开发范围的取舍，不能据此认定关系数据库无法实现，或未经测量就声称 MongoDB 一定更快。</p>
+<p><img src="images/png/fig-11.png" alt="图 11 嵌入与引用选择图"></p>
+<p><strong>图 11 嵌入与引用选择图</strong></p>
+<p>本项目采用混合方式：一起使用的问卷定义嵌入保存，独立管理或持续增长的数据通过引用关联。</p>
+<h3 id="33-为什么适合-mongodb">3.3 为什么适合 MongoDB </h3>
+<h4 id="331-文档能够表达不同题型">3.3.1 文档能够表达不同题型 </h4>
+<p>选择题需要选项，数字题需要范围和整数限制，文本题需要长度限制。不同题型既有共同字段，也有各自配置，适合通过文档中的嵌套结构表达。</p>
+<p>跳转条件还可以包含 <code>all</code>、<code>any</code> 等组合，文档能够直接保留条件层次。但字段允许不同，不代表可以随意写入，结构仍受 Schema 和后端校验约束。</p>
+<h4 id="332-完整版本适合整体保存">3.3.2 完整版本适合整体保存 </h4>
+<p>题目版本保存某次固定内容，问卷发布版本保存完整定义。读取历史答案时，可以找到当时使用的内容，不必读取题目最新版。</p>
+<p><img src="images/png/fig-12.png" alt="图 12 独立题目与题目版本关系图"></p>
+<p><strong>图 12 独立题目与题目版本关系图</strong></p>
+<p><code>question_id</code> 识别题目系列，<code>question_version_id</code> 识别确定版本。<code>latest_version_id</code> 用于管理和提示，问卷不会因为这个指针变化就自动升级。</p>
+<h4 id="333-独立增长的数据分别存储">3.3.3 独立增长的数据分别存储 </h4>
+<p>答卷、题目历史、题库成员和授权记录会增加，因此使用独立集合，避免一个文档无限增长。</p>
+<p><img src="images/png/fig-13.png" alt="图 13 题库与成员关系图"></p>
+<p><strong>图 13 题库与成员关系图</strong></p>
+<p>题库成员指向确定版本。同一题库可以收录同系列不同版本，但不能重复加入同一个确定版本。</p>
+<p>题库只是整理工具，不是新的授权渠道。把共享题放入自己的题库，不会获得转授给第三人的权限。</p>
+<h3 id="34-来源记录与冗余控制">3.4 来源记录与冗余控制 </h3>
+<h4 id="341-为什么同时保存内容和来源">3.4.1 为什么同时保存内容和来源 </h4>
+<p>导入题目时，问卷实例保存两部分信息：</p>
+<ul>
+<li><strong>题目内容</strong>：保证问卷能够按当时定义独立运行。</li>
+<li><strong>来源记录</strong>：说明来自哪个系列、哪个版本，以及这次合法导入属于哪个问卷和实例。</li>
+</ul>
+<p>这是为历史稳定性保留的内容副本，需要明确一致性维护方式。</p>
+<p>后端在导入时读取真实版本生成实例，在普通保存和发布时核对来源与内容。不能保留 v1 来源，却将题干、选项或校验改成另一份内容。来源也不能复制到其他实例或问卷作为授权证明。</p>
+<h4 id="342-为什么正式答案不重复保存来源">3.4.2 为什么正式答案不重复保存来源 </h4>
+<p>正式答卷已有 <code>version_id</code>，可以沿发布快照找到实例来源。</p>
+<p><img src="images/png/fig-14.png" alt="图 14 题目来源追溯图"></p>
+<p><strong>图 14 题目来源追溯图</strong></p>
+<p>追溯过程为：</p>
+<pre data-role="codeBlock" data-info="text" class="language-text text"><code>正式答卷的 version_id
+    → 问卷发布快照
+    → 按答案中的 question_id 找到问卷实例
+    → 读取实例 source
+    → 定位独立题目版本
+</code></pre><p>答案中的 <code>question_id</code> 表示问卷实例 ID，不是独立题目系列 ID。沿原快照查找，才能准确解释当时的答案。</p>
+<p>因此，正式答案不再保存第二套来源，减少重复数据和维护成本。没有来源的旧实例仍按原定义解释，不强行关联到新系列。</p>
+<h4 id="343-为什么保留草稿和发布快照">3.4.3 为什么保留草稿和发布快照 </h4>
+<p><img src="images/png/fig-15.png" alt="图 15 草稿、发布快照与答卷关系图"></p>
+<p><strong>图 15 草稿、发布快照与答卷关系图</strong></p>
+<p>草稿负责编辑，发布快照负责固定内容，填写过程绑定开始时的发布版本，正式答卷继续关联该版本。</p>
+<p>即使填写期间发布了新版，原 <code>attempt.version_id</code> 也不切换。当前使用追踪直接查询草稿和发布记录，没有额外维护使用缓存；后续如有性能问题，应先测量，再决定是否增加冗余。</p>
+<h3 id="35-schema-索引-事务与并发控制">3.5 Schema、索引、事务与并发控制 </h3>
+<h4 id="351-schema-在哪里体现">3.5.1 Schema 在哪里体现 </h4>
+<p>数据库约束集中保存在：</p>
+<ul>
+<li><a href="../1_%E4%BB%A3%E7%A0%81/database/collection_validators.json">collection_validators.json</a>：十一集合的结构约束。</li>
+<li><a href="../1_%E4%BB%A3%E7%A0%81/database/indexes.json">indexes.json</a>：唯一索引和查询索引。</li>
+<li><a href="../1_%E4%BB%A3%E7%A0%81/backend/app/database.py">database.py</a>：连接、初始化检查、索引和事务基础。</li>
+<li><a href="../1_%E4%BB%A3%E7%A0%81/backend/app/migration.py">migration.py</a>：已有约束的显式升级与恢复保护。</li>
+</ul>
+<p>Schema 不只要求顶层是对象，还约束必要字段、类型、嵌套结构、枚举和适用的范围。错误结构即使绕过 API 直接写库，也应被拒绝。</p>
+<p>但 Schema 不能独自证明来源真实、版本归属正确或用户拥有权限，这些仍由后端判断。</p>
+<h4 id="352-索引解决查找和重复问题">3.5.2 索引解决查找和重复问题 </h4>
+<p>本阶段共有 <strong>22 个显式索引</strong>，包括第一阶段的 11 个和第二阶段新增的 11 个，不包含 MongoDB 自动创建的 <code>_id</code> 索引。</p>
+<p>索引主要用于：</p>
+<ul>
+<li>按所有者、问卷、来源和题库查询。</li>
+<li>防止同系列出现重复版本号。</li>
+<li>防止同库重复收录确定版本。</li>
+<li>配合原填写与提交机制控制重复记录。</li>
+</ul>
+<p>索引可以支持查询，但本项目没有据此给出未经测试的性能提升比例。</p>
+<h4 id="353-事务保证关联修改完整">3.5.3 事务保证关联修改完整 </h4>
+<p>创建版本需要同时分配序号、插入内容版本并更新最近版本指针。如果插入失败，其他修改也应撤销。</p>
+<p>题库成员变更与题库修订号更新、正式答卷写入与填写过程完成，也需要保持一致。</p>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>主要职责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Schema</td>
+<td>检查文档结构和字段值范围</td>
+</tr>
+<tr>
+<td>索引</td>
+<td>支持查询并约束唯一性</td>
+</tr>
+<tr>
+<td>事务</td>
+<td>保证相关写入一起完成或撤销</td>
+</tr>
+<tr>
+<td><code>revision</code></td>
+<td>检查请求是否基于过期状态</td>
+</tr>
+<tr>
+<td>后端业务校验</td>
+<td>判断来源、权限、跳转和状态是否合法</td>
+</tr>
+</tbody>
+</table>
+<p>并发导入与撤销还需要共同的写入边界。只读授权、再写其他文档，不一定发生冲突。因此，操作会触及共同协调记录；冲突重试后重新检查授权，以成功提交顺序决定结果。</p>
+<h3 id="36-升级与旧数据兼容">3.6 升级与旧数据兼容 </h3>
+<p>兼容处理保留以下原则：</p>
+<ol>
+<li>
+<p><strong>旧题可以没有来源。</strong><br>
+<code>source</code> 为可选扩展，旧问卷继续使用，不猜测其来源。</p>
+</li>
+<li>
+<p><strong>旧填写过程继续绑定原快照。</strong><br>
+不因题库或问卷更新，替换已经开始的填写内容。</p>
+</li>
+<li>
+<p><strong>正式答案结构保持原样。</strong><br>
+来源通过快照追溯，不批量重写旧答案。</p>
+</li>
+<li>
+<p><strong>普通启动不覆盖旧约束。</strong><br>
+发现结构不一致时，先检查并通过显式迁移处理。</p>
+</li>
+</ol>
+<p>已有记录核对了原六集合文档，约束升级前后未改写业务文档；独立测试也检查了纯第一阶段样本的读取、升级和回退保护。</p>
+<p>这说明已验证样本可以兼容，不代表未知未来需求已经得到保证。</p>
+<h3 id="37-数据结构如何变化">3.7 数据结构如何变化 </h3>
+<table>
+<thead>
+<tr>
+<th>对象</th>
+<th>第一阶段</th>
+<th>第二阶段调整</th>
+<th>兼容方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>users</code>、<code>sessions</code></td>
+<td>账号与会话</td>
+<td>继续使用</td>
+<td>保留原身份体系</td>
+</tr>
+<tr>
+<td>问卷草稿中的实例</td>
+<td>内容、必答和跳转</td>
+<td>增加可选 <code>source</code></td>
+<td>旧题不要求补来源</td>
+</tr>
+<tr>
+<td><code>surveys</code> 管理信息</td>
+<td>状态与修订信息等</td>
+<td>增加草稿问题提示和协调字段等</td>
+<td>提示不能代替发布校验</td>
+</tr>
+<tr>
+<td>发布快照中的实例</td>
+<td>完整发布内容</td>
+<td>新发布可以包含来源</td>
+<td>不回写旧快照</td>
+</tr>
+<tr>
+<td><code>attempts</code></td>
+<td>原始输入、状态、绑定版本、修订号</td>
+<td>集合结构保留</td>
+<td>继续读取原快照</td>
+</tr>
+<tr>
+<td><code>responses</code></td>
+<td>正式答案、路径和提交信息</td>
+<td>集合结构保留</td>
+<td>答案项仍为实例 ID 与值</td>
+</tr>
+<tr>
+<td><code>questions</code></td>
+<td>无</td>
+<td>新增系列管理信息</td>
+<td>不影响旧题</td>
+</tr>
+<tr>
+<td><code>question_versions</code></td>
+<td>无</td>
+<td>新增固定内容和版本关系</td>
+<td>新版本追加，不覆盖旧内容</td>
+</tr>
+<tr>
+<td>题库及成员</td>
+<td>无</td>
+<td>新增两个集合</td>
+<td>成员固定到确定版本</td>
+</tr>
+<tr>
+<td><code>resource_grants</code></td>
+<td>无</td>
+<td>新增使用与汇总授权</td>
+<td>按资源、用途和接收者检查</td>
+</tr>
+</tbody>
+</table>
+<p><img src="images/png/fig-16.png" alt="图 16 两阶段数据结构变化图"></p>
+<p><strong>图 16 两阶段数据结构变化图</strong></p>
+<p>“结构保留”不等于全部原文件未修改。例如，为了不向填写者暴露内部来源，返回定义的处理有所调整，但填写状态机和正式答案格式继续使用。</p>
+<p><img src="images/png/fig-17.png" alt="图 17 Schema、索引与事务分工图"></p>
+<p><strong>图 17 Schema、索引与事务分工图</strong></p>
+<p>例如，题库成员不能重复由唯一索引约束，目标版本是否可用由后端检查，相关写入是否完整由事务保证。几层机制需要配合，前端禁用按钮不能替代它们。</p>
+<p>完整字段类型、索引组合和边界说明见<a href="../2_%E6%96%87%E6%A1%A3/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BE%E8%AE%A1.md">数据库设计</a>。</p>
+<h3 id="38-为什么增加-source-而不重写答案">3.8 为什么增加 source 而不重写答案 </h3>
+<p>第一阶段的旧实例可以没有来源，例如：</p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"id"</span><span class="token operator">:</span> <span class="token string">"age_local"</span><span class="token punctuation">,</span>
+  <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"number"</span><span class="token punctuation">,</span>
+  <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"年龄"</span><span class="token punctuation">,</span>
+  <span class="token property">"required"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+  <span class="token property">"options"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"validation"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"min"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+    <span class="token property">"max"</span><span class="token operator">:</span> <span class="token number">120</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"routing"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"rules"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token property">"default_target"</span><span class="token operator">:</span> <span class="token null keyword">null</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre><p>第二阶段通过合法导入生成来源，以下仅展示 <code>source</code> 的示意内容：</p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"question_id"</span><span class="token operator">:</span> <span class="token string">"series_age"</span><span class="token punctuation">,</span>
+  <span class="token property">"question_version_id"</span><span class="token operator">:</span> <span class="token string">"age_v1"</span><span class="token punctuation">,</span>
+  <span class="token property">"version"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+  <span class="token property">"survey_id"</span><span class="token operator">:</span> <span class="token string">"survey_demo"</span><span class="token punctuation">,</span>
+  <span class="token property">"instance_id"</span><span class="token operator">:</span> <span class="token string">"age_local"</span><span class="token punctuation">,</span>
+  <span class="token property">"imported_by"</span><span class="token operator">:</span> <span class="token string">"owner_demo"</span><span class="token punctuation">,</span>
+  <span class="token property">"imported_at"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"$date"</span><span class="token operator">:</span> <span class="token string">"2026-10-26T00:00:00Z"</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"grant_id"</span><span class="token operator">:</span> <span class="token null keyword">null</span>
+<span class="token punctuation">}</span>
+</code></pre><p>这个片段不是完整集合文档，时间采用 MongoDB Extended JSON 表示，不能直接当作完整 API 请求提交。实际来源由后端生成，客户端在普通保存时携带它，只用于一致性核对。</p>
+<p>正式答案仍然可以是：</p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"question_id"</span><span class="token operator">:</span> <span class="token string">"age_local"</span><span class="token punctuation">,</span>
+  <span class="token property">"value"</span><span class="token operator">:</span> <span class="token number">25</span>
+<span class="token punctuation">}</span>
+</code></pre><p>其中 <code>age_local</code> 是问卷实例 ID。通过答卷的发布版本找到该实例，再读取来源，即可确定独立题目版本，无须在答案中重复保存来源。</p>
+<h3 id="39-升级顺序-失败恢复和限制">3.9 升级顺序、失败恢复和限制 </h3>
+<p>数据库升级由 <code>backend/scripts/migrate_phase2.py</code> 提供入口，处理顺序为：</p>
+<ol>
+<li><strong>保存基线并做好完整备份。</strong> 保留旧源码、业务数据和集合约束，在维护窗口停止相关写入。</li>
+<li><strong>运行检查。</strong> 识别已有约束，检查旧文档是否符合目标结构。</li>
+<li><strong>明确执行升级。</strong> 保存原约束、目标和恢复日志，逐集合应用并记录进度。</li>
+<li><strong>初始化缺失集合并确保索引存在。</strong> 新集合初始化与已有约束升级分别处理。</li>
+<li><strong>验证旧数据和原功能。</strong> 检查读取、填写、提交和统计，再恢复正常使用。</li>
+</ol>
+<p>集合约束修改不是一个能够跨所有集合统一回滚的业务事务，因此必须保留日志。恢复前还要检查日志归属、约束是否被其他操作改变，以及是否已经产生新业务数据。</p>
+<p>如果已有第二阶段题目或来源数据，程序会阻止仅恢复旧约束；需要依据维护前完整备份安排恢复，不能让旧程序直接读取不兼容的新结构。</p>
+<p>如果数据库已经是第二阶段 2.0.1，更新到 2.0.2 不需要再次迁移本轮数据库结构，只需更新对应程序和前端构建。</p>
+<p>另外，更新时应保留原 <code>SECRET_KEY</code>，避免影响已有凭证及匿名身份、填写恢复等相关机制。若未来需要关联旧答案，应另行设计并确认对应关系，不能按题干相同自动补写来源。</p>
+<h2 id="四-跳转设计">四、跳转设计 </h2>
+<p>跳转解决的是“回答完这一题，下一步去哪里”。本章先说明完整执行过程，再介绍条件、匹配顺序和异常处理，最后对照第二阶段的变化。图中的四题问卷用于解释机制，不作为新增测试执行记录。</p>
+<h3 id="41-跳转的整体过程">4.1 跳转的整体过程 </h3>
+<p>创建者先为题目配置条件和目标；发布时，后端检查这些配置是否合法；填写时，页面与服务端根据有效答案计算路径；正式提交时，后端再按原发布快照重新计算，不能直接相信页面传来的路径。</p>
+<p><img src="images/png/fig-18-1.png" alt="图 18-1 跳转全过程与填写路径处理"></p>
+<p><strong>图 18-1 跳转全过程与填写路径处理</strong></p>
+<p>这条流程贯穿配置、发布、填写、恢复和提交。保存草稿不代表已经可以发布；页面显示到最后一题也不代表可以跳过提交检查。配置错误在发布前反馈，答案错误在填写和提交时反馈。</p>
+<h3 id="42-一条规则由什么组成">4.2 一条规则由什么组成 </h3>
+<p>一条普通条件包含引用题目、运算符和比较值，再配上跳转目标。多条规则与默认目标一起保存在当前实例的 <code>routing</code> 中。</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>表示什么</th>
+<th>四题示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>condition.question_id</code></td>
+<td>读取哪道题的有效答案</td>
+<td><code>q1</code></td>
+</tr>
+<tr>
+<td><code>condition.operator</code></td>
+<td>采用什么比较方式</td>
+<td><code>eq</code>，即等于</td>
+</tr>
+<tr>
+<td><code>condition.value</code></td>
+<td>和什么值比较</td>
+<td>选项 ID <code>no</code></td>
+</tr>
+<tr>
+<td><code>target</code></td>
+<td>该规则成立时去哪里</td>
+<td><code>q3</code></td>
+</tr>
+<tr>
+<td><code>default_target</code></td>
+<td>所有规则均未命中时去哪里</td>
+<td><code>null</code> 表示继续下一题</td>
+</tr>
+</tbody>
+</table>
+<p><img src="images/png/fig-18-2.png" alt="图 18-2 一条规则的结构拆解"></p>
+<p><strong>图 18-2 一条规则的结构拆解</strong></p>
+<p>下面是 Q1 的示意配置：选择“否”时跳过 Q2，其他情况下顺序进入 Q2。<code>yes/no</code> 是选项 ID，不能直接把显示文字当作所有问卷通用的 ID。</p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"rules"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"condition"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"question_id"</span><span class="token operator">:</span> <span class="token string">"q1"</span><span class="token punctuation">,</span> <span class="token property">"operator"</span><span class="token operator">:</span> <span class="token string">"eq"</span><span class="token punctuation">,</span> <span class="token property">"value"</span><span class="token operator">:</span> <span class="token string">"no"</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token property">"target"</span><span class="token operator">:</span> <span class="token string">"q3"</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"default_target"</span><span class="token operator">:</span> <span class="token null keyword">null</span>
+<span class="token punctuation">}</span>
+</code></pre><p>这是局部配置，不是完整问卷。<code>END</code> 表示结束路径；<code>null</code> 表示没有指定跳转目标，继续下一题，两者含义不同。通过正常 API 保存的每条规则 target 必须是非空目标字符串；空值用于 default_target，不能把缺少规则目标当成合法规则。</p>
+<h3 id="43-各题型怎样判断条件">4.3 各题型怎样判断条件 </h3>
+<p>运算符必须与被引用题目的类型匹配，不能把数字比较放到选择题上，也不能把未实现的文本关键词匹配写成已有功能。</p>
+<table>
+<thead>
+<tr>
+<th>题型或组合</th>
+<th>代码中的运算符</th>
+<th>判断方式及示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单选</td>
+<td><code>eq</code>、<code>ne</code></td>
+<td>等于或不等于某个有效选项 ID</td>
+</tr>
+<tr>
+<td>多选</td>
+<td><code>contains_any</code></td>
+<td>与指定选项集合至少有一项相同</td>
+</tr>
+<tr>
+<td>多选</td>
+<td><code>contains_all</code></td>
+<td>包含指定集合的全部选项，可额外选择其他项</td>
+</tr>
+<tr>
+<td>多选</td>
+<td><code>set_equals</code></td>
+<td>两个选项集合完全相同，不要求排列顺序相同</td>
+</tr>
+<tr>
+<td>数字</td>
+<td><code>eq</code>、<code>ne</code>、<code>gt</code>、<code>gte</code>、<code>lt</code>、<code>lte</code></td>
+<td>等于、不等于、大于、大于等于、小于、小于等于</td>
+</tr>
+<tr>
+<td>数字</td>
+<td><code>between</code></td>
+<td>位于闭区间内，例如 <code>[18,30]</code> 包含 18 和 30</td>
+</tr>
+<tr>
+<td>文本</td>
+<td>无</td>
+<td>当前不提供文本条件运算符</td>
+</tr>
+<tr>
+<td>组合</td>
+<td><code>all</code></td>
+<td>所有子条件成立才成立</td>
+</tr>
+<tr>
+<td>组合</td>
+<td><code>any</code></td>
+<td>至少一个子条件成立就成立</td>
+</tr>
+</tbody>
+</table>
+<p>例如，已选工具为 <code>[MongoDB,Redis]</code> 时，“包含任意 <code>[MongoDB,MySQL]</code>”成立，“包含全部 <code>[MongoDB,MySQL]</code>”不成立，“集合等于 <code>[Redis,MongoDB]</code>”成立。</p>
+<p><img src="images/png/fig-18-3.png" alt="图 18-3 组合条件怎样逐层判断"></p>
+<p><strong>图 18-3 组合条件怎样逐层判断</strong></p>
+<p>图中示例在 Q3 配置：Q1 为“是”，并且“Q3 学习时间至少 2 小时”或“Q2 选择了 MongoDB”至少满足一个。这里用当前题和前题说明嵌套关系，不新增另一份问卷。</p>
+<p>没有有效答案时，普通条件返回不成立，连 <code>ne</code> 也一样。因此，“未回答”不能被当成“不等于某选项”的有效答案；已跳过的旧答案也不能通过组合条件重新参与分支。</p>
+<h3 id="44-多条规则按什么顺序执行">4.4 多条规则按什么顺序执行 </h3>
+<p>规则按列表顺序检查，第一条命中就停止。若两条条件都能成立，排在前面的优先；系统不会自动选择“更具体”的条件，也不会同时跳向两个目标。</p>
+<p><img src="images/png/fig-18-4.png" alt="图 18-4 规则匹配与默认目标决策"></p>
+<p><strong>图 18-4 规则匹配与默认目标决策</strong></p>
+<table>
+<thead>
+<tr>
+<th>检查结果</th>
+<th>下一步</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>某条首先命中，目标为后续题</td>
+<td>跳到该题</td>
+</tr>
+<tr>
+<td>某条首先命中，目标为 <code>END</code></td>
+<td>结束路径，仍需提交检查</td>
+</tr>
+<tr>
+<td>全部未命中，默认目标为后续题或 <code>END</code></td>
+<td>采用默认目标</td>
+</tr>
+<tr>
+<td>全部未命中，默认目标为空</td>
+<td>继续下一题；已是末题则自然结束</td>
+</tr>
+</tbody>
+</table>
+<p>如果规则配置合法但与创建者意图不符，例如过于宽泛的规则排在前面，这是配置优先级问题，需要调整顺序或条件，不能由程序猜测。</p>
+<h3 id="45-配置怎样才算合法">4.5 配置怎样才算合法 </h3>
+<p>发布检查不仅验证 JSON 能否解析，还检查题目引用、类型、比较值和目标位置。问卷需要 1～100 道题；实例 ID 不能重复或使用保留值 <code>END</code>。</p>
+<table>
+<thead>
+<tr>
+<th>检查项</th>
+<th>合法要求</th>
+<th>会被拒绝的例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>规则结构</td>
+<td>每条规则包含 <code>condition</code> 与 <code>target</code>；普通条件字段完整</td>
+<td>缺少 <code>condition</code></td>
+</tr>
+<tr>
+<td>条件引用</td>
+<td>引用存在的当前题或前题</td>
+<td>Q1 的规则依赖 Q3 的回答</td>
+</tr>
+<tr>
+<td>跳转目标</td>
+<td>规则指向存在的后续题或 <code>END</code>；默认目标可为空</td>
+<td>跳到自身、前题或不存在的题</td>
+</tr>
+<tr>
+<td>单选比较值</td>
+<td>存在的选项 ID</td>
+<td>引用已删除的选项 c</td>
+</tr>
+<tr>
+<td>多选比较值</td>
+<td>非空数组，无重复，全部选项存在</td>
+<td><code>[a,a]</code> 或空数组</td>
+</tr>
+<tr>
+<td>题型与运算符</td>
+<td>与表 4.3 对应</td>
+<td>文本使用 <code>gt</code></td>
+</tr>
+<tr>
+<td>数字条件</td>
+<td>有限安全数值，绝对值不超过 <code>10^15</code></td>
+<td>无穷大或超范围值</td>
+</tr>
+<tr>
+<td>数字区间</td>
+<td>两个值，下界不大于上界</td>
+<td><code>between=[30,18]</code></td>
+</tr>
+<tr>
+<td>数量限制</td>
+<td>每题至多 20 条规则；每组 1～20 个子条件</td>
+<td>空的 <code>all</code> 或超量规则</td>
+</tr>
+<tr>
+<td>嵌套限制</td>
+<td>从根深度 0 递归检查，深度不得超过 5</td>
+<td>过深条件树</td>
+</tr>
+</tbody>
+</table>
+<p>只允许向后或结束，可以避免循环。但“无循环”不等于所有条件一定会触发，也不承诺自动证明每道题都能被访问。当前校验聚焦结构、引用、类型与前向目标，不应夸大为任意复杂逻辑的数学证明。</p>
+<h3 id="46-回答变化后路径怎样改变">4.6 回答变化后路径怎样改变 </h3>
+<p>以下四题贯穿本章：Q1 是否使用数据库；Q2 使用哪些工具；Q3 计划学习多少小时；Q4 有什么建议。</p>
+<p><img src="images/png/fig-18.png" alt="图 18 条件跳转路径图"></p>
+<p><strong>图 18 条件跳转路径图</strong></p>
+<p>Q1 选择“是”时，路径为 <code>Q1 → Q2 → Q3 → Q4</code>；选择“否”时，路径为 <code>Q1 → Q3 → Q4</code>。Q2、Q3 默认顺序前进，Q4 后自然结束或明确指向 <code>END</code>。</p>
+<p>如果先选“是”并回答 Q2，再把 Q1 改为“否”，程序必须重新计算，不能只隐藏 Q2。</p>
+<p><img src="images/png/fig-19.png" alt="图 19 路径变化后的答案清理图"></p>
+<p><strong>图 19 路径变化后的答案清理图</strong></p>
+<p>服务端保存时清除已经由有效跳转确定绕过的答案；有效 <code>END</code> 后的答案也被清除。若前题输入尚不合法，程序不能确定后续完整路径，会先保留其后的暂存原始输入，等前题修正后重新判断，而不是一概删除。</p>
+<p>正式提交只写入重新计算出的有效路径答案。被跳过的旧内容不参与分支和正式统计，路径外的必答题也不要求填写。</p>
+<h3 id="47-保存-恢复和提交怎样使用路径">4.7 保存、恢复和提交怎样使用路径 </h3>
+<p>同一引擎参与几个时点，但严格程度不同，可结合图 18-1 理解。</p>
+<table>
+<thead>
+<tr>
+<th>时点</th>
+<th>路径怎样计算</th>
+<th>遇到错误怎样处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>页面填写</td>
+<td>根据当前答案提示路径</td>
+<td>页面提示用于交互，不能作为提交凭据</td>
+</tr>
+<tr>
+<td>自动保存</td>
+<td>按原快照解析、校验当前输入，从第一题前进</td>
+<td>到第一道无效题停止，不用无效答案决定分支或默认路径；保存允许不完整</td>
+</tr>
+<tr>
+<td>恢复</td>
+<td>读取原快照与服务端已保存输入，重算路径</td>
+<td>优先回到需修正题；位置提示只能在合理路径内使用</td>
+</tr>
+<tr>
+<td>正式提交</td>
+<td>服务端重新规范化草稿答案，再运行完整 <code>evaluate</code></td>
+<td>收集实际路径中的逐题错误，有错误则拒绝；无错误才生成正式答案与路径</td>
+</tr>
+</tbody>
+</table>
+<p>例如 Q3 输入 <code>-</code> 可以作为尚未完成的数字输入暂存，但不能拿它与数字比较。自动恢复不能信任客户端声称“已经到了 Q4”。提交阶段也不能因出现 <code>END</code> 就忽略此前路径上的错误：结束路径后仍检查收集到的问题。</p>
+<h3 id="48-第二阶段怎样扩展原逻辑">4.8 第二阶段怎样扩展原逻辑 </h3>
+<p>第二阶段保留规则引擎，变化集中在题目来源和升级对配置的影响。</p>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>第一阶段</th>
+<th>第二阶段</th>
+<th>变化理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>规则执行</td>
+<td>首条命中、默认、向后或结束</td>
+<td>继续沿用</td>
+<td>原引擎可以处理新实例</td>
+</tr>
+<tr>
+<td>跳转归属</td>
+<td>问卷内题目配置</td>
+<td>仍属于问卷实例</td>
+<td>不同问卷的前后关系不同</td>
+</tr>
+<tr>
+<td>题目导入</td>
+<td>没有独立题目版本导入</td>
+<td>新实例 ID，初始化空规则与空默认目标</td>
+<td>不复制其他问卷的目标 ID</td>
+</tr>
+<tr>
+<td>题目升级</td>
+<td>编辑当前问卷内容</td>
+<td>保留实例 ID、必答和 routing，替换版本内容</td>
+<td>由用户修复受影响规则</td>
+</tr>
+<tr>
+<td>发布检查</td>
+<td>检查原题型与跳转</td>
+<td>增加来源内容一致性</td>
+<td>不能标旧来源却写新内容</td>
+</tr>
+<tr>
+<td>历史填写</td>
+<td>绑定完整发布快照</td>
+<td>继续沿用</td>
+<td>新版题目不改变旧过程</td>
+</tr>
+</tbody>
+</table>
+<p><img src="images/png/fig-19-1.png" alt="图 19-1 题目升级后的规则修复流程"></p>
+<p><strong>图 19-1 题目升级后的规则修复流程</strong></p>
+<p>例如新版删除选项 c，旧规则仍判断 c：预览列出问题，确认后可保留待修复草稿；系统不偷偷删除规则。修复前不能发布，修复后完整检查通过才生成新快照，旧快照和旧填写过程不变。</p>
+<p>依据：<code>domain/rules.py</code>、<code>services/attempts.py</code>、<code>services/question_instances.py</code>；现有测试 T099、T100 及原路径、条件和失效答案测试。这里说明已有实现，不声称本次重新执行业务测试。</p>
+<h2 id="五-校验设计">五、校验设计 </h2>
+<p>校验解决的是“这份配置能否使用、这次操作有没有权限、这些输入能否保存或提交”。本章按层次和生命周期展开，区分问卷设计草稿、填写草稿和正式答卷，最后对照两阶段变化。</p>
+<h3 id="51-为什么需要多层校验">5.1 为什么需要多层校验 </h3>
+<p>页面提示帮助用户及时改错，但请求也可能由其他客户端直接发送，所以后端不能省略检查。数据库负责最后的文档结构和唯一性约束，也不能代替业务权限判断。</p>
+<p><img src="images/png/fig-20-1.png" alt="图 20-1 分层校验的职责"></p>
+<p><strong>图 20-1 分层校验的职责</strong></p>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>检查什么</th>
+<th>不能代替什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>前端组件</td>
+<td>输入提示、规则 JSON 检查、保存状态与操作保护</td>
+<td>服务端校验和权限</td>
+</tr>
+<tr>
+<td>请求模型</td>
+<td>字段、类型、数量、嵌套与安全数值</td>
+<td>跨集合归属和真实来源</td>
+</tr>
+<tr>
+<td>业务服务与领域逻辑</td>
+<td>所有权、授权、状态、revision、题型、路径和来源</td>
+<td>数据库唯一性与关联写入原子性</td>
+</tr>
+<tr>
+<td>MongoDB</td>
+<td>集合 Schema、唯一索引及事务写入</td>
+<td>题意、可作答性和用户操作权限</td>
+</tr>
+</tbody>
+</table>
+<p>请求还会拒绝未知字段和过深嵌套，统一数值检查的递归深度上限为 32。问卷标题至多 200 字符、说明至多 5000，题干至多 500，选项 ID 采用 1～64 位限定字符，选项文字至多 200。具体字段类型和上限由 <a href="http://schemas.py">schemas.py</a> 与集合约束共同定义。</p>
+<p>账号也有入口检查：用户名为 3～40 字符并满足允许字符模式，密码为 8～128 字符；注册检查重名，登录核对密码，会话过期不能执行需登录操作。资源服务再分别核对问卷、题目、题库和过程归属，不能仅凭已登录就访问他人对象。</p>
+<p>例如，数据库能拒绝答案项缺字段，却不能仅靠“最小值、最大值都是数字”判断必答整数题是否有合法答案。下文分别说明这些检查。</p>
+<h3 id="52-四种题型的配置与答案校验">5.2 四种题型的配置与答案校验 </h3>
+<p>配置校验面向问卷创建者，答案校验面向填写者，两者不能混用。</p>
+<table>
+<thead>
+<tr>
+<th>题型</th>
+<th>配置检查</th>
+<th>非空答案检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单选</td>
+<td>2～100 个选项；选项 ID 唯一、文字非空；不接受不支持的 validation 字段</td>
+<td>字符串且为有效选项 ID</td>
+</tr>
+<tr>
+<td>多选</td>
+<td>继承选项检查；<code>0≤最少项≤最多项≤选项数</code>，上下限为整数；必答至少允许选一项</td>
+<td>字符串数组、无重复、选项都存在、数量在范围内</td>
+</tr>
+<tr>
+<td>文本</td>
+<td>无选项；长度为整数且 <code>0≤最短≤最长≤10000</code>；必答最长至少允许一个字符</td>
+<td>字符串，去除首尾空白后按 Unicode 码点检查长度</td>
+</tr>
+<tr>
+<td>数字</td>
+<td>无选项；上下界为安全数值、下界不大于上界；整数限制为布尔值；必答整数范围中存在整数</td>
+<td>真正的安全数字，范围合法，必要时必须为整数</td>
+</tr>
+</tbody>
+</table>
+<p>统一的数字安全边界为有限数值且绝对值不超过 <code>10^15</code>，布尔值不能冒充数字。数字填写框保存的字符串先经过格式检查和规范化，再进行题型校验；不能把任意字符串直接当作数值。</p>
+<p><img src="images/png/fig-20-2.png" alt="图 20-2 必答题是否存在合法答案"></p>
+<p><strong>图 20-2 必答题是否存在合法答案</strong></p>
+<p>必答多选最多 0 项时，不选违反必答，选择又超过上限；必答整数题范围为 0.1～0.9 时，不存在整数。两者都应在发布配置检查中拒绝。必答文本最多 0 个字符也同理。</p>
+<p>空值包括 <code>null</code>、空字符串、空数组和纯空白字符串。必答题遇到空值返回“此题必须回答”；可选题遇到空值归一为 <code>null</code>，不继续执行非空答案校验。但可选题一旦提交非空内容，仍须满足题型要求。</p>
+<p>文本采用去除首尾空白后的码点长度，<code>😀</code> 计一个码点。前端不以原生 UTF-16 <code>maxlength</code> 阻止后端允许的输入；组合输入期间与最终输入的反馈也由组件处理。这些能力来自第一阶段修订，第二阶段继续保留。</p>
+<h3 id="53-问卷发布校验">5.3 问卷发布校验 </h3>
+<p>发布前检查的是“这份定义能不能正式使用”，不要求当时就有填写答案。</p>
+<p><img src="images/png/fig-20.png" alt="图 20 发布校验流程图"></p>
+<p><strong>图 20 发布校验流程图</strong></p>
+<p>检查覆盖：所有者和 revision；截止时间必须为空或带时区且晚于当前时间；问卷标题非空；1～100 道题；实例 ID 唯一且不为 <code>END</code>；题干和选项文字非空；题型配置有合法答案；第四章中的条件与目标限制；来源真实且内容一致。</p>
+<p>全部通过后，在事务中保存完整发布快照并更新问卷发布信息。检查失败时返回原因，不生成一个可填写但定义错误的新版本。<code>draft_issues</code> 只是编辑提示，不能代替发布时重新检查。</p>
+<p>设计草稿可以暂时有不完整或失效规则，但仍受请求结构、所有权、revision 和来源保护约束，不代表任何损坏 JSON 都可保存。</p>
+<h3 id="54-自动保存校验">5.4 自动保存校验 </h3>
+<p>填写草稿保存的是过程，不要求每道题已经完成。后端仍检查登录与归属、进行中状态、revision，以及问卷是否允许继续写入，再读取原发布快照。</p>
+<p><img src="images/png/fig-21.png" alt="图 21 自动保存与恢复时序图"></p>
+<p><strong>图 21 自动保存与恢复时序图</strong></p>
+<p>答案不能包含未知题目；单项允许空值、字符串、安全数字或受限制的字符串数组。数组至多 100 项、每项字符串长度至多 64，草稿单项文本至多 20000 个码点。这个过程输入上限不等于正式文本题的 10000 上限；不完整或超出题目正式限制的内容可暂存为待修正输入，但不参与条件计算。</p>
+<p>保存携带读到的 revision，成功后增加修订号。客户端在停顿、最长等待或切题时同步，只有当前最新修改被服务器确认，才能表示已同步；旧请求成功不代表等待期间的新输入也保存了。保存失败保留页面输入并反馈，不能承诺浏览器退出后未同步内容也能跨设备恢复。</p>
+<h3 id="55-恢复填写校验">5.5 恢复填写校验 </h3>
+<p>恢复先核对过程是否属于当前账号，再读取该过程绑定的快照。服务端不依赖当前题库最新版，且检查快照 Schema 和规则引擎版本是否受支持。</p>
+<p><img src="images/png/fig-21-1.png" alt="图 21-1 恢复填写与只读状态判断"></p>
+<p><strong>图 21-1 恢复填写与只读状态判断</strong></p>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th>读取与后续处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>过程不存在或不属于本人</td>
+<td>按接口返回 404，不暴露他人草稿</td>
+</tr>
+<tr>
+<td>快照版本不受支持</td>
+<td>返回明确版本错误，不能猜测执行</td>
+</tr>
+<tr>
+<td>进行中且问卷仍开放</td>
+<td>重算路径，返回合理位置，允许继续保存和提交</td>
+</tr>
+<tr>
+<td>问卷关闭、截止或不再可写</td>
+<td>仍可读取过程，标记只读并说明原因；拒绝新增保存和提交</td>
+</tr>
+<tr>
+<td>过程已提交</td>
+<td>返回终态及回执，原始草稿答案副本已清理</td>
+</tr>
+<tr>
+<td>过程已放弃</td>
+<td>只读终态，停止保存，已清除原始输入</td>
+</tr>
+</tbody>
+</table>
+<p>恢复位置只是提示：前面有无效题时应回到需处理的位置；提示题不在当前路径时不能原样采用。开始填写时还检查匿名是否允许、是否已提交过，以及同账号同问卷是否已有进行中过程；并发开始由唯一性保证只产生一份进行中草稿。已有过程恢复时不会因页面默认值改变原匿名选择。</p>
+<h3 id="56-正式提交校验">5.6 正式提交校验 </h3>
+<p>当前支持恢复填写的主流程提交请求携带过程 ID 与 revision，答案以服务器已保存草稿为准，不再发送另一套独立答案。页面应先完成最新保存，再使用对应 revision 提交。</p>
+<p><img src="images/png/fig-22.png" alt="图 22 正式提交事务图"></p>
+<p><strong>图 22 正式提交事务图</strong></p>
+<p>提交依次核对归属、状态、revision、问卷可写状态、原快照与重复填写策略；再规范化数字输入，按第四章规则重新计算路径并检查有效路径答案。可选空值可以通过，路径上的必答和非空错误答案不能通过。</p>
+<p>有逐题错误时返回问题，不创建正式答卷；通过后，同一事务写入 response、记录实际路径、将 attempt 标为 <code>submitted</code>、关联 <code>response_id</code> 并清除 <code>raw_answers</code> 副本。匿名答卷不增加实名 <code>user_id</code>，但仍使用受保护的参与标识处理相关限制。</p>
+<p>已经提交的同一过程再次请求提交时，返回原回执，不新增第二份答卷；已放弃过程返回冲突。问卷是否允许重复填写是另一条规则：允许时可新开过程，不等于同一过程可以重复生成答卷。</p>
+<p>兼容保留的旧接口 <code>POST /api/responses</code> 仍接收签名 token 与 answers，不应与以上过程提交请求混为一谈。它校验凭证有效期、当前账号、绑定的发布版本、问卷状态、匿名与重复策略，仍调用同一规则引擎清理和校验；相同 token 的 attempt_id 已提交时返回原回执。旧接口没有可恢复草稿，不将其请求答案说成来自 attempts.raw_answers。</p>
+<h3 id="57-来源与操作权限校验">5.7 来源与操作权限校验 </h3>
+<p>第二阶段在原账号和问卷归属检查之上，增加来源、题目版本和授权检查。来源由服务器生成，不能仅靠页面锁定字段。</p>
+<p><img src="images/png/fig-22-1.png" alt="图 22-1 不同来源操作的权限判断"></p>
+<p><strong>图 22-1 不同来源操作的权限判断</strong></p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>服务端判断</th>
+<th>拒绝的情况</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>普通保存／发布</td>
+<td>与数据库已有实例来源比较，核对版本内容和实例绑定</td>
+<td>新建、删改来源，复制凭据，保留旧来源改内容</td>
+</tr>
+<tr>
+<td>删除整道题</td>
+<td>按问卷编辑与归属规则处理</td>
+<td>不能用“保留实例但不传 source”代替解除</td>
+</tr>
+<tr>
+<td>导入</td>
+<td>读取所选版本，检查当前使用权、归档状态和 revision，生成新实例</td>
+<td>无权、已归档或过期修订</td>
+</tr>
+<tr>
+<td>升级</td>
+<td>检查目标当前使用权、同系列和 revision，重新生成绑定来源</td>
+<td>跨系列替换，使用撤销授权或过期草稿</td>
+</tr>
+<tr>
+<td>解除关联</td>
+<td>专门操作，要求题目属于自己</td>
+<td>他人共享题不能解除后据为己有</td>
+</tr>
+<tr>
+<td>保存为常用题</td>
+<td>提取允许内容；有来源时核对题目所有者</td>
+<td>共享实例不能借另存创建自有系列</td>
+</tr>
+</tbody>
+</table>
+<p>来源中的系列、版本、问卷、实例、导入人等均需可信。普通保存保留相同 source 只是供核对，不赋予客户端修改资格。发布后的填写定义会移除内部来源字段，服务端快照仍保留追溯依据。</p>
+<p>撤销前合法导入的原实例可以继续按原版本保存和发布；再次导入、升级目标需要当前授权。既有使用规则不适用于统计授权撤销，后者会缩小后续查询范围。</p>
+<h3 id="58-统计参数与数据范围校验">5.8 统计参数与数据范围校验 </h3>
+<p>统计先检查参数，再确定允许读取的问卷，最后聚合同一确定版本的正式答案，不能先统计所有数据再隐藏标题。</p>
+<p><img src="images/png/fig-22-2.png" alt="图 22-2 统计参数与授权范围校验"></p>
+<p><strong>图 22-2 统计参数与授权范围校验</strong></p>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>检查与口径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>时间</td>
+<td>包含时区，开始不晚于结束；筛选正式 <code>submitted_at</code>，包含端点</td>
+</tr>
+<tr>
+<td>数字分组</td>
+<td>2～30 个边界，严格递增，有限且绝对值不超过 <code>10^15</code>；显式空数组拒绝</td>
+</tr>
+<tr>
+<td>默认分组</td>
+<td>未传边界时采用 <code>[0,18,30,45,60,121]</code>，不等于任意数值都落入默认桶</td>
+</tr>
+<tr>
+<td>权限</td>
+<td>自有问卷与有效指定版本 aggregate 授权；显式越权范围拒绝</td>
+</tr>
+<tr>
+<td>版本</td>
+<td>按发布快照 source 匹配确定版本，不按题干或类型合并</td>
+</tr>
+<tr>
+<td>份数和条数</td>
+<td>答卷 ID 去重；同卷重复实例分别贡献作答</td>
+</tr>
+<tr>
+<td>多选比例</td>
+<td>选项次数除以有效作答条数，比例总和可超过 100%</td>
+</tr>
+<tr>
+<td>覆盖与实际作答</td>
+<td>发布引用该版本但零作答的授权问卷可计入覆盖，不计入有作答问卷</td>
+</tr>
+</tbody>
+</table>
+<p>例如 2 份答卷含 3 条作答 20、40、60，应得到答卷数 2、作答数 3、均值 40。本轮没有跨问卷去重人数、跨版本合并或文本原文列表。2.0.1 曾修复 <code>safe_number</code> 返回值被忽略的问题，现有拒绝检查不能只停留在调用函数上。</p>
+<h3 id="59-并发-重复和失败处理">5.9 并发、重复和失败处理 </h3>
+<p>revision 可以理解为“这份数据当前修订到哪次”。页面 A 和 B 都读到 1，A 保存后变为 2，B 再以 1 保存就要拒绝，避免覆盖。</p>
+<p><img src="images/png/fig-22-3.png" alt="图 22-3 并发保存与迟到请求处理"></p>
+<p><strong>图 22-3 并发保存与迟到请求处理</strong></p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>处理方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>修订过期</td>
+<td>通常返回 409，提示核对或重新加载；不自动强制覆盖</td>
+</tr>
+<tr>
+<td>输入或配置错误</td>
+<td>通常返回 422 和问题说明；路径错误可包含逐题详情</td>
+</tr>
+<tr>
+<td>无权访问</td>
+<td>视接口返回 403 或 404，不把所有权限错误写成同一状态码</td>
+</tr>
+<tr>
+<td>登录过期</td>
+<td>前端暂停同步，保留当前页面输入；同账号重新登录后再尝试保存</td>
+</tr>
+<tr>
+<td>已提交／放弃后迟到保存</td>
+<td>终态检查拒绝，不重新打开进行中状态</td>
+</tr>
+<tr>
+<td>事务中途失败</td>
+<td>相关写入回滚，不留下半个版本、半个来源实例或半份提交</td>
+</tr>
+<tr>
+<td>升级预览后继续编辑</td>
+<td>核对本地草稿及交互上下文；失效后重新预览</td>
+</tr>
+<tr>
+<td>确认升级</td>
+<td>必须匹配预览，不允许通用操作先自动保存来换 revision</td>
+</tr>
+<tr>
+<td>旧预览／统计／明细请求迟到</td>
+<td>成功、失败和结束回调均核对上下文；不能覆盖当前选择或重开已关闭窗口</td>
+</tr>
+<tr>
+<td>导入与撤销／归档同时发生</td>
+<td>通过共同协调写入及事务重试重查权限，以成功提交顺序决定</td>
+</tr>
+</tbody>
+</table>
+<p>事务并不自动解决所有竞争。版本创建还要原子分配序号，撤销和导入要共同写入协调记录；页面异步请求则要使用请求代次和目标上下文。不同问题分别处理，不能用“有事务”概括全部保护。</p>
+<h3 id="510-第一阶段到第二阶段的变化与验证">5.10 第一阶段到第二阶段的变化与验证 </h3>
+<table>
+<thead>
+<tr>
+<th>能力</th>
+<th>第一阶段基础</th>
+<th>第二阶段变化</th>
+<th>已有验证入口</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>题型、必答和可作答性</td>
+<td>四题型、安全数值、Unicode 码点及不可回答配置修订</td>
+<td>继续保留，不重复算新增</td>
+<td><code>test_domain.py</code>、<code>test_review_fixes.py</code>、输入组件测试</td>
+</tr>
+<tr>
+<td>路径、恢复和提交</td>
+<td>有效路径、原快照、revision、终态及事务</td>
+<td>沿用核心；对外定义隐藏来源</td>
+<td><code>test_attempts.py</code>、原集成测试；T098、T100</td>
+</tr>
+<tr>
+<td>来源与版本</td>
+<td>没有独立题目来源管理</td>
+<td>增加来源绑定、内容一致性、专门操作和固定版本</td>
+<td>T075～T100、T106</td>
+</tr>
+<tr>
+<td>共享与权限</td>
+<td>原账号和问卷所有权</td>
+<td>增加确定版本 use 与指定范围 aggregate</td>
+<td>T091～T097、T104、T127</td>
+</tr>
+<tr>
+<td>统计参数与入口</td>
+<td>整卷统计</td>
+<td>新增跨卷统计；2.0.1 修复边界判断及入口</td>
+<td>T102～T104、T117～T131</td>
+</tr>
+<tr>
+<td>升级确认与异步交互</td>
+<td>已有保存响应保护</td>
+<td>2.0.2 增加预览上下文、禁自动保存和迟到请求隔离</td>
+<td>T198～T221</td>
+</tr>
+<tr>
+<td>数据库兼容</td>
+<td>原集合 Schema 与索引</td>
+<td>可选来源、五新集合和显式升级保护</td>
+<td>T107～T113</td>
+</tr>
+</tbody>
+</table>
+<p>第一阶段 1.1.0 与第二阶段 2.0.2 的比较用于说明演进；2.0.1、2.0.2 又是第二阶段内部修订。现有结果仍为 154 后端、90 组件、16 逻辑，共 260 项；本次说明与插图核对不增加业务测试次数。真实浏览器人工验收限制继续保留，不能把图示当成已执行测试。</p>
+<p>核对入口：<a href="../3_%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B/%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B%E4%B8%8E%E7%BB%93%E6%9E%9C.md">完整测试步骤、输入与输出</a>、<a href="../3_%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B/%E6%B5%8B%E8%AF%95%E8%AF%81%E6%8D%AE/%E9%80%90%E9%A1%B9%E6%B5%8B%E8%AF%95%E7%B4%A2%E5%BC%95.json">逐项测试索引</a>。本章主要依据 <code>domain/questions.py</code>、<code>domain/numbers.py</code>、<code>domain/question_sources.py</code>、<code>services/attempts.py</code>、<code>services/surveys.py</code>、<code>services/question_statistics.py</code> 和前端对应保存、预览及统计逻辑。</p>
+<h2 id="六-ai使用过程">六、AI使用过程 </h2>
+<h3 id="一-ai-帮了什么">一、AI 帮了什么 </h3>
+<p>本项目使用 Codex 辅助完成需求分析、程序实现、测试和材料整理。AI 的主要作用，是把讨论中的需求转化为具体方案、代码和验证记录。</p>
+<p>帮助梳理第二阶段需求。<br>
+AI 根据需求文档整理八项新增功能，分析它们与第一阶段的关系，并提出在原系统上扩展独立题目、版本、题库和共享管理的实现思路。</p>
+<p>帮助完善 MongoDB 数据设计。<br>
+AI 辅助划分新增集合，编写字段约束和索引，并说明题目内容、问卷实例、发布快照和正式答卷之间的关系。设计中保留原有六个集合，增加五个职责明确的新集合。</p>
+<p>帮助实现后端业务。<br>
+AI 辅助编写常用题保存、导入、版本创建、比较、恢复、共享撤销、题库管理、使用追踪和跨问卷统计等功能，同时增加来源、权限和修订号检查。</p>
+<p>帮助实现前端页面和交互。<br>
+AI 辅助增加题目管理、历史版本、题库和共享等页面，并在问卷编辑器中加入选题、升级预览和确认操作，补充错误提示与操作保护。</p>
+<p>帮助处理兼容与并发问题。<br>
+AI 辅助实现显式数据库约束升级、回退保护、版本创建事务，以及导入和撤销授权之间的并发控制，并检查旧问卷、旧快照和旧填写过程是否继续可用。</p>
+<p>帮助编写和执行测试。<br>
+AI 辅助补充正常流程、非法输入、权限隔离、事务回滚和页面请求先后顺序等测试。现有记录中，后端 154 项、前端组件 90 项、前端逻辑 16 项，共 260 项测试通过，类型检查和生产构建也有通过记录。</p>
+<p>帮助整理提交材料。<br>
+AI 辅助编写系统说明、数据库设计、API 说明、关键逻辑、测试材料和项目报告，并整理原始失败记录、修改差异、文件清单及独立解压核对结果。</p>
+<h3 id="二-ai-做错了什么">二、AI 做错了什么 </h3>
+<p>AI 生成的方案和代码需要持续审阅。项目中既出现过业务实现遗漏，也出现过测试和材料处理错误。</p>
+<p>最初提出了不必要的来源冗余。<br>
+初始方案考虑在正式答卷中增加题目来源字段。经过讨论，发现已有发布快照能够完成追溯，因此调整为只在问卷实例和快照中保留来源，减少重复存储和一致性维护。</p>
+<p>遗漏了数字统计的有效校验。<br>
+代码调用了安全数值检查函数，却没有使用其返回结果，导致部分无穷大或超范围输入未被正确拒绝。后来修改拒绝条件，并补充非法边界测试。</p>
+<p>部分功能有接口，却缺少可用的页面入口。<br>
+例如，仅获得统计授权的用户难以进入统计页面，共享接收者也无法方便地查看自己的使用情况。后来分别补充入口，并保持原有权限范围。</p>
+<p>题库分页和搜索处理不完整。<br>
+选题窗口最初只加载前二十个题库，选中题库后搜索关键词也没有正确参与查询。后来增加后续加载，并将搜索放在分页之前处理。</p>
+<p>没有充分处理连续操作和迟到响应。<br>
+升级预览与确认可能对应不同实例，旧统计请求也可能覆盖当前选择。后来将操作目标、版本、修订号和本地草稿状态一起核对，并让失效请求不能再更新页面。</p>
+<p>部分测试代码自身存在错误。<br>
+实际出现过错误的测试钩子返回值、不存在的页面定位文字、错误的模拟响应，以及未允许匿名却使用匿名提交的配置。修正这些问题时保留了业务校验，没有通过放宽权限让错误测试通过。</p>
+<p>材料处理也出现过疏漏。<br>
+例如临时数据库名称过长、生成脚本遗漏变量、文件比较误纳入运行缓存等。修正后重新核对，同时保留失败过程。此外，早期对“测试全部通过”的表述过于宽泛，后来明确区分自动测试、接口验证和真实浏览器人工验收。</p>
+<h3 id="三-自己改了什么">三、自己改了什么 </h3>
+<p>本人主要通过调整需求、审阅方案和提供问题反馈推动项目修改。具体代码编辑、测试执行和材料生成由 Codex 辅助完成，以下按实际参与内容说明。</p>
+<ol>
+<li>
+<p><strong>调整了项目的关注重点。</strong><br>
+本人没有只关注功能能否运行，还持续要求考虑可扩展性，避免后续增加功能时需要推倒重来。</p>
+</li>
+<li>
+<p><strong>明确了第二阶段的修改方式。</strong><br>
+要求在第一阶段代码基础上扩展，保留主要功能和核心结构，并清楚记录新旧设计之间的关系。</p>
+</li>
+<li>
+<p><strong>补充了数据拆分要求。</strong><br>
+提出不要把全部数据放在一个集合中，要求根据用途、增长规模和修改方式划分集合，并解释拆分原因。</p>
+</li>
+<li>
+<p><strong>收紧了冗余设计。</strong><br>
+要求谨慎保存重复信息，尤其是能够通过发布快照追溯的来源，不应再次复制到正式答案中。</p>
+</li>
+<li>
+<p><strong>要求业务规则能够调整。</strong><br>
+提出不要把跳转条件、题型限制等逻辑写死，尽量通过结构化配置表达，使后续扩展有明确入口。</p>
+</li>
+<li>
+<p><strong>补充了填写人数的统计要求。</strong><br>
+在回答份数之外要求增加人数口径，避免同一账号多次填写被直接显示为多个人。</p>
+</li>
+<li>
+<p><strong>明确了多人填写的验收规模。</strong><br>
+说明课程项目需要验证多个人填写同一问卷时逻辑是否正确，可以采用并发测试，不必为了展示功能强行增加复杂的公网部署。</p>
+</li>
+<li>
+<p><strong>增加了未完成填写的保存要求。</strong><br>
+提出填写到一半退出后应能恢复，推动系统将进行中的填写与正式答卷分开处理。</p>
+</li>
+<li>
+<p><strong>要求说明保存成功的含义。</strong><br>
+参与确认只有服务器已经确认保存的内容才能承诺恢复，页面不能因为旧请求成功就把最新输入显示为已保存。</p>
+</li>
+<li>
+<p><strong>补充了多端冲突处理要求。</strong><br>
+要求同时打开多个页面或设备时检查修订号，避免较旧内容直接覆盖新的填写结果。</p>
+</li>
+<li>
+<p><strong>提供了题目配置的审阅问题。</strong><br>
+将必答多选最多零项、整数题范围内不存在整数等问题交给 AI，要求发布检查不仅判断上下界，还判断是否存在合法答案。</p>
+</li>
+<li>
+<p><strong>提供了极端数字输入问题。</strong><br>
+要求在转换和入库之前拒绝不安全数值，并返回明确错误，避免异常输入造成服务器错误。</p>
+</li>
+<li>
+<p><strong>要求加强数据库约束。</strong><br>
+提出不能只检查顶层字段，还应约束嵌套题目、答案项和必要字段，使数据库结构与应用约定一致。</p>
+</li>
+<li>
+<p><strong>推动区分数据库启动与升级。</strong><br>
+要求普通启动不直接覆盖旧约束，结构变化通过显式检查和升级完成，并保留失败恢复记录。</p>
+</li>
+<li>
+<p><strong>补充了编辑器的数据保护要求。</strong><br>
+针对关闭问卷覆盖未保存修改、保存响应覆盖等待期间新输入等问题，要求增加相应保护。</p>
+</li>
+<li>
+<p><strong>要求统一文本长度口径。</strong><br>
+提供表情字符长度不一致的问题，要求输入组件和后端使用一致的字符计数方式。</p>
+</li>
+<li>
+<p><strong>要求截止时间也参与修改提醒。</strong><br>
+指出只修改截止时间时容易被误认为没有修改，要求明确提示尚未发布的时间设置。</p>
+</li>
+<li>
+<p><strong>推动修复功能入口。</strong><br>
+对仅统计授权用户缺少统计入口、共享接收者缺少使用入口等问题，要求页面能够完整支持后端已经允许的操作。</p>
+</li>
+<li>
+<p><strong>推动修复题库查询问题。</strong><br>
+要求选题窗口能访问后续题库，选择题库后关键词搜索仍然有效，并避免只筛选当前页。</p>
+</li>
+<li>
+<p><strong>补充了异步交互的检查条件。</strong><br>
+针对升级确认错题、迟到统计覆盖当前版本等问题，要求绑定操作上下文，并处理切换、关闭和请求先后返回的情况。</p>
+</li>
+<li>
+<p><strong>明确了复杂功能的优先级。</strong><br>
+参与确认将跨问卷去重人数、跨版本合并和旧答案人工关联后置，先完成核心要求及兼容验证。</p>
+</li>
+<li>
+<p><strong>调整了报告和提交材料。</strong><br>
+确定四部分目录、Markdown 格式、详细数据库说明和真实 AI 日志，并要求报告逐项说明设计为什么变化、改了哪里以及怎样保证旧功能。</p>
+</li>
+</ol>
+<h3 id="四-自己设计了什么">四、自己设计了什么 </h3>
+<p>本人主要参与确定系统的使用规则、设计约束和验收方式。以下内容是在需求表达、方案比较和多轮审阅中逐步明确的，具体实现由 Codex 辅助落实。</p>
+<ol>
+<li>
+<p><strong>确定了以原系统为基础继续演进的原则。</strong><br>
+第一阶段负责问卷、填写和提交的核心继续保留，新功能围绕原结构扩展。</p>
+</li>
+<li>
+<p><strong>确定了按职责组织数据的方向。</strong><br>
+将问卷、正式答卷、填写过程、独立题目和授权视为不同对象，根据各自生命周期安排存储方式。</p>
+</li>
+<li>
+<p><strong>参与明确了嵌入与引用的选择依据。</strong><br>
+一起读取和发布的内容适合嵌入，独立增长或独立管理的数据适合分开保存并引用，不能只追求集合数量多或少。</p>
+</li>
+<li>
+<p><strong>参与确定了正式答卷保持简洁的方案。</strong><br>
+优先通过问卷发布版本和实例来源追溯题目，不在每条答案中重复保存一套来源。</p>
+</li>
+<li>
+<p><strong>参与区分了题目系列、题目版本和问卷实例。</strong><br>
+系列表示同一道常用题，版本表示某次固定内容，实例表示这道题在某份问卷中的具体使用。</p>
+</li>
+<li>
+<p><strong>参与明确了可复用内容的边界。</strong><br>
+常用题保存题干、题型、选项和校验；必答、位置和跳转由采用它的问卷单独配置。</p>
+</li>
+<li>
+<p><strong>参与确定了固定版本的使用方式。</strong><br>
+问卷采用一个明确版本，题目作者发布新版后，已使用旧版的问卷不会自动改变。</p>
+</li>
+<li>
+<p><strong>参与确定了主动升级规则。</strong><br>
+创建者先选择目标版本、查看差异和受影响规则，再确认升级，避免系统替用户决定采用哪个版本。</p>
+</li>
+<li>
+<p><strong>参与明确了“最新版本”的含义。</strong><br>
+编号最大只表示最近创建，不能据此认定它适合所有问卷，更不能自动替换已有版本。</p>
+</li>
+<li>
+<p><strong>参与明确了分支版本的关系。</strong><br>
+允许基于旧版本继续修改，通过父版本记录演进来源，而不是强制每次都沿最近版本修改。</p>
+</li>
+<li>
+<p><strong>参与明确了历史恢复方式。</strong><br>
+恢复旧内容时生成新版本，分别记录直接父版本和恢复来源，保留操作发生的时间顺序。</p>
+</li>
+<li>
+<p><strong>参与确定了来源由服务端维护的原则。</strong><br>
+导入人、导入时间、版本和实例绑定等信息不能由客户端随意创建或替换。</p>
+</li>
+<li>
+<p><strong>参与明确了普通编辑与来源操作的区别。</strong><br>
+导入、升级和解除关联使用专门操作；普通保存不能通过漏传或替换来源字段达到相同效果。</p>
+</li>
+<li>
+<p><strong>参与确定了共享的授权单位。</strong><br>
+首轮授权作用于确定版本，分享旧版不自动包含未来版本，避免接收者获得未明确授予的新内容。</p>
+</li>
+<li>
+<p><strong>参与区分了题目使用权和统计访问权。</strong><br>
+能导入题目，不代表能看到采用这道题的其他问卷答案；统计访问需要相应问卷的授权。</p>
+</li>
+<li>
+<p><strong>参与明确了共享题的使用限制。</strong><br>
+接收者可以在授权范围内采用题目，但不能利用另存或解除来源，把共享题变成自己的系列再转授。</p>
+</li>
+<li>
+<p><strong>参与确定了撤销后的已有使用规则。</strong><br>
+合法导入的原实例可以继续保存和发布；新增导入或替换其他版本，需要重新检查当前授权。</p>
+</li>
+<li>
+<p><strong>参与明确了并发操作的生效依据。</strong><br>
+导入和撤销同时发生时，以受并发控制保护的成功提交顺序判断，不能只依据点击时间或请求开始时间。</p>
+</li>
+<li>
+<p><strong>参与确定了升级后待修复草稿的处理方式。</strong><br>
+如果新版使旧跳转规则失效，应保留问题并允许修复，修复前禁止发布，不能静默删除规则。</p>
+</li>
+<li>
+<p><strong>参与明确了题库成员规则。</strong><br>
+同一题库可以保存同系列不同版本，但不能重复收录同一个确定版本；题库管理也不产生额外转授权能力。</p>
+</li>
+<li>
+<p><strong>参与明确了使用追踪的统计方式。</strong><br>
+分别展示草稿、当前发布和历史发布使用，并按问卷去重，避免把一份问卷的多次发布算成多份问卷。</p>
+</li>
+<li>
+<p><strong>参与确定了使用追踪的隐私边界。</strong><br>
+用户查看自己的问卷明细；题目所有者按权限查看外部脱敏数量，不能直接读取他人的问卷详情。</p>
+</li>
+<li>
+<p><strong>参与明确了跨问卷统计口径。</strong><br>
+同一确定版本在有权限的问卷范围内汇总，答卷数按提交记录去重，作答条数按匹配实例计数，多选比例以有效作答条数为分母。</p>
+</li>
+<li>
+<p><strong>参与确定了全过程可追溯的交付方式。</strong><br>
+报告需要对应说明原设计、新问题、修改原因、数据变化、程序调整、兼容处理和回归证据；AI 日志则保留真实提示来源、产出、错误和修正过程。</p>
+</li>
+</ol>
+<p>以上贡献主要体现在需求细化、方案取舍和审阅约束。具体集合字段、事务代码、页面实现及测试执行由 Codex 辅助完成，个人贡献按实际参与范围记录。</p>
+<h3 id="63-用户调整了什么">6.3 用户调整了什么 </h3>
+<p>用户通过对话明确需求优先级，要求保留第一阶段主要功能，提出集合拆分、谨慎冗余和逻辑可配置等约束；随后提供审阅问题，要求增加人数口径、填写恢复、版本隔离与权限保护，并确定 Markdown、四部分目录和详细程度。本轮又明确了 36 张图全部随九章正文展示、语言通俗和不单设附录。</p>
+<p>这些是可核对的需求、设计取舍和审阅贡献。具体代码、测试执行及图文生成由 Codex 辅助完成，不能写成作者本人独立编码或亲自完成了全部人工验收。</p>
+<h3 id="64-日志与证据怎样保存">6.4 日志与证据怎样保存 </h3>
+<p>完整的 <a href="AI%E4%BD%BF%E7%94%A8%E6%97%A5%E5%BF%97.md">40 条 AI 使用日志</a> 单独保存，逐项说明工具、真实提示词或共享任务来源、得到的代码、实际修改及验证结果。多条实例可能来自同一次实施指令，不伪装成四十次独立提示。本章只保留总结和图示，不重复嵌入整份日志。</p>
+<p>本次 2026-10-29 新增的是报告可视化及交付核对，不修改业务实现，不增加业务测试数量。2.0.2 真实浏览器人工验收仍待完成，图示、组件测试和历史截图不能替代该项工作。</p>
+<p>图 23 用实际问题说明 AI 辅助编程仍需要审阅、复现和修正。</p>
+<p><img src="images/png/fig-23.png" alt="图 23 三处交互问题的发现与修复对照图"></p>
+<p><strong>图 23 三处交互问题的发现与修复对照图</strong></p>
+<p>用户提出问题及约束，Codex 辅助修改代码、测试和材料。自动测试通过并不等于所有页面已经人工验收；2.0.2 原生弹窗等浏览器复核仍待完成。</p>
+<p>核对依据：AI使用日志：实例13、32～38；逐项测试索引。</p>
+<h2 id="七-测试结果">七、测试结果 </h2>
+<h3 id="71-测试方法与计数原则">7.1 测试方法与计数原则 </h3>
+<p>本阶段不仅检查新增功能能否使用，还检查它们是否影响第一阶段的原有功能。测试分为以下几类：</p>
+<table>
+<thead>
+<tr>
+<th>测试类别</th>
+<th>主要检查内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>后端测试</td>
+<td>题型校验、跳转、来源保护、权限、版本、统计及旧功能</td>
+</tr>
+<tr>
+<td>真实 MongoDB 测试</td>
+<td>集合约束、唯一性、并发写入、事务回滚和数据库升级</td>
+</tr>
+<tr>
+<td>前端逻辑测试</td>
+<td>条件计算、答案校验和统计计算口径</td>
+</tr>
+<tr>
+<td>前端组件测试</td>
+<td>页面输入、按钮操作、请求延迟和连续切换</td>
+</tr>
+<tr>
+<td>构建与启动检查</td>
+<td>类型检查、生产构建、隔离启动和 API 定义</td>
+</tr>
+<tr>
+<td>独立解压复核</td>
+<td>提交包中的代码、材料和运行结果是否一致</td>
+</tr>
+</tbody>
+</table>
+<p>本章的 <strong>260 项</strong>指不同自动测试用例的数量。重复执行同一批测试，不增加用例总数。材料中的 22 步 API 调用链另外记录，也不加进这 260 项。</p>
+<p>测试步骤、输入、预期输出、实际输出和结果，详见<a href="../3_%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B/%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B%E4%B8%8E%E7%BB%93%E6%9E%9C.md">测试用例与结果</a>。其中，18 个后端业务场景已经补充具体状态码、返回字段或数据库检查结果。</p>
+<h3 id="72-当前版本的测试结果">7.2 当前版本的测试结果 </h3>
+<p>2.0.2 版本的自动测试结果如下。</p>
+<table>
+<thead>
+<tr>
+<th>测试类别</th>
+<th style="text-align:right">用例数</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>后端测试</td>
+<td style="text-align:right">154</td>
+<td>全部通过</td>
+</tr>
+<tr>
+<td>前端组件测试</td>
+<td style="text-align:right">90</td>
+<td>全部通过</td>
+</tr>
+<tr>
+<td>前端逻辑测试</td>
+<td style="text-align:right">16</td>
+<td>全部通过</td>
+</tr>
+<tr>
+<td><strong>合计</strong></td>
+<td style="text-align:right"><strong>260</strong></td>
+<td><strong>全部通过</strong></td>
+</tr>
+<tr>
+<td>TypeScript 类型检查</td>
+<td style="text-align:right">单独检查</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>前端生产构建</td>
+<td style="text-align:right">单独检查</td>
+<td>通过</td>
+</tr>
+</tbody>
+</table>
+<p>原有 233 项测试继续通过，本次版本增加了 27 项测试，包括 24 项组件测试和 3 项后端测试。原审查中的 4 项诊断也有通过记录，其中与正式回归重复的部分不再次计数。</p>
+<p>首次完整结果记录于 <strong>2026 年 10 月 25 日</strong>。<strong>2026 年 10 月 26 日</strong>，在独立解压目录中再次执行同一批测试，仍为 260 项通过；包内类型检查、生产构建、隔离启动及 50 个 API 定义检查也通过。</p>
+<p>这次独立复测使用了本机已有的 Python 依赖和前端依赖缓存，因此只能说明提交包在该环境下能够运行，不能写成已经完成全新电脑的安装验证。</p>
+<p><img src="images/png/fig-24.png" alt="图 24 测试构成与验收状态图"></p>
+<p><strong>图 24 测试构成与验收状态图</strong></p>
+<p>图中展示的是已有测试记录。本次完善报告、插图和测试说明没有重新执行业务测试，也没有增加测试数量。测试项数不等于代码覆盖率，不能据此推导系统容量或性能上限。</p>
+<h3 id="73-八项新需求的验证结果">7.3 八项新需求的验证结果 </h3>
+<p>下表按需求列出主要操作、输入和实际结果。具体请求、动态 ID 和完整断言可通过对应测试索引核对。</p>
+<table>
+<thead>
+<tr>
+<th>需求</th>
+<th>测试操作与输入</th>
+<th>实际输出与检查结果</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R01 保存常用题</td>
+<td>将旧问卷中的自有题目保存为常用题</td>
+<td>当前草稿建立来源；旧发布快照保持不变；新版本统计的覆盖问卷数仍为 0，没有自动关联历史答案</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>R02 共享题目</td>
+<td>授权指定版本，再撤销授权</td>
+<td>新导入被拒绝；原合法实例仍能发布和提交；不能通过解除或另存变成自有题</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>R03 修改隔离</td>
+<td>开始填写 v1，再升级题目并发布新版</td>
+<td>恢复后仍显示旧题干；提交得到的正式答卷仍属于问卷发布版本 1</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>R04 历史与恢复</td>
+<td>创建版本、从旧版分支，再恢复历史内容</td>
+<td>恢复生成 v4；父版本与恢复来源分别正确；v1 内容未被覆盖</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>R05 版本并存</td>
+<td>同系列两个版本加入题库，并分别使用</td>
+<td>不同版本可以共存；重复成员返回 409；统计不会自动混合不同版本</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>R06 使用追踪</td>
+<td>同一问卷使用该题并发布两次</td>
+<td>使用问卷总数为 1；自己的明细列出发布版本 <code>[2,1]</code>；他人私密标题不返回</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>R07 题库管理</td>
+<td>重复加入、使用旧修订号、更新已撤销旧成员</td>
+<td>重复或修订冲突返回 409；旧版失效但新版有授权时，可以选择并更新为新版</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>R08 跨问卷统计</td>
+<td>两份问卷提交三条数字答案：20、40、60</td>
+<td>覆盖问卷数 2、有效答卷数 2、有效作答数 3，均值 40，最小值 20，最大值 60</td>
+<td>通过</td>
+</tr>
+</tbody>
+</table>
+<p>此外，还验证了以下容易出错的情况：</p>
+<ul>
+<li><strong>并发创建版本</strong>：两个请求使用同一修订号，结果分别为 201 和 409，没有生成重复版本。</li>
+<li><strong>事务失败</strong>：在版本插入处注入异常后，题目序号和最近版本指针保持原值。</li>
+<li><strong>来源篡改</strong>：修改来源字段或保留旧来源改写内容，均被拒绝；重复实例 ID 返回 422。</li>
+<li><strong>多选统计</strong>：两次回答 <code>[a,b]</code> 和 <code>[b,c]</code>，选项次数为 <code>[1,2,1]</code>，比例分别为 50%、100%、50%，合计 200%，符合按有效作答条数计算分母的规则。</li>
+<li><strong>统计权限撤销</strong>：授权后可查询指定范围，撤销后新请求排除该范围，显式越权查询返回 403。</li>
+<li><strong>页面请求竞争</strong>：迟到的旧预览、统计和候选结果不能覆盖当前操作对象。</li>
+</ul>
+<h3 id="74-如何保证旧功能仍然可用">7.4 如何保证旧功能仍然可用 </h3>
+<p>第二阶段保留第一阶段的回归测试，并针对新旧功能交叉使用的情况补充检查。</p>
+<table>
+<thead>
+<tr>
+<th>原有功能</th>
+<th>保留方式</th>
+<th>验证内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>注册、登录和账号隔离</td>
+<td>沿用原会话及所有权检查</td>
+<td>登录、越权和新资源权限检查</td>
+</tr>
+<tr>
+<td>创建、保存、发布和关闭问卷</td>
+<td>沿用问卷服务和完整发布快照</td>
+<td>原流程回归及新增来源检查</td>
+</tr>
+<tr>
+<td>四种题型及限制</td>
+<td>沿用题型处理器</td>
+<td>数值范围、必答、多选数量、字符长度和合法答案检查</td>
+</tr>
+<tr>
+<td>按回答跳转</td>
+<td>沿用规则引擎和实例跳转配置</td>
+<td>条件判断、路径变化、答案清理和结束问卷</td>
+</tr>
+<tr>
+<td>自动保存与恢复</td>
+<td>填写过程绑定原发布版本</td>
+<td>新版发布后旧过程仍可恢复、提交，冲突不会直接覆盖</td>
+</tr>
+<tr>
+<td>匿名、重复填写和并发提交</td>
+<td>沿用原身份处理、唯一性及事务</td>
+<td>重复请求、并发提交和失败回滚</td>
+</tr>
+<tr>
+<td>正式答卷和整卷统计</td>
+<td>保留原答案结构及统计服务</td>
+<td>新功能不改写旧答案，原统计继续可用</td>
+</tr>
+<tr>
+<td>旧数据读取</td>
+<td>旧题允许没有来源字段</td>
+<td>第一阶段样本升级、读取和回退保护</td>
+</tr>
+</tbody>
+</table>
+<p>代码差异记录也用于核对哪些模块保留、哪些模块修改。不过，文件内容相同只能证明代码未变，不能单独证明行为正确，因此仍需要与实际回归结果结合判断。</p>
+<h3 id="75-材料示例的实际验证">7.5 材料示例的实际验证 </h3>
+<p>2026 年 10 月 26 日，使用真实 MongoDB 临时数据库执行了材料中的 API 调用链，检查文档示例是否与实现一致。</p>
+<table>
+<thead>
+<tr>
+<th>操作与输入</th>
+<th>实际输出</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>创建数字题 v1、v2</td>
+<td>同系列生成两个固定版本，父关系正确</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>创建题库、加入 v1 并共享</td>
+<td>成员和授权记录指向确定版本</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>导入 v1、发布并开始填写</td>
+<td>生成实例、发布快照和旧填写过程</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>升级为 v2 并再次发布</td>
+<td>新发布成功，旧填写过程没有切换版本</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>旧过程保存答案 25 并提交</td>
+<td>正式答卷仍属于发布版本 1</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>分别查询 v1、v2 统计</td>
+<td>v1 有 1 条作答、均值 25；v2 覆盖 1 份问卷但作答数为 0</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>写入十一集合的脱敏示例</td>
+<td>各集合样本均被当前 Schema 接收</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>直接写入缺字段的答卷文档</td>
+<td>MongoDB 拒绝，错误码为 121</td>
+<td>通过</td>
+</tr>
+<tr>
+<td>清理临时数据库</td>
+<td>本次创建的测试库已清理</td>
+<td>通过</td>
+</tr>
+</tbody>
+</table>
+<p>这些记录用于验证材料示例和旧版本兼容，不作为新增业务测试计入 260 项。完整过程见测试证据中的 API 调用链记录和 MongoDB 设计核对记录。</p>
+<h3 id="76-历史版本结果与修复过程">7.6 历史版本结果与修复过程 </h3>
+<p>历史结果用于说明项目如何逐步完善，不与当前 260 项相加。</p>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th style="text-align:right">后端</th>
+<th style="text-align:right">组件</th>
+<th style="text-align:right">前端逻辑</th>
+<th style="text-align:right">合计</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2.0.0</td>
+<td style="text-align:right">136</td>
+<td style="text-align:right">56</td>
+<td style="text-align:right">16</td>
+<td style="text-align:right">208</td>
+</tr>
+<tr>
+<td>2.0.1</td>
+<td style="text-align:right">151</td>
+<td style="text-align:right">66</td>
+<td style="text-align:right">16</td>
+<td style="text-align:right">233</td>
+</tr>
+<tr>
+<td>2.0.2</td>
+<td style="text-align:right">154</td>
+<td style="text-align:right">90</td>
+<td style="text-align:right">16</td>
+<td style="text-align:right">260</td>
+</tr>
+</tbody>
+</table>
+<p>2.0.0 已有部分真实浏览器记录，包括创建年龄题版本、加入题库、导入问卷、发布、填写 25 并查看统计。</p>
+<p>后续审阅发现，208 项测试通过仍遗漏了数字统计边界、统计入口、使用查询入口、题库分页和题库内搜索等问题。2.0.1 修复这些问题，增加 25 项测试，并在隔离临时库中进行了相应浏览器检查。</p>
+<p>2.0.2 又修复了升级确认错题、迟到统计覆盖当前版本，以及旧题库成员失效后无法选择有效新版等交互问题，增加 27 项测试。</p>
+<p>首次失败、修正过程和最终通过记录均保留。历史浏览器记录只证明对应版本、对应操作的检查情况，不能代替当前版本所有页面的人工验收。</p>
+<h2 id="八-遇到的问题">八、遇到的问题 </h2>
+<p>第二阶段的困难主要来自两方面：一是新增需求改变了题目的管理方式，需要补充版本、来源和权限设计；二是实际实现中出现了校验遗漏、页面入口不完整和连续操作错误。</p>
+<p>两类问题需要分别说明。P01～P06、P10 是设计时需要解决的问题；P07～P09 是 2.0.0 阶段实际发现的问题，P11～P15 属于 2.0.1 修订，P16～P18 属于 2.0.2 修订。</p>
+<h3 id="81-主要问题及原因">8.1 主要问题及原因 </h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>遇到的问题</th>
+<th>产生原因或影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P01</td>
+<td>无法可靠追踪同一道题在不同问卷中的使用</td>
+<td>第一阶段的题目 ID 只区分当前问卷内的题目，没有独立的题目身份</td>
+</tr>
+<tr>
+<td>P02</td>
+<td>题目修改可能影响旧问卷</td>
+<td>如果旧问卷始终读取题目的最新内容，过去答案的含义可能随之改变</td>
+</tr>
+<tr>
+<td>P03</td>
+<td>客户端可能伪造题目来源</td>
+<td>仅接收页面传来的来源字段，不能证明该题确实经过合法导入</td>
+</tr>
+<tr>
+<td>P04</td>
+<td>导入与撤销授权可能同时发生</td>
+<td>只读取授权、再写问卷，不一定与撤销操作产生写入冲突</td>
+</tr>
+<tr>
+<td>P05</td>
+<td>题目使用权与答案访问权容易混淆</td>
+<td>允许别人采用题目，不代表允许其查看相关问卷的数据</td>
+</tr>
+<tr>
+<td>P06</td>
+<td>升级题目后，原跳转规则可能失效</td>
+<td>新版本可能删除选项或改变题型，而问卷仍保留原规则</td>
+</tr>
+<tr>
+<td>P07</td>
+<td>旧数据库回退测试出现断言失败</td>
+<td>测试错误地要求第二阶段新增集合也恢复成不存在的旧约束</td>
+</tr>
+<tr>
+<td>P08</td>
+<td>旧数据迁移测试被新格式数据干扰</td>
+<td>共用测试数据库中混入了此前测试产生的题目来源信息</td>
+</tr>
+<tr>
+<td>P09</td>
+<td>窄屏下共享入口被隐藏</td>
+<td>原导航样式隐藏了最后一项，导致新增入口不可见</td>
+</tr>
+<tr>
+<td>P10</td>
+<td>答卷数和作答条数容易混算</td>
+<td>一份答卷可以包含两个同版本实例，展开后会得到多条答案</td>
+</tr>
+<tr>
+<td>P11</td>
+<td>非法数字分组边界未被完整拒绝</td>
+<td>调用了安全数值函数，却忽略了函数返回的判断结果</td>
+</tr>
+<tr>
+<td>P12</td>
+<td>只有统计授权的用户找不到统计入口</td>
+<td>页面入口依赖题目使用列表，而统计授权不等于题目使用授权</td>
+</tr>
+<tr>
+<td>P13</td>
+<td>共享接收者被引导到无权访问的历史页面</td>
+<td>使用查询与所有者的历史管理入口放在一起</td>
+</tr>
+<tr>
+<td>P14</td>
+<td>选题窗口只能选择前二十个题库</td>
+<td>页面只请求题库列表第一页，没有继续加载</td>
+</tr>
+<tr>
+<td>P15</td>
+<td>选择题库后搜索不生效</td>
+<td>搜索关键词没有传给题库成员查询接口</td>
+</tr>
+<tr>
+<td>P16</td>
+<td>预览 A 题后可能确认升级 B 题</td>
+<td>确认时重新读取当前选中题目，没有绑定预览对象</td>
+</tr>
+<tr>
+<td>P17</td>
+<td>页面显示的统计可能属于旧版本</td>
+<td>较早请求返回较晚，覆盖了用户当前选择的查询结果</td>
+</tr>
+<tr>
+<td>P18</td>
+<td>旧版本授权失效后无法更新到有效新版</td>
+<td>页面根据旧版本是否可用，直接禁用了更新入口</td>
+</tr>
+</tbody>
+</table>
+<p>这些问题说明，接口能够返回正确结果，并不代表页面操作已经完整；已有测试全部通过，也不代表所有边界都已经覆盖。</p>
+<h3 id="82-旧数据与新版本之间的兼容问题">8.2 旧数据与新版本之间的兼容问题 </h3>
+<p>第一阶段的问卷没有独立题目来源，但仍保存着完整题目内容。第二阶段不能要求这些旧问卷必须补齐来源后才能继续使用。</p>
+<p>因此，兼容处理需要满足两点：</p>
+<ul>
+<li>没有来源的旧题继续按原定义填写、提交和统计。</li>
+<li>没有明确关联依据时，不把旧答案自动计入某个新建常用题的统计。</li>
+</ul>
+<p><img src="images/png/fig-26.png" alt="图 26 旧数据继续运行示例图"></p>
+<p><strong>图 26 旧数据继续运行示例图</strong></p>
+<p>例如，把旧问卷中的年龄题另存为常用题，只会为当前草稿建立新的来源关系。已经发布的历史快照和旧答案保持原样，不能仅凭题干相同就自动合并。</p>
+<p>另一个兼容问题是：题目作者修改内容后，已经采用旧版的问卷怎么办？</p>
+<p><img src="images/png/fig-27.png" alt="图 27 问卷升级前后的隔离效果图"></p>
+<p><strong>图 27 问卷升级前后的隔离效果图</strong></p>
+<p>问卷 A 可以主动升级，问卷 B 继续使用旧版。已经开始的填写过程仍读取原发布快照。这样，题库内容更新不会在填写中途替换题目，也不会改变历史答案的解释。</p>
+<p>已有测试检查了旧快照不变、旧填写过程在新版发布后继续提交，以及旧数据约束升级和回退保护。具体依据包括 T075、T099、T100、T106～T108。</p>
+<h3 id="83-统计数量容易产生误解">8.3 统计数量容易产生误解 </h3>
+<p>跨问卷统计不能直接把展开后的答案行数当作答卷数，更不能当作人数。</p>
+<p>例如，一份答卷中出现两个同版本实例，就会贡献两条作答，但仍然只有一份答卷。</p>
+<p><img src="images/png/fig-28.png" alt="图 28 统计计数示例图"></p>
+<p><strong>图 28 统计计数示例图</strong></p>
+<p>已有测试中，两份问卷收到两份答卷，共包含三条数字作答：20、40、60。因此，答卷数为 2，作答条数为 3，平均值为 40。</p>
+<p>多选题也需要明确分母。两条回答分别为 <code>[a,b]</code> 和 <code>[b,c]</code> 时，选项比例为 50%、100%、50%，相加为 200% 是正常结果，因为每条回答可以选择多个选项。</p>
+<p>本轮跨问卷统计没有实现去重人数，不能把作答条数换名显示为人数。相关测试见 T102、T103。</p>
+<h3 id="84-导入与撤销授权的并发问题">8.4 导入与撤销授权的并发问题 </h3>
+<p>用户导入题目时，题目所有者可能同时撤销授权。如果只在导入开始时检查一次授权，就可能出现检查时有效、写入时已经撤销的情况。</p>
+<p><img src="images/png/fig-29.png" alt="图 29 导入与撤销并发时序图"></p>
+<p><strong>图 29 导入与撤销并发时序图</strong></p>
+<p>系统需要明确两种结果：</p>
+<ul>
+<li>导入先成功提交，原实例属于已合法使用，可以保留。</li>
+<li>撤销先成功提交，之后的新增导入应被拒绝。</li>
+</ul>
+<p>这需要授权检查和写入操作共同配合。发生事务冲突并重试时，还要重新读取授权，不能继续使用第一次检查的结论。相关测试通过受控执行顺序分别验证这两种情况，见 T094～T097。</p>
+<h2 id="九-如何解决">九、如何解决 </h2>
+<p>针对第八章的问题，第二阶段采用了增加独立题目管理、固定历史内容、分开权限以及补充交互保护的方式。修改集中在题目管理、问卷编辑和新增统计层，原填写与提交核心继续复用。</p>
+<h3 id="91-问题与修改对应关系">9.1 问题与修改对应关系 </h3>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>具体修改</th>
+<th>验证方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P01</td>
+<td>增加题目系列和确定版本，问卷内继续使用实例 ID</td>
+<td>同系列多问卷、多实例及旧题测试</td>
+</tr>
+<tr>
+<td>P02</td>
+<td>实例保存内容，发布保存完整快照</td>
+<td>比较旧快照，验证旧填写过程仍可提交</td>
+</tr>
+<tr>
+<td>P03</td>
+<td>导入、升级和解除使用专门操作，普通保存核对原来源</td>
+<td>来源篡改、复制、删除和共享另存拒绝测试</td>
+</tr>
+<tr>
+<td>P04</td>
+<td>条件写入共同协调记录，事务重试时重新检查授权</td>
+<td>控制导入与撤销、归档的两种提交顺序</td>
+</tr>
+<tr>
+<td>P05</td>
+<td>分开使用授权和统计授权，先确定权限范围再统计</td>
+<td>越权拒绝、授权后可见、撤销后排除</td>
+</tr>
+<tr>
+<td>P06</td>
+<td>保留待修复草稿，发布时重新完整校验</td>
+<td>无效规则可保存，修复前发布被拒绝</td>
+</tr>
+<tr>
+<td>P07</td>
+<td>将旧约束回退断言限定到原集合</td>
+<td>纯第一阶段样本回归</td>
+</tr>
+<tr>
+<td>P08</td>
+<td>单独构造不含新来源的旧样本，保留降级保护</td>
+<td>旧样本可回退，新业务数据拒绝仅恢复旧约束</td>
+</tr>
+<tr>
+<td>P09</td>
+<td>修正导航显示样式</td>
+<td>对应版本的窄屏浏览器记录</td>
+</tr>
+<tr>
+<td>P10</td>
+<td>答卷按 ID 去重，作答按实例计数</td>
+<td>两份答卷、三条作答及多选分母测试</td>
+</tr>
+<tr>
+<td>P11</td>
+<td>将安全数值判断结果用于拒绝条件</td>
+<td>无穷大、非数值和越界边界检查</td>
+</tr>
+<tr>
+<td>P12</td>
+<td>在有效统计授权记录旁增加入口</td>
+<td>仅统计授权用户的接口与组件测试</td>
+</tr>
+<tr>
+<td>P13</td>
+<td>提供独立使用情况入口</td>
+<td>接收者只查自己的使用，不调用所有者历史接口</td>
+</tr>
+<tr>
+<td>P14</td>
+<td>增加题库后续加载和失败重试</td>
+<td>第二页及第 21 个题库可达测试</td>
+</tr>
+<tr>
+<td>P15</td>
+<td>传递关键词，对可读固定版本先搜索再分页</td>
+<td>关键词、分页和私密标题保护测试</td>
+</tr>
+<tr>
+<td>P16</td>
+<td>预览绑定实例、来源、目标、修订号和本地草稿状态</td>
+<td>切题、延迟响应、草稿变化及确认参数测试</td>
+</tr>
+<tr>
+<td>P17</td>
+<td>仅最新请求更新结果，结果与筛选范围一起保存</td>
+<td>请求乱序、关闭明细和翻页竞争测试</td>
+</tr>
+<tr>
+<td>P18</td>
+<td>允许选择新版，提交时重新检查目标权限</td>
+<td>旧版撤销、新版有效及目标再次撤销测试</td>
+</tr>
+</tbody>
+</table>
+<h3 id="92-用固定版本保护历史内容">9.2 用固定版本保护历史内容 </h3>
+<p>题目修改时创建新版本，不覆盖原文档。用户也可以从旧版继续修改，因此版本编号只表示创建顺序，不代表所有问卷都应该采用编号最大的版本。</p>
+<p><img src="images/png/fig-30.png" alt="图 30 题目版本演进与分支图"></p>
+<p><strong>图 30 题目版本演进与分支图</strong></p>
+<p>图中 v4 虽然创建得最晚，却可以基于 v1 分支。创建版本时，序号分配、版本插入和最近版本指针更新放在同一事务中，避免失败后只写入一部分。</p>
+<p>历史恢复同样创建新版本，但需要额外记录恢复来源。</p>
+<p><img src="images/png/fig-31.png" alt="图 31 历史恢复关系图"></p>
+<p><strong>图 31 历史恢复关系图</strong></p>
+<p>例如，当前最近版本为 v3，用户恢复 v1 的内容后生成 v4：</p>
+<ul>
+<li><code>parent_version_id</code> 指向 v3，记录直接演进关系。</li>
+<li><code>restored_from_version_id</code> 指向 v1，记录内容恢复来源。</li>
+</ul>
+<p>这里与图 30 是两种独立示例，旧版本在两种情况下都不覆盖。相关验证见 T075～T077、T218。</p>
+<h3 id="93-将升级预览与确认绑定">9.3 将升级预览与确认绑定 </h3>
+<p>升级不仅涉及内容替换，还可能影响原跳转规则，因此先预览差异，再确认修改。</p>
+<p><img src="images/png/fig-32.png" alt="图 32 升级预览与确认流程图"></p>
+<p><strong>图 32 升级预览与确认流程图</strong></p>
+<p>预览记录问卷、实例、来源版本、目标版本、服务器修订号和本地草稿状态。切换题目、改变目标、继续编辑、关闭窗口或离开页面时，原确认失效。</p>
+<p>确认阶段禁止自动保存后继续升级。否则，自动保存取得的新修订号可能绕过原预览约束。用户需要保存后重新预览，再确认。</p>
+<p>升级后若规则失效，保留原规则并提示问题，允许继续修复草稿；只有完整校验通过才能发布。相关验证见 T099、T198～T208、T219、T221。</p>
+<h3 id="94-分开使用权和统计权">9.4 分开使用权和统计权 </h3>
+<p>系统使用两类授权，分别回答两个问题：</p>
+<table>
+<thead>
+<tr>
+<th>授权</th>
+<th>授权人</th>
+<th>允许的操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>use</code></td>
+<td>题目所有者</td>
+<td>使用指定题目版本，新增导入问卷</td>
+</tr>
+<tr>
+<td><code>aggregate</code></td>
+<td>问卷所有者</td>
+<td>查询指定问卷、指定题目版本的汇总统计</td>
+</tr>
+</tbody>
+</table>
+<p><img src="images/png/fig-33.png" alt="图 33 使用授权与统计授权关系图"></p>
+<p><strong>图 33 使用授权与统计授权关系图</strong></p>
+<p>题目作者不会因为拥有题目，就自动看到他人问卷中的答案。统计授权也不会开放问卷详情、原始答卷或文本明细。</p>
+<p>撤销时，还需要区分既有使用和新的使用。</p>
+<p><img src="images/png/fig-34.png" alt="图 34 撤销授权前后行为图"></p>
+<p><strong>图 34 撤销授权前后行为图</strong></p>
+<p>已合法导入的来源绑定原问卷和原实例，可以继续保留；新增导入或替换版本需要检查当前授权。统计授权撤销后，新查询排除相应问卷范围，不能沿用过去的访问资格。</p>
+<p>使用追踪只展示自己的问卷明细，题目所有者按权限查看外部脱敏数量。当前没有通用的他人问卷详情授权。相关验证见 T091～T097、T104、T127。</p>
+<h3 id="95-先确定权限范围再计算统计">9.5 先确定权限范围，再计算统计 </h3>
+<p>跨问卷统计先筛选有权访问的问卷，再匹配发布快照、题目实例和正式答案。</p>
+<p><img src="images/png/fig-35.png" alt="图 35 跨问卷统计处理流程图"></p>
+<p><strong>图 35 跨问卷统计处理流程图</strong></p>
+<p>统计口径明确如下：</p>
+<table>
+<thead>
+<tr>
+<th>指标或条件</th>
+<th>计算方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>题目范围</td>
+<td>同一确定版本，不自动合并不同版本</td>
+</tr>
+<tr>
+<td>问卷范围</td>
+<td>自有问卷或获得有效汇总授权的问卷</td>
+</tr>
+<tr>
+<td>时间范围</td>
+<td>按正式提交时间 <code>submitted_at</code> 筛选，包含起止边界</td>
+</tr>
+<tr>
+<td>覆盖问卷数</td>
+<td>有权限且发布快照引用该版本的问卷数，包括零作答问卷</td>
+</tr>
+<tr>
+<td>有作答问卷数</td>
+<td>筛选范围内实际收到该版本有效作答的问卷数</td>
+</tr>
+<tr>
+<td>有效答卷数</td>
+<td>按正式答卷 ID 去重</td>
+</tr>
+<tr>
+<td>有效作答数</td>
+<td>按匹配的问卷实例计数</td>
+</tr>
+<tr>
+<td>多选比例</td>
+<td>选项次数除以有效作答条数</td>
+</tr>
+</tbody>
+</table>
+<p>使用追踪中的几个分类可以重叠：“历史发布使用”包含当前发布，不能将分类数量直接相加。</p>
+<p>这些权限范围需要在验收时说明，不能无条件表述为能够查看所有使用问卷或所有问卷的数据。本轮未实现跨版本合并、旧答案自动关联和跨问卷去重人数。相关验证见 T102～T105、T116～T127。</p>
+<h3 id="96-显式升级数据库并保留恢复保护">9.6 显式升级数据库并保留恢复保护 </h3>
+<p>普通启动负责连接、检查已有约束、初始化缺失集合和确保索引存在。已有集合约束的变化通过显式升级处理。</p>
+<p><img src="images/png/fig-36.png" alt="图 36 数据库显式升级与恢复流程图"></p>
+<p><strong>图 36 数据库显式升级与恢复流程图</strong></p>
+<p>升级时先检查旧文档是否满足目标结构，再保存原约束、目标信息和应用进度。逐集合应用成功后记录完成；失败时尝试依据日志恢复。</p>
+<p>恢复也有条件：日志必须属于当前数据库，约束不能已经被其他操作改变。已有第二阶段题目或来源数据时，程序会拒绝只恢复旧约束，要求按维护前完整备份制定恢复处理。</p>
+<p>因此，约束恢复不能代替业务数据备份，也不能承诺任意时刻都能无条件降级。相关验证见 T107、T108。</p>
+<h1></h1>
+
+      </div>
+      
+      
+    
+    
+    
+    
+    
+    
+  
+    </body></html>

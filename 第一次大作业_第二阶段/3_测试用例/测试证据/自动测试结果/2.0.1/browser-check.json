@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-24",
+  "isolated_browser_database": true,
+  "browser_base": "http://localhost:8001",
+  "fixture_setup": "API预置临时数据；以下操作通过真实浏览器完成",
+  "statistics_only_grantee_link_opens_scoped_statistics": true,
+  "nonfinite_boundary_shows_input_error_and_clears_old_statistics": true,
+  "recipient_usage_page_shows_only_own_survey": true,
+  "twenty_first_library_loaded_and_selected": true,
+  "library_search_reduces_two_items_to_one": true,
+  "browser_console_errors_observed": 0,
+  "business_documents_and_collection_names_unchanged": true,
+  "database_schema_files_unchanged": true,
+  "business_migration_run": false,
+  "temporary_database_removed": true,
+  "screenshots": [
+    "browser-granted-entry.png",
+    "browser-invalid-boundaries.png",
+    "browser-recipient-usage.png",
+    "browser-library-search.png"
+  ],
+  "scope_notice": "仅验证这五项修复对应的页面流程，未声称所有页面均人工验收。"
+}

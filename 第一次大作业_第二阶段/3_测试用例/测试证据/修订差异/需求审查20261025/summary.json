@@ -1,0 +1,42 @@
+{
+  "backend": {
+    "tests": 151,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "components": {
+    "tests": 66,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "probes": {
+    "tests": 4,
+    "failures": 3,
+    "errors": 0,
+    "skipped": 0
+  },
+  "frontend_unit": {
+    "tests": 16,
+    "failures": 0
+  },
+  "scope_evidence": {
+    "library_upgrade_after_old_grant_revoked": {
+      "old_item_available": false,
+      "new_version_is_authorized": true,
+      "upgrade_api_status": 200,
+      "target_stored": true
+    },
+    "question_author_external_usage": {
+      "used_surveys": 1,
+      "listed_survey_details": 0
+    },
+    "question_author_without_data_grant": {
+      "valid_answers": 0,
+      "actual_answers_in_survey_owner_scope": 1
+    },
+    "temporary_database_removed": true
+  },
+  "report_exists": true
+}

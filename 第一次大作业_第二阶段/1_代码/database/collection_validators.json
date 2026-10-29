@@ -1,0 +1,1436 @@
+{
+  "users": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "username": {
+        "bsonType": "string",
+        "minLength": 3,
+        "maxLength": 40
+      },
+      "username_key": {
+        "bsonType": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "password_hash": {
+        "bsonType": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "created_at": {
+        "bsonType": "date"
+      },
+      "schema_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      }
+    },
+    "required": [
+      "_id",
+      "username",
+      "username_key",
+      "password_hash",
+      "created_at",
+      "schema_version"
+    ]
+  },
+  "sessions": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "token_hash": {
+        "bsonType": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "user_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "expires_at": {
+        "bsonType": "date"
+      }
+    },
+    "required": [
+      "_id",
+      "token_hash",
+      "user_id",
+      "expires_at"
+    ]
+  },
+  "surveys": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "owner_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "share_code": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "status": {
+        "enum": [
+          "draft",
+          "published",
+          "closed"
+        ]
+      },
+      "draft": {
+        "bsonType": "object",
+        "properties": {
+          "title": {
+            "bsonType": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "bsonType": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "allow_anonymous": {
+            "bsonType": "bool"
+          },
+          "allow_repeat": {
+            "bsonType": "bool"
+          },
+          "questions": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "object",
+              "properties": {
+                "id": {
+                  "bsonType": "string",
+                  "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                },
+                "type": {
+                  "bsonType": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "title": {
+                  "bsonType": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "required": {
+                  "bsonType": "bool"
+                },
+                "options": {
+                  "bsonType": "array",
+                  "items": {
+                    "bsonType": "object",
+                    "properties": {
+                      "id": {
+                        "bsonType": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                      },
+                      "label": {
+                        "bsonType": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "label"
+                    ]
+                  },
+                  "maxItems": 100
+                },
+                "validation": {
+                  "bsonType": "object",
+                  "properties": {
+                    "min_choices": {
+                      "bsonType": [
+                        "int",
+                        "long"
+                      ],
+                      "minimum": 0,
+                      "maximum": 1000000000000000
+                    },
+                    "max_choices": {
+                      "bsonType": [
+                        "int",
+                        "long"
+                      ],
+                      "minimum": 0,
+                      "maximum": 1000000000000000
+                    },
+                    "min_length": {
+                      "bsonType": [
+                        "int",
+                        "long"
+                      ],
+                      "minimum": 0,
+                      "maximum": 1000000000000000
+                    },
+                    "max_length": {
+                      "bsonType": [
+                        "int",
+                        "long"
+                      ],
+                      "minimum": 0,
+                      "maximum": 1000000000000000
+                    },
+                    "min": {
+                      "bsonType": [
+                        "int",
+                        "long",
+                        "double"
+                      ],
+                      "minimum": -1000000000000000,
+                      "maximum": 1000000000000000
+                    },
+                    "max": {
+                      "bsonType": [
+                        "int",
+                        "long",
+                        "double"
+                      ],
+                      "minimum": -1000000000000000,
+                      "maximum": 1000000000000000
+                    },
+                    "integer_only": {
+                      "bsonType": "bool"
+                    }
+                  }
+                },
+                "routing": {
+                  "bsonType": "object",
+                  "properties": {
+                    "rules": {
+                      "bsonType": "array",
+                      "items": {
+                        "bsonType": "object",
+                        "properties": {
+                          "condition": {
+                            "bsonType": "object",
+                            "minProperties": 1
+                          },
+                          "target": {
+                            "bsonType": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          }
+                        },
+                        "required": [
+                          "condition",
+                          "target"
+                        ]
+                      },
+                      "maxItems": 20
+                    },
+                    "default_target": {
+                      "bsonType": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "rules",
+                    "default_target"
+                  ]
+                },
+                "source": {
+                  "anyOf": [
+                    {
+                      "bsonType": "object",
+                      "properties": {
+                        "question_id": {
+                          "bsonType": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                        },
+                        "question_version_id": {
+                          "bsonType": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                        },
+                        "version": {
+                          "bsonType": [
+                            "int",
+                            "long"
+                          ],
+                          "minimum": 1,
+                          "maximum": 1000000000000000
+                        },
+                        "survey_id": {
+                          "bsonType": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                        },
+                        "instance_id": {
+                          "bsonType": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                        },
+                        "imported_by": {
+                          "bsonType": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                        },
+                        "imported_at": {
+                          "bsonType": "date"
+                        },
+                        "grant_id": {
+                          "anyOf": [
+                            {
+                              "bsonType": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                            },
+                            {
+                              "bsonType": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "question_id",
+                        "question_version_id",
+                        "version",
+                        "survey_id",
+                        "instance_id",
+                        "imported_by",
+                        "imported_at",
+                        "grant_id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "bsonType": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "title",
+                "required",
+                "options",
+                "validation",
+                "routing"
+              ]
+            },
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "allow_anonymous",
+          "allow_repeat",
+          "questions"
+        ]
+      },
+      "deadline": {
+        "bsonType": [
+          "date",
+          "null"
+        ]
+      },
+      "revision": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 1
+      },
+      "current_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 0,
+        "maximum": 1000000000000000
+      },
+      "created_at": {
+        "bsonType": "date"
+      },
+      "updated_at": {
+        "bsonType": "date"
+      },
+      "activity_seq": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 0,
+        "maximum": 1000000000000000
+      },
+      "schema_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      }
+    },
+    "required": [
+      "_id",
+      "owner_id",
+      "share_code",
+      "status",
+      "draft",
+      "deadline",
+      "revision",
+      "current_version",
+      "created_at",
+      "updated_at",
+      "activity_seq",
+      "schema_version"
+    ]
+  },
+  "survey_versions": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "survey_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 1
+      },
+      "definition": {
+        "bsonType": "object",
+        "properties": {
+          "title": {
+            "bsonType": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "bsonType": "string",
+            "minLength": 0,
+            "maxLength": 5000
+          },
+          "allow_anonymous": {
+            "bsonType": "bool"
+          },
+          "allow_repeat": {
+            "bsonType": "bool"
+          },
+          "questions": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "object",
+              "properties": {
+                "id": {
+                  "bsonType": "string",
+                  "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                },
+                "type": {
+                  "bsonType": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "title": {
+                  "bsonType": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "required": {
+                  "bsonType": "bool"
+                },
+                "options": {
+                  "bsonType": "array",
+                  "items": {
+                    "bsonType": "object",
+                    "properties": {
+                      "id": {
+                        "bsonType": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                      },
+                      "label": {
+                        "bsonType": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "label"
+                    ]
+                  },
+                  "maxItems": 100
+                },
+                "validation": {
+                  "bsonType": "object",
+                  "properties": {
+                    "min_choices": {
+                      "bsonType": [
+                        "int",
+                        "long"
+                      ],
+                      "minimum": 0,
+                      "maximum": 1000000000000000
+                    },
+                    "max_choices": {
+                      "bsonType": [
+                        "int",
+                        "long"
+                      ],
+                      "minimum": 0,
+                      "maximum": 1000000000000000
+                    },
+                    "min_length": {
+                      "bsonType": [
+                        "int",
+                        "long"
+                      ],
+                      "minimum": 0,
+                      "maximum": 1000000000000000
+                    },
+                    "max_length": {
+                      "bsonType": [
+                        "int",
+                        "long"
+                      ],
+                      "minimum": 0,
+                      "maximum": 1000000000000000
+                    },
+                    "min": {
+                      "bsonType": [
+                        "int",
+                        "long",
+                        "double"
+                      ],
+                      "minimum": -1000000000000000,
+                      "maximum": 1000000000000000
+                    },
+                    "max": {
+                      "bsonType": [
+                        "int",
+                        "long",
+                        "double"
+                      ],
+                      "minimum": -1000000000000000,
+                      "maximum": 1000000000000000
+                    },
+                    "integer_only": {
+                      "bsonType": "bool"
+                    }
+                  }
+                },
+                "routing": {
+                  "bsonType": "object",
+                  "properties": {
+                    "rules": {
+                      "bsonType": "array",
+                      "items": {
+                        "bsonType": "object",
+                        "properties": {
+                          "condition": {
+                            "bsonType": "object",
+                            "minProperties": 1
+                          },
+                          "target": {
+                            "bsonType": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          }
+                        },
+                        "required": [
+                          "condition",
+                          "target"
+                        ]
+                      },
+                      "maxItems": 20
+                    },
+                    "default_target": {
+                      "bsonType": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "rules",
+                    "default_target"
+                  ]
+                },
+                "source": {
+                  "anyOf": [
+                    {
+                      "bsonType": "object",
+                      "properties": {
+                        "question_id": {
+                          "bsonType": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                        },
+                        "question_version_id": {
+                          "bsonType": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                        },
+                        "version": {
+                          "bsonType": [
+                            "int",
+                            "long"
+                          ],
+                          "minimum": 1,
+                          "maximum": 1000000000000000
+                        },
+                        "survey_id": {
+                          "bsonType": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                        },
+                        "instance_id": {
+                          "bsonType": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                        },
+                        "imported_by": {
+                          "bsonType": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                        },
+                        "imported_at": {
+                          "bsonType": "date"
+                        },
+                        "grant_id": {
+                          "anyOf": [
+                            {
+                              "bsonType": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                            },
+                            {
+                              "bsonType": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "question_id",
+                        "question_version_id",
+                        "version",
+                        "survey_id",
+                        "instance_id",
+                        "imported_by",
+                        "imported_at",
+                        "grant_id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "bsonType": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "title",
+                "required",
+                "options",
+                "validation",
+                "routing"
+              ]
+            },
+            "maxItems": 100,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "allow_anonymous",
+          "allow_repeat",
+          "questions"
+        ]
+      },
+      "schema_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      },
+      "rule_engine_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      },
+      "published_at": {
+        "bsonType": "date"
+      }
+    },
+    "required": [
+      "_id",
+      "survey_id",
+      "version",
+      "definition",
+      "schema_version",
+      "rule_engine_version",
+      "published_at"
+    ]
+  },
+  "responses": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "survey_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "version_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 1
+      },
+      "attempt_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "respondent_key": {
+        "bsonType": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "anonymous": {
+        "bsonType": "bool"
+      },
+      "answers": {
+        "bsonType": "array",
+        "items": {
+          "bsonType": "object",
+          "properties": {
+            "question_id": {
+              "bsonType": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "bsonType": "null"
+                },
+                {
+                  "bsonType": "string",
+                  "minLength": 1,
+                  "maxLength": 10000
+                },
+                {
+                  "bsonType": [
+                    "int",
+                    "long",
+                    "double"
+                  ],
+                  "minimum": -1000000000000000,
+                  "maximum": 1000000000000000
+                },
+                {
+                  "bsonType": "array",
+                  "items": {
+                    "bsonType": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                  },
+                  "maxItems": 100,
+                  "uniqueItems": true,
+                  "minItems": 1
+                }
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "question_id",
+            "value"
+          ]
+        },
+        "maxItems": 100,
+        "minItems": 1
+      },
+      "path": {
+        "bsonType": "array",
+        "items": {
+          "bsonType": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+        },
+        "maxItems": 100,
+        "minItems": 1,
+        "uniqueItems": true
+      },
+      "submitted_at": {
+        "bsonType": "date"
+      },
+      "schema_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      },
+      "user_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      }
+    },
+    "required": [
+      "_id",
+      "survey_id",
+      "version_id",
+      "version",
+      "attempt_id",
+      "respondent_key",
+      "anonymous",
+      "answers",
+      "path",
+      "submitted_at",
+      "schema_version"
+    ],
+    "oneOf": [
+      {
+        "properties": {
+          "anonymous": {
+            "enum": [
+              true
+            ]
+          }
+        },
+        "not": {
+          "required": [
+            "user_id"
+          ]
+        }
+      },
+      {
+        "properties": {
+          "anonymous": {
+            "enum": [
+              false
+            ]
+          }
+        },
+        "required": [
+          "user_id"
+        ]
+      }
+    ]
+  },
+  "attempts": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "survey_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "version_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "respondent_key": {
+        "bsonType": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "anonymous": {
+        "bsonType": "bool"
+      },
+      "status": {
+        "bsonType": "string",
+        "enum": [
+          "in_progress",
+          "submitted",
+          "abandoned"
+        ]
+      },
+      "raw_answers": {
+        "bsonType": "object",
+        "maxProperties": 100,
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "bsonType": "null"
+            },
+            {
+              "bsonType": "string",
+              "minLength": 0,
+              "maxLength": 20000
+            },
+            {
+              "bsonType": [
+                "int",
+                "long",
+                "double"
+              ],
+              "minimum": -1000000000000000,
+              "maximum": 1000000000000000
+            },
+            {
+              "bsonType": "array",
+              "items": {
+                "bsonType": "string",
+                "pattern": "^[A-Za-z0-9_-]{1,64}$"
+              },
+              "maxItems": 100
+            }
+          ]
+        }
+      },
+      "current_question_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "revision": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 1
+      },
+      "created_at": {
+        "bsonType": "date"
+      },
+      "updated_at": {
+        "bsonType": "date"
+      },
+      "schema_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      },
+      "response_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      }
+    },
+    "required": [
+      "_id",
+      "survey_id",
+      "version_id",
+      "respondent_key",
+      "anonymous",
+      "status",
+      "raw_answers",
+      "current_question_id",
+      "revision",
+      "created_at",
+      "updated_at",
+      "schema_version"
+    ]
+  },
+  "questions": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "owner_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "title": {
+        "bsonType": "string",
+        "minLength": 1,
+        "maxLength": 500
+      },
+      "latest_version_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "version_seq": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 1,
+        "maximum": 1000000000000000
+      },
+      "revision": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 1,
+        "maximum": 1000000000000000
+      },
+      "archived": {
+        "bsonType": "bool"
+      },
+      "activity_seq": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 0,
+        "maximum": 1000000000000000
+      },
+      "updated_at": {
+        "bsonType": "date"
+      },
+      "created_at": {
+        "bsonType": "date"
+      },
+      "schema_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      }
+    },
+    "required": [
+      "_id",
+      "owner_id",
+      "title",
+      "latest_version_id",
+      "version_seq",
+      "revision",
+      "archived",
+      "activity_seq",
+      "updated_at",
+      "created_at",
+      "schema_version"
+    ],
+    "additionalProperties": false
+  },
+  "question_versions": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "question_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 1,
+        "maximum": 1000000000000000
+      },
+      "parent_version_id": {
+        "anyOf": [
+          {
+            "bsonType": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,64}$"
+          },
+          {
+            "bsonType": "null"
+          }
+        ]
+      },
+      "restored_from_version_id": {
+        "anyOf": [
+          {
+            "bsonType": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,64}$"
+          },
+          {
+            "bsonType": "null"
+          }
+        ]
+      },
+      "content": {
+        "bsonType": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "single_choice",
+              "multiple_choice",
+              "text",
+              "number"
+            ]
+          },
+          "title": {
+            "bsonType": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "options": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "object",
+              "properties": {
+                "id": {
+                  "bsonType": "string",
+                  "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                },
+                "label": {
+                  "bsonType": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "id",
+                "label"
+              ]
+            },
+            "maxItems": 100
+          },
+          "validation": {
+            "bsonType": "object",
+            "properties": {
+              "min_choices": {
+                "bsonType": [
+                  "int",
+                  "long"
+                ],
+                "minimum": 0,
+                "maximum": 1000000000000000
+              },
+              "max_choices": {
+                "bsonType": [
+                  "int",
+                  "long"
+                ],
+                "minimum": 0,
+                "maximum": 1000000000000000
+              },
+              "min_length": {
+                "bsonType": [
+                  "int",
+                  "long"
+                ],
+                "minimum": 0,
+                "maximum": 1000000000000000
+              },
+              "max_length": {
+                "bsonType": [
+                  "int",
+                  "long"
+                ],
+                "minimum": 0,
+                "maximum": 1000000000000000
+              },
+              "min": {
+                "bsonType": [
+                  "int",
+                  "long",
+                  "double"
+                ],
+                "minimum": -1000000000000000,
+                "maximum": 1000000000000000
+              },
+              "max": {
+                "bsonType": [
+                  "int",
+                  "long",
+                  "double"
+                ],
+                "minimum": -1000000000000000,
+                "maximum": 1000000000000000
+              },
+              "integer_only": {
+                "bsonType": "bool"
+              }
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "options",
+          "validation"
+        ],
+        "additionalProperties": false
+      },
+      "change_note": {
+        "bsonType": "string",
+        "maxLength": 1000
+      },
+      "created_by": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "created_at": {
+        "bsonType": "date"
+      },
+      "schema_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      }
+    },
+    "required": [
+      "_id",
+      "question_id",
+      "version",
+      "parent_version_id",
+      "restored_from_version_id",
+      "content",
+      "change_note",
+      "created_by",
+      "created_at",
+      "schema_version"
+    ],
+    "additionalProperties": false
+  },
+  "question_libraries": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "owner_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "name": {
+        "bsonType": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "description": {
+        "bsonType": "string",
+        "maxLength": 2000
+      },
+      "revision": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 1,
+        "maximum": 1000000000000000
+      },
+      "updated_at": {
+        "bsonType": "date"
+      },
+      "created_at": {
+        "bsonType": "date"
+      },
+      "schema_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      }
+    },
+    "required": [
+      "_id",
+      "owner_id",
+      "name",
+      "description",
+      "revision",
+      "updated_at",
+      "created_at",
+      "schema_version"
+    ],
+    "additionalProperties": false
+  },
+  "question_library_items": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "library_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "question_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "question_version_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "position": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 0,
+        "maximum": 100000
+      },
+      "created_at": {
+        "bsonType": "date"
+      },
+      "schema_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      }
+    },
+    "required": [
+      "_id",
+      "library_id",
+      "question_id",
+      "question_version_id",
+      "position",
+      "created_at",
+      "schema_version"
+    ],
+    "additionalProperties": false
+  },
+  "resource_grants": {
+    "bsonType": "object",
+    "properties": {
+      "_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "kind": {
+        "enum": [
+          "use",
+          "aggregate"
+        ]
+      },
+      "question_version_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "survey_id": {
+        "anyOf": [
+          {
+            "bsonType": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,64}$"
+          },
+          {
+            "bsonType": "null"
+          }
+        ]
+      },
+      "grantor_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "grantee_id": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      },
+      "active": {
+        "bsonType": "bool"
+      },
+      "revision": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 1,
+        "maximum": 1000000000000000
+      },
+      "activity_seq": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "minimum": 0,
+        "maximum": 1000000000000000
+      },
+      "updated_at": {
+        "bsonType": "date"
+      },
+      "created_at": {
+        "bsonType": "date"
+      },
+      "schema_version": {
+        "bsonType": [
+          "int",
+          "long"
+        ],
+        "enum": [
+          1
+        ]
+      }
+    },
+    "required": [
+      "_id",
+      "kind",
+      "question_version_id",
+      "survey_id",
+      "grantor_id",
+      "grantee_id",
+      "active",
+      "revision",
+      "activity_seq",
+      "updated_at",
+      "created_at",
+      "schema_version"
+    ],
+    "additionalProperties": false,
+    "oneOf": [
+      {
+        "properties": {
+          "kind": {
+            "enum": [
+              "use"
+            ]
+          },
+          "survey_id": {
+            "bsonType": "null"
+          }
+        }
+      },
+      {
+        "properties": {
+          "kind": {
+            "enum": [
+              "aggregate"
+            ]
+          },
+          "survey_id": {
+            "bsonType": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,64}$"
+          }
+        }
+      }
+    ]
+  }
+}

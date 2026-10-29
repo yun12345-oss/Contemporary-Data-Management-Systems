@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-26",
+  "version": "2.0.2",
+  "collections": {
+    "users": {
+      "documents": 2,
+      "schema_insert": "passed"
+    },
+    "sessions": {
+      "documents": 2,
+      "schema_insert": "passed"
+    },
+    "surveys": {
+      "documents": 1,
+      "schema_insert": "passed"
+    },
+    "survey_versions": {
+      "documents": 2,
+      "schema_insert": "passed"
+    },
+    "responses": {
+      "documents": 1,
+      "schema_insert": "passed"
+    },
+    "attempts": {
+      "documents": 2,
+      "schema_insert": "passed"
+    },
+    "questions": {
+      "documents": 1,
+      "schema_insert": "passed"
+    },
+    "question_versions": {
+      "documents": 2,
+      "schema_insert": "passed"
+    },
+    "question_libraries": {
+      "documents": 1,
+      "schema_insert": "passed"
+    },
+    "question_library_items": {
+      "documents": 1,
+      "schema_insert": "passed"
+    },
+    "resource_grants": {
+      "documents": 1,
+      "schema_insert": "passed"
+    }
+  },
+  "invalid_document_rejected": true,
+  "old_attempt_submitted_after_v2_publish": true,
+  "statistics_v1_average": 25,
+  "statistics_v2_valid_answers": 0,
+  "validation_scope": "结构校验真实插入；不宣称数据库自动验证外键、业务权限或全部兼容场景",
+  "temporary_databases_removed": true
+}

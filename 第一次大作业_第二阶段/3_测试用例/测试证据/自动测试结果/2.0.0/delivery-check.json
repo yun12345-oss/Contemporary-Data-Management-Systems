@@ -1,0 +1,9 @@
+{
+  "source_path_confirmed": true,
+  "independent_extracted_backend_exit_code": 0,
+  "backend_tests": 136,
+  "reuses_installed_python_dependencies": true,
+  "fresh_computer_install_claimed": false,
+  "repeat_not_added_to_unique_tests": true,
+  "unique_business_tests": 208
+}
